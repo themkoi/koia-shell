@@ -1,0 +1,41 @@
+import { HorizontalBox } from "std-widgets.slint";
+import { Palette } from "std-widgets.slint";
+
+import { FilledButton } from "@material/material.slint";
+import { MaterialPalette } from "@material/material.slint";
+import { MaterialScheme } from "@material/material.slint";
+import { MaterialSchemes } from "@material/material.slint";
+import {
+    MaterialTypography,
+    MaterialStyleMetrics,
+} from "@material/material.slint";
+
+
+
+export { MaterialPalette }
+export { MaterialScheme }
+export { MaterialSchemes }
+
+
+export component AppWindow inherits Window {
+    in property <ColorScheme> color-scheme <=> Palette.color_scheme;
+    in-out property <int> counter: 42;
+    default-font-size: 10px;
+    animate background { duration: 250ms; }
+
+    callback request-increase-value();
+    HorizontalBox {
+        width: 10%;
+        height: 100%;
+        Text {
+            text: "Counter: \{root.counter}";
+        }
+
+        FilledButton {
+            text: "Increase value";
+            clicked => {
+                root.request-increase-value();
+            }
+        }
+    }
+}
