@@ -27,9 +27,15 @@ slint::include_modules!();
 spell_framework::generate_widgets![AppWindow];
 
 mod config_shell;
-use config_shell::{config, theme};
+use config_shell::components::theme;
+use config_shell::config;
+
+use crate::services::taskbar::taskbar::run_taskbar;
+
+mod services;
 
 fn main() -> Result<(), Box<dyn Error>> {
+    env_logger::init();
     let config = config::load_app_config().unwrap();
     let args = Args::parse();
 
@@ -51,6 +57,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         ui.set_color_scheme(ColorScheme::Dark);
     }
     theme::apply_config_palette(&ui, &config);
+
+    run_taskbar(&config, ui.as_weak());
 
     // Setting the callback closure value which will be called on when the button is clicked.
     ui.on_request_increase_value({

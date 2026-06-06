@@ -6,18 +6,22 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::config_shell::defaults::{default_dark_scheme, default_light_scheme};
-use crate::config_shell::theme::MaterialScheme;
+use crate::config_shell::components::taskbar::{default_taskbar, TaskbarConfig};
+use crate::config_shell::components::theme::{
+    default_dark_scheme, default_light_scheme, MaterialScheme,
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
-    pub height: u32,
+    pub icon_theme: String,
+    pub taskbar_config: TaskbarConfig,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
-            height: 600,
+            icon_theme: "Papirus-Dark".to_string(),
+            taskbar_config: default_taskbar(),
         }
     }
 }
@@ -57,8 +61,7 @@ fn theme_file() -> PathBuf {
 }
 
 fn write_config<P: AsRef<Path>, T: Serialize>(path: P, config: &T) -> std::io::Result<()> {
-    let toml_string = toml::to_string(config)
-        .expect("Failed to serialize config");
+    let toml_string = toml::to_string(config).expect("Failed to serialize config");
 
     fs::write(path, toml_string)
 }

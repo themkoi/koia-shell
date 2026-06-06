@@ -1,4 +1,4 @@
-import { HorizontalBox } from "std-widgets.slint";
+import { HorizontalBox, Button } from "std-widgets.slint";
 import { Palette } from "std-widgets.slint";
 
 import { FilledButton } from "@material/material.slint";
@@ -16,25 +16,60 @@ export { MaterialPalette }
 export { MaterialScheme }
 export { MaterialSchemes }
 
+import { Workspace, Taskbar } from "components/taskbar.slint";
+
 
 export component AppWindow inherits Window {
+    height: 40px;
     in property <ColorScheme> color-scheme <=> Palette.color_scheme;
+
+    in property <[Workspace]> workspaces;
+    padding: 0px;
     in-out property <int> counter: 42;
     default-font-size: 10px;
-    animate background { duration: 250ms; }
 
     callback request-increase-value();
-    HorizontalBox {
-        width: 10%;
+    
+    Rectangle {
+        width: 100%;
         height: 100%;
-        Text {
-            text: "Counter: \{root.counter}";
-        }
+        
+        // Changed from HorizontalBox to HorizontalLayout to remove automatic padding
+        HorizontalLayout {
+            width: 100%;
+            height: 100%;
+            padding: 0px;   // Removes top/bottom/left/right spacing
+            spacing: 0px;   // Removes spacing between layout elements
 
-        FilledButton {
-            text: "Increase value";
-            clicked => {
-                root.request-increase-value();
+            Taskbar {
+                // Ensure the Taskbar definition itself doesn't hardcode height: 80%
+                height: 80%; 
+                width: 50%;
+                workspaces: workspaces;
+            }
+
+            Rectangle {
+                horizontal-stretch: 1;
+            }
+
+            // Wrapped Text in a layout or vertical centering if needed, 
+            // since HorizontalLayout aligns items to the top by default
+            VerticalLayout {
+                alignment: center;
+                Text {
+                    text: "Counter: \{root.counter}";
+                }
+            }
+
+            Rectangle {
+                horizontal-stretch: 1;
+            }
+
+            VerticalLayout {
+                alignment: center;
+                FilledButton {
+                    text: "Increase value";
+                }
             }
         }
     }

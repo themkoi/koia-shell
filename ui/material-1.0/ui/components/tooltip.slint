@@ -12,9 +12,15 @@ export component ToolTip {
 
     background_layer := Rectangle {
         border_radius: 4px;
-        background: MaterialPalette.inverse_surface;
+        background: rgba(
+    MaterialPalette.inverse_surface.red,
+    MaterialPalette.inverse_surface.green,
+    MaterialPalette.inverse_surface.blue,
+    0.4);
 
         layout := HorizontalLayout {
+            z: 10000;
+
             max_width: 200px;
             padding_top: 4px;
             padding_bottom: 4px;
