@@ -29,31 +29,47 @@ export component AppWindow inherits Window {
     default-font-size: 10px;
 
     callback request-increase-value();
-    
+    callback run_command(string);
+
     Rectangle {
         width: 100%;
         height: 100%;
-        
-        // Changed from HorizontalBox to HorizontalLayout to remove automatic padding
+
         HorizontalLayout {
             width: 100%;
             height: 100%;
-            padding: 0px;   // Removes top/bottom/left/right spacing
-            spacing: 0px;   // Removes spacing between layout elements
+            padding: 0px;
+            spacing: 0px;
 
             Taskbar {
-                // Ensure the Taskbar definition itself doesn't hardcode height: 80%
-                height: 80%; 
+                height: 80%;
                 width: 50%;
                 workspaces: workspaces;
+                dispatch_command(cmd) => {
+                    root.run_command(cmd);
+                }
             }
 
             Rectangle {
+                background: white;
+                TouchArea {
+                    pointer-event(event) => {
+
+                        if (event.button == PointerEventButton.left) {
+                            debug("left click");
+                        }
+                        if (event.button == PointerEventButton.middle) {
+                            debug("tets click");
+                        }
+                        if (event.button == PointerEventButton.right) {
+                            debug("Right click");
+                        }
+                    }
+                }
+
                 horizontal-stretch: 1;
             }
 
-            // Wrapped Text in a layout or vertical centering if needed, 
-            // since HorizontalLayout aligns items to the top by default
             VerticalLayout {
                 alignment: center;
                 Text {

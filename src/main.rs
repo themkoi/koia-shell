@@ -30,9 +30,11 @@ mod config_shell;
 use config_shell::components::theme;
 use config_shell::config;
 
+mod services;
 use crate::services::taskbar::taskbar::run_taskbar;
 
-mod services;
+mod helpers;
+use crate::helpers::commands::runner::start_command_handler;
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
@@ -59,6 +61,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     theme::apply_config_palette(&ui, &config);
 
     run_taskbar(&config, ui.as_weak());
+    start_command_handler(ui.as_weak());
 
     // Setting the callback closure value which will be called on when the button is clicked.
     ui.on_request_increase_value({

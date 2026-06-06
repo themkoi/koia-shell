@@ -49,10 +49,7 @@ export component ScrollBar {
 
         moved => {
             if (self.enabled && self.pressed) {
-                root.value = -max(0px, min(root.maximum, self.pressed-value + (
-                    root.horizontal ? (touch-area.mouse-x - touch-area.pressed-x) * (root.maximum / (root.track-size - thumb.width))
-                               : (touch-area.mouse-y - touch-area.pressed-y) * (root.maximum / (root.track-size - thumb.height))
-                )));
+                root.value = -max(0px, min(root.maximum, self.pressed-value + (root.horizontal ? (touch-area.mouse-x - touch-area.pressed-x) * (root.maximum / (root.track-size - thumb.width)) : (touch-area.mouse-y - touch-area.pressed-y) * (root.maximum / (root.track-size - thumb.height)))));
             }
         }
 
@@ -64,7 +61,6 @@ export component ScrollBar {
                 root.value = max(-root.maximum, min(0px, root.value + event.delta-y));
                 return accept;
             }
-
             reject
         }
 
@@ -97,10 +93,10 @@ export component ScrollBar {
     }
 
     states [
-        pressed when touch_area.pressed : {
+        pressed when touch_area.pressed: {
             root.state_opacity: 80%;
         }
-        hover when root.has_hover : {
+        hover when root.has_hover: {
             root.state_opacity: 70%;
         }
     ]
@@ -116,13 +112,22 @@ export component ScrollView {
     in_out property <length> viewport_y <=> flickable.viewport_y;
     in property <ScrollBarPolicy> vertical_scrollbar_policy <=> vertical_bar.policy;
     in property <ScrollBarPolicy> horizontal_scrollbar_policy <=> horizontal_bar.policy;
-    // FIXME: remove. This property is currently set by the ListView and is used by the native style to draw the scrollbar differently when it has focus
+
+    in property <bool> overlay_scrollbars: false;
+
+    in property <bool> horizontal_scroll: true;
+
+    // FIXME: remove. This property is currently set by the ListView and is used
+    // by the native style to draw the scrollbar differently when it has focus
     in_out property <bool> has_focus;
 
     callback scrolled <=> flickable.flicked;
 
     property <length> scroll_bar_size: 8px;
     property <length> scroll_bar_padding: 1px;
+
+    property <length> scroll_x_target: 0px;
+    property <length> scroll_y_target: 0px;
 
     min_height: 50px;
     min_width: 50px;
@@ -134,33 +139,109 @@ export component ScrollView {
     flickable := Flickable {
         x: 0;
         y: 0;
-        viewport_y <=> vertical_bar.value;
-        viewport_x <=> horizontal_bar.value;
-        width: root.width - (root.vertical_scrollbar_policy != ScrollBarPolicy.always_off ? root.scroll_bar_size - 2 * root.scroll_bar_padding : 0);
-        height: root.height - (root.horizontal_scrollbar_policy != ScrollBarPolicy.always_off ? root.scroll_bar_size : 0);
+
+        viewport_x: horizontal_bar.value;
+        viewport_y: vertical_bar.value;
+
+        width: root.width - (!root.overlay_scrollbars && root.vertical_scrollbar_policy != ScrollBarPolicy.always_off && !root.horizontal_scroll ? root.scroll_bar_size - 2 * root.scroll_bar_padding : 0);
+        height: root.height - (!root.overlay_scrollbars && (root.horizontal_scrollbar_policy != ScrollBarPolicy.always_off || root.horizontal_scroll) ? root.scroll_bar_size : 0);
+
+        TouchArea {
+            width: parent.width;
+            height: parent.height;
+            
+            scroll-event(event) => {
+                if (root.horizontal_scroll) {
+                    root.scroll_x_target = Math.max(
+                        -(flickable.viewport_width - flickable.width), 
+                        Math.min(0px, root.scroll_x_target + event.delta-y)
+                    );
+                } else {
+                    root.scroll_y_target = Math.max(
+                        -(flickable.viewport_height - flickable.height), 
+                        Math.min(0px, root.scroll_y_target + event.delta-y)
+                    );
+                }
+                return accept;
+            }
+        }
 
         @children
     }
 
-    vertical_bar := ScrollBar {
-        enabled: root.enabled;
-        x: flickable.width + root.scroll_bar_padding;
+    left_shadow := Rectangle {
+        x: 0;
         y: 0;
-        width: root.visible ? root.scroll_bar_size : 0;
-        height: root.vertical_scrollbar_policy != ScrollBarPolicy.always_off ? parent.height - horizontal_bar.height : parent.height;
+        width: 15px;
+        height: flickable.height;
+        background: @linear-gradient(90deg, rgba(0, 0, 0, 0.40) 0%, rgba(0, 0, 0, 0) 100%);
+        opacity: flickable.viewport_x < 0px ? 1.0 : 0.0;
+        animate opacity { duration: 200ms; }
+    }
+
+    right_shadow := Rectangle {
+        x: flickable.width - self.width;
+        y: 0;
+        width: 15px;
+        height: flickable.height;
+        background: @linear-gradient(270deg, rgba(0, 0, 0, 0.40) 0%, rgba(0, 0, 0, 0) 100%);
+        opacity: (flickable.viewport_width + flickable.viewport_x) > flickable.width ? 1.0 : 0.0;
+        animate opacity { duration: 200ms; }
+    }
+
+    top_shadow := Rectangle {
+        x: 0;
+        y: 0;
+        width: flickable.width;
+        height: 15px;
+        background: @linear-gradient(180deg, rgba(0, 0, 0, 0.40) 0%, rgba(0, 0, 0, 0) 100%);
+        opacity: flickable.viewport_y < 0px ? 1.0 : 0.0;
+        animate opacity { duration: 200ms; }
+    }
+
+    bottom_shadow := Rectangle {
+        x: 0;
+        y: flickable.height - self.height;
+        width: flickable.width;
+        height: 15px;
+        background: @linear-gradient(0deg, rgba(0, 0, 0, 0.40) 0%, rgba(0, 0, 0, 0) 100%);
+        opacity: (flickable.viewport_height + flickable.viewport_y) > flickable.height ? 1.0 : 0.0;
+        animate opacity { duration: 200ms; }
+    }
+
+    vertical_bar := ScrollBar {
+        enabled: root.enabled && !root.horizontal_scroll;
+        x: root.overlay_scrollbars ? parent.width - self.width - root.scroll_bar_padding : flickable.width + root.scroll_bar_padding;
+        y: 0;
+        width: root.vertical_scrollbar_policy != ScrollBarPolicy.always_off && !root.horizontal_scroll ? root.scroll_bar_size : 0;
+        height: root.vertical_scrollbar_policy != ScrollBarPolicy.always_off ? (root.overlay_scrollbars ? parent.height : parent.height - horizontal_bar.height) : parent.height;
         horizontal: false;
-        maximum:  flickable.viewport_height - flickable.height;
-        page-size:  flickable.height;
+
+        value: root.scroll_y_target;
+        maximum: flickable.viewport_height - flickable.height;
+        page-size: flickable.height;
+
+        animate value {
+            duration: 120ms;
+            easing: ease-out;
+        }
     }
 
     horizontal_bar := ScrollBar {
         enabled: root.enabled;
-        width: vertical_bar.visible ? parent.width - vertical_bar.width : parent.width;
-        height: root.horizontal_scrollbar_policy != ScrollBarPolicy.always_off ? root.scroll_bar_size : 0;
+        width: root.overlay_scrollbars ? parent.width : (vertical_bar.visible ? parent.width - vertical_bar.width : parent.width);
+        height: root.horizontal_scrollbar_policy != ScrollBarPolicy.always_off || root.horizontal_scroll ? root.scroll_bar_size : 0;
         x: 0;
-        y: flickable.height + root.scroll_bar_padding;
+        y: root.overlay_scrollbars ? parent.height - self.height : flickable.height + root.scroll_bar_padding;
         horizontal: true;
-        maximum:  flickable.viewport_width - flickable.width;
-        page_size:  flickable.width;
+
+        value: root.scroll_x_target;
+        maximum: flickable.viewport_width - flickable.width;
+        page_size: flickable.width;
+
+        animate value {
+            duration: 120ms;
+            easing: ease-out;
+        }
     }
 }

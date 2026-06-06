@@ -23,10 +23,13 @@ export struct Workspace {
 
 export component Taskbar inherits Rectangle {
     in property <[Workspace]> workspaces;
+    callback dispatch_command(string);
     height: 80%;
 
     ScrollView {
         height: 100%;
+        overlay_scrollbars: true;
+        horizontal_scroll: true;
 
         HorizontalLayout {
             height: 100%;
@@ -44,11 +47,11 @@ export component Taskbar inherits Rectangle {
                 layout := HorizontalLayout {
                     height: 100%;
                     spacing: 4px;
-                    padding: 4px; 
+                    padding: 4px;
 
                     for win[j] in ws.windows: Rectangle {
                         height: 100%;
-                        width: base.preferred-width; 
+                        width: base.preferred-width;
 
                         callback clicked <=> base.clicked;
 
@@ -68,7 +71,7 @@ export component Taskbar inherits Rectangle {
                         base := BaseButton {
                             icon: win.icon;
                             text_length: 80px;
-                            text: self.has-hover ? win.title : "";
+                            text: self.has-hover || self.pressed ? win.title : "";
                             icon_color: transparent;
                             border_radius: elevation.border_radius;
                             color: MaterialPalette.on_primary;
@@ -78,6 +81,7 @@ export component Taskbar inherits Rectangle {
                                 duration: 200ms;
                                 easing: ease-in-out;
                             }
+
                         }
 
                         states [
