@@ -41,39 +41,22 @@ export component AppWindow inherits Window {
             padding: 0px;
             spacing: 0px;
 
-            Taskbar {
-                height: 80%;
-                width: 50%;
-                workspaces: workspaces;
-                dispatch_command(cmd) => {
-                    root.run_command(cmd);
+            VerticalLayout {
+                alignment: center;
+                FilledButton {
+                    text: "Increase value";
                 }
             }
 
             Rectangle {
-                background: white;
-                TouchArea {
-                    pointer-event(event) => {
-
-                        if (event.button == PointerEventButton.left) {
-                            debug("left click");
-                        }
-                        if (event.button == PointerEventButton.middle) {
-                            debug("tets click");
-                        }
-                        if (event.button == PointerEventButton.right) {
-                            debug("Right click");
-                        }
-                    }
-                }
-
                 horizontal-stretch: 1;
             }
 
-            VerticalLayout {
-                alignment: center;
-                Text {
-                    text: "Counter: \{root.counter}";
+            Taskbar {
+                height: 70%;
+                workspaces: workspaces;
+                dispatch_command(cmd) => {
+                    root.run_command(cmd);
                 }
             }
 

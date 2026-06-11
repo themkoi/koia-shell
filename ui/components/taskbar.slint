@@ -24,10 +24,8 @@ export struct Workspace {
 export component Taskbar inherits Rectangle {
     in property <[Workspace]> workspaces;
     callback dispatch_command(string);
-    height: 80%;
 
     ScrollView {
-        height: 100%;
         overlay_scrollbars: true;
         horizontal_scroll: true;
 
@@ -71,17 +69,22 @@ export component Taskbar inherits Rectangle {
                         base := BaseButton {
                             icon: win.icon;
                             text_length: 80px;
-                            text: self.has-hover || self.pressed ? win.title : "";
+                            text: (self.has-hover || self.pressed) || self.pressed ? win.title : "";
                             icon_color: transparent;
                             border_radius: elevation.border_radius;
                             color: MaterialPalette.on_primary;
                             height: 100%;
                             button_horizontal_padding: MaterialStyleMetrics.padding_8;
-                            animate opacity {
-                                duration: 200ms;
-                                easing: ease-in-out;
+                            pointer-event(event) => {
+                                if (event.button == PointerEventButton.left) {
+                                    dispatch_command("niri msg action focus-window --id \{win.id}");
+                                }
+                                if (event.button == PointerEventButton.middle) {
+                                    dispatch_command("niri msg action close-window --id \{win.id}");
+                                }
+                                if (event.button == PointerEventButton.right) {
+                                }
                             }
-
                         }
 
                         states [

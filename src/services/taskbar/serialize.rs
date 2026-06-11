@@ -1,14 +1,20 @@
-use crate::config_shell::components::taskbar::SortingMode;
-use crate::services::taskbar::cache::{save_cache, set_path, CacheMap};
-use crate::services::taskbar::taskbar::State;
-use freedesktop_desktop_entry::{default_paths, get_languages_from_env, DesktopEntry, Iter};
-use freedesktop_icons::lookup;
-use serde::Serialize;
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
+    fs,
     path::Path,
-    sync::LazyLock,
 };
+
+use crate::config_shell::components::taskbar::SortingMode;
+use crate::services::taskbar::cache::{CacheMap, get_cache_folder, save_cache, set_path};
+use crate::services::taskbar::taskbar::State;
+
+use freedesktop_desktop_entry::{
+    default_paths, get_languages_from_env, DesktopEntry, Iter,
+};
+use freedesktop_icons::lookup;
+
+use serde::Serialize;
+
 
 #[derive(Clone)]
 pub struct SerializeState {
@@ -30,72 +36,41 @@ pub struct Window {
     pub is_focused: bool,
 }
 
-static DESKTOP_ICON_INDEX: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
+fn build_desktop_icon_index() -> HashMap<String, String> {
     let locales = get_languages_from_env();
     let mut map = HashMap::new();
+
     for path in Iter::new(default_paths()) {
         if let Ok(entry) = DesktopEntry::from_path(path.clone(), Some(&locales)) {
             if let Some(icon) = entry.icon() {
                 if let Some(stem) = path.file_stem() {
                     map.insert(stem.to_string_lossy().to_lowercase(), icon.to_string());
                 }
+
                 if let Some(wm) = entry.startup_wm_class() {
                     map.insert(wm.to_lowercase(), icon.to_string());
                 }
             }
         }
     }
+
     map
-});
-
-#[derive(Clone)]
-pub struct WorkspaceDraft {
-    pub id: i32,
-    pub windows: Vec<WindowDraft>,
 }
 
-#[derive(Clone)]
-pub struct WindowDraft {
-    pub id: i32,
-    pub app_id: String,
-    pub title: String,
-    pub icon_path: String,
-    pub is_focused: bool,
-}
+pub fn get_icon_desktop_fallback(
+    app_id: &str,
+    icon_theme: &str,
+    icon_size: u16,
+    desktop_icon_index: &HashMap<String, String>,
+) -> Option<String> {
+    let icon_name = desktop_icon_index.get(&app_id.to_lowercase())?;
 
-pub fn get_icon_desktop_fallback(app_id: &str, icon_theme: &str, icon_size: u16) -> Option<String> {
-    let icon_name = DESKTOP_ICON_INDEX.get(&app_id.to_lowercase())?;
     lookup(icon_name)
         .with_theme(icon_theme)
         .with_size(icon_size)
         .with_cache()
         .find()
         .map(|p| p.to_string_lossy().into_owned())
-}
-
-pub fn group_windows(state: &State) -> Vec<WorkspaceDraft> {
-    let mut workspaces: HashMap<i32, Vec<WindowDraft>> = HashMap::new();
-
-    for win in &state.windows {
-        let ws_id = win.workspace_id.unwrap_or(0) as i32;
-        let entry = workspaces.entry(ws_id).or_default();
-
-        entry.push(WindowDraft {
-            id: win.id as i32,
-            app_id: win.app_id.clone().unwrap_or_default(),
-            title: win.title.clone().unwrap_or_default(),
-            icon_path: String::new(), // Fast pipeline execution remains IO-free
-            is_focused: win.is_focused,
-        });
-    }
-
-    let mut result: Vec<WorkspaceDraft> = workspaces
-        .into_iter()
-        .map(|(id, windows)| WorkspaceDraft { id, windows })
-        .collect();
-
-    result.sort_by_key(|w| w.id);
-    result
 }
 
 impl SerializeState {
@@ -108,8 +83,103 @@ impl SerializeState {
         icon_cache: &mut CacheMap,
         check_cache_validity: &bool,
     ) -> Self {
+        let mut cache_changed = false;
+
+        let desktop_icon_index = build_desktop_icon_index();
+
         let mut resolved: HashMap<String, String> = HashMap::new();
-        let mut workspaces: HashMap<u64, Workspace> = HashMap::new();
+
+        let unique_apps: Vec<String> = state
+            .windows
+            .iter()
+            .map(|w| {
+                w.app_id
+                    .clone()
+                    .unwrap_or_else(|| "application-default-icon".into())
+            })
+            .collect();
+
+        let results: Vec<(String, String)> = unique_apps
+            .into_iter()
+            .map(|app_id| {
+                let key = app_id.clone();
+                let mut icon_path = String::new();
+                let mut run_lookup = true;
+
+                if let Some(cache) = icon_cache.get(&key) {
+                    icon_path = cache.icon_path.clone();
+
+                    if *check_cache_validity && Path::new(&icon_path).exists() {
+                        run_lookup = false;
+                    }
+                }
+
+                if run_lookup {
+                    let mut icon = lookup(&key)
+                        .with_cache()
+                        .with_size(*icon_size)
+                        .with_theme(icon_theme)
+                        .find();
+
+                    icon_path = icon
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .into_owned();
+
+                    if icon_path.is_empty() {
+                        let lower = key.to_lowercase();
+
+                        icon = lookup(&lower)
+                            .with_cache()
+                            .with_size(*icon_size)
+                            .with_theme(icon_theme)
+                            .find();
+
+                        icon_path = icon
+                            .unwrap_or_default()
+                            .to_string_lossy()
+                            .into_owned();
+                    }
+
+                    if icon_path.is_empty() {
+                        icon_path = get_icon_desktop_fallback(
+                            &key,
+                            icon_theme,
+                            *icon_size,
+                            &desktop_icon_index,
+                        )
+                        .unwrap_or_default();
+                    }
+
+                    if icon_path.is_empty() {
+                        icon = lookup("application-x-executable")
+                            .with_cache()
+                            .with_size(*icon_size)
+                            .with_theme(icon_theme)
+                            .find();
+
+                        icon_path = icon
+                            .unwrap_or_default()
+                            .to_string_lossy()
+                            .into_owned();
+                    }
+                }
+
+                (key, icon_path)
+            })
+            .collect();
+
+        for (key, path) in &results {
+            if !path.is_empty() {
+                set_path(icon_cache, key, path);
+                cache_changed = true;
+            }
+
+            resolved.insert(key.clone(), path.clone());
+        }
+
+        let mut workspaces_map =
+            std::collections::BTreeMap::<u64, Workspace>::new();
 
         for win in &state.windows {
             let key = win
@@ -117,42 +187,15 @@ impl SerializeState {
                 .clone()
                 .unwrap_or_else(|| "application-default-icon".into());
 
-            let icon = resolved.entry(key.clone()).or_insert_with(|| {
-                let mut icon_path = String::new();
+            let icon_path = resolved.get(&key).cloned().unwrap_or_default();
 
-                if let Some(cache) = icon_cache.get(&key) {
-                    icon_path = cache.icon_path.clone();
-                    if *check_cache_validity && Path::new(&icon_path).exists() {
-                        return icon_path;
-                    }
-                }
-
-                let mut result = lookup(&key)
-                    .with_cache()
-                    .with_size(*icon_size)
-                    .with_theme(icon_theme)
-                    .find();
-
-                icon_path = result.unwrap_or_default().to_string_lossy().into_owned();
-
-                if icon_path.is_empty() {
-                    let lower = key.to_lowercase();
-                    result = lookup(&lower)
-                        .with_cache()
-                        .with_size(*icon_size)
-                        .with_theme(icon_theme)
-                        .find();
-
-                    icon_path = result.unwrap_or_default().to_string_lossy().into_owned();
-                }
-
-                if icon_path.is_empty() {
-                    icon_path = get_icon_desktop_fallback(&key, icon_theme, *icon_size)
-                        .unwrap_or_default();
-                }
-
-                icon_path
-            }).clone();
+            let window = Window {
+                id: win.id as i32,
+                app_id: key.clone().into(),
+                title: win.title.clone().unwrap_or_default().into(),
+                icon_path: icon_path.into(),
+                is_focused: win.is_focused,
+            };
 
             let ws_id = if *separate_workspaces {
                 win.workspace_id.unwrap_or(0)
@@ -160,31 +203,37 @@ impl SerializeState {
                 0
             };
 
-            let workspace = workspaces.entry(ws_id).or_insert_with(|| Workspace {
-                id: ws_id as i32,
-                windows: Vec::new(),
-            });
-
-            workspace.windows.push(Window {
-                id: win.id as i32,
-                app_id: key.into(),
-                title: win.title.clone().unwrap_or_default().into(),
-                icon_path: icon.into(),
-                is_focused: win.is_focused,
-            });
+            workspaces_map
+                .entry(ws_id)
+                .or_insert_with(|| Workspace {
+                    id: ws_id as i32,
+                    windows: Vec::new(),
+                })
+                .windows
+                .push(window);
         }
 
-        let mut ws: Vec<_> = workspaces.into_values().collect();
-        ws.sort_by_key(|w| w.id);
+        let mut workspaces: Vec<Workspace> =
+            workspaces_map.into_values().collect();
 
-        for w in &mut ws {
+        workspaces.sort_by_key(|ws| ws.id);
+
+        for ws in &mut workspaces {
             match sorting_mode {
-                SortingMode::AZ => w.windows.sort_by(|a, b| a.app_id.cmp(&b.app_id)),
-                SortingMode::Id => w.windows.sort_by_key(|w| w.id),
                 SortingMode::Default => {}
+                SortingMode::AZ => {
+                    ws.windows.sort_by(|a, b| a.app_id.cmp(&b.app_id))
+                }
+                SortingMode::Id => {
+                    ws.windows.sort_by_key(|w| w.id)
+                }
             }
         }
 
-        Self { workspaces: ws }
+        if cache_changed {
+            save_cache(icon_cache);
+        }
+
+        SerializeState { workspaces }
     }
 }

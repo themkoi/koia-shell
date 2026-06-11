@@ -1,12 +1,12 @@
 use std::path::Path;
 use std::rc::Rc;
-use std::thread;
+use std::{fs, thread};
 
 use log::{debug, info};
 use niri_ipc::{socket::Socket, Event, Request, Window};
 use slint::{Image, ModelRc, VecModel};
 
-use crate::services::taskbar::cache::CacheMap;
+use crate::services::taskbar::cache::{get_cache_folder, load_cache};
 use crate::services::taskbar::serialize::SerializeState;
 use crate::AppWindow; // Import directly from here
 
@@ -15,10 +15,13 @@ pub fn run_taskbar(
     ui_weak: slint::Weak<AppWindow>,
 ) -> thread::JoinHandle<()> {
     let config_internal = config.config.clone();
+    let mut cache_folder = get_cache_folder();
+    cache_folder.push("icons");
+    fs::create_dir_all(&cache_folder).ok();
 
     thread::spawn(move || {
         let mut state = State::new();
-        let mut icon_cache = CacheMap::default();
+        let mut icon_cache = load_cache();
 
         let icon_size = config_internal.taskbar_config.icon_size;
         let icon_theme = config_internal.icon_theme.clone();
