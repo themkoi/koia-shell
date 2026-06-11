@@ -1,4 +1,3 @@
-import { HorizontalBox, Button } from "std-widgets.slint";
 import { Palette } from "std-widgets.slint";
 
 import { FilledButton } from "@material/material.slint";
@@ -10,23 +9,31 @@ import {
     MaterialStyleMetrics,
 } from "@material/material.slint";
 
+export struct TaskbarConfigSlint {
+    icon_size: length,
+    max-text-lenght: length,
+}
 
+
+export struct ConfigSlint {
+    taskbar: TaskbarConfigSlint,
+}
 
 export { MaterialPalette }
 export { MaterialScheme }
 export { MaterialSchemes }
+export {Palette}
 
 import { Workspace, Taskbar } from "components/taskbar.slint";
 
 
-export component AppWindow inherits Window {
-    height: 40px;
-    in property <ColorScheme> color-scheme <=> Palette.color_scheme;
-
+export component barWindow inherits Window {
     in property <[Workspace]> workspaces;
+    in property <ConfigSlint> config;
     padding: 0px;
     in-out property <int> counter: 42;
     default-font-size: 10px;
+    background: MaterialPalette.surface_container;
 
     callback request-increase-value();
     callback run_command(string);
@@ -41,11 +48,8 @@ export component AppWindow inherits Window {
             padding: 0px;
             spacing: 0px;
 
-            VerticalLayout {
-                alignment: center;
-                FilledButton {
-                    text: "Increase value";
-                }
+            FilledButton {
+                text: "text button";
             }
 
             Rectangle {
@@ -54,6 +58,8 @@ export component AppWindow inherits Window {
 
             Taskbar {
                 height: 70%;
+                icon-size: config.taskbar.icon-size;
+                max-text-lenght: config.taskbar.max-text-lenght;
                 workspaces: workspaces;
                 dispatch_command(cmd) => {
                     root.run_command(cmd);
@@ -64,11 +70,8 @@ export component AppWindow inherits Window {
                 horizontal-stretch: 1;
             }
 
-            VerticalLayout {
-                alignment: center;
-                FilledButton {
-                    text: "Increase value";
-                }
+            FilledButton {
+                text: "Test button";
             }
         }
     }

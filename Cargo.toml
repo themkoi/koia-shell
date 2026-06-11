@@ -22,7 +22,7 @@ slint = { version = "=1.16.1", default-features = false, features = [
     "backend-winit",
     "gettext",
 ] }
-spell-framework = { git = "https://github.com/VimYoung/Spell", ver = "25396a11a09cfc736049b6cca2107fb68465b427" }
+spell-framework = { git = "https://github.com/VimYoung/Spell", ver = "f44fcf91539aef28a886dbc4da6a3a7c4bb2361a" }
 
 toml = "1.1.2"
 

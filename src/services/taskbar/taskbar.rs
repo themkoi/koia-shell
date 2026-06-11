@@ -8,11 +8,11 @@ use slint::{Image, ModelRc, VecModel};
 
 use crate::services::taskbar::cache::{get_cache_folder, load_cache};
 use crate::services::taskbar::serialize::SerializeState;
-use crate::AppWindow; // Import directly from here
+use crate::barWindow; // Import directly from here
 
 pub fn run_taskbar(
     config: &crate::config::AppConfig,
-    ui_weak: slint::Weak<AppWindow>,
+    ui_weak: slint::Weak<barWindow>,
 ) -> thread::JoinHandle<()> {
     let config_internal = config.config.clone();
     let mut cache_folder = get_cache_folder();

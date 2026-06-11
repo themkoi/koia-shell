@@ -1,11 +1,11 @@
 use std::thread;
 use log::{debug, error};
 
-use crate::AppWindow;
+use crate::barWindow;
 
 use std::process::Command;
 
-pub fn start_command_handler(ui_weak: slint::Weak<AppWindow>) {
+pub fn start_command_handler(ui_weak: slint::Weak<barWindow>) {
     if let Some(ui) = ui_weak.upgrade() {
         ui.on_run_command(move |command_str| {
             let cmd_to_run = command_str.to_string();

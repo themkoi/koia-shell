@@ -123,7 +123,7 @@ export component ScrollView {
     property <length> scroll_bar_padding: 1px;
 
     property <length> scroll_x_target: 0px;
-    property <length> scroll_y_target: 0px; 
+    property <length> scroll_y_target: 0px;
 
     min_height: 50px;
     min_width: 50px;
@@ -131,33 +131,41 @@ export component ScrollView {
     vertical_stretch: 1;
     preferred_height: 100%;
     preferred_width: 100%;
-
     flickable := Flickable {
         x: 0;
         y: 0;
 
-        // Force explicit fallback evaluation
-        viewport_x: root.scroll_x_target;
-        viewport_y: root.horizontal_scroll ? 0px : root.scroll_y_target;
+        viewport_x <=> root.scroll_x_target;
+        viewport_y <=> root.scroll_y_target;
+
+        animate viewport_x {
+            duration: 120ms;
+            easing: ease-out;
+        }
+        animate viewport_y {
+            duration: 120ms;
+            easing: ease-out;
+        }
 
         width: root.width - (!root.overlay_scrollbars && root.vertical_scrollbar_policy != ScrollBarPolicy.always_off && !root.horizontal_scroll ? root.scroll_bar_size - 2 * root.scroll_bar_padding : 0);
         height: root.height - (!root.overlay_scrollbars && (root.horizontal_scrollbar_policy != ScrollBarPolicy.always_off || root.horizontal_scroll) ? root.scroll_bar_size : 0);
 
         TouchArea {
-            width: parent.width;
-            height: parent.height;
-            
+            width: parent.viewport_width;
+            height: parent.viewport_height;
+
             scroll-event(event) => {
+                let speed_multiplier = 2.0;
+                let adjusted_delta = event.delta-y * speed_multiplier;
+
                 if (root.horizontal_scroll) {
-                    root.scroll_x_target = Math.max(
-                        -(flickable.viewport_width - flickable.width), 
-                        Math.min(0px, root.scroll_x_target + event.delta-y)
-                    );
+                    let max_scroll = Math.min(0px, -(flickable.viewport_width - flickable.width));
+                    root.scroll_x_target = Math.max(max_scroll, Math.min(0px, root.scroll_x_target + adjusted_delta));
+                    root.scroll_y_target = 0px;
                 } else {
-                    root.scroll_y_target = Math.max(
-                        -(flickable.viewport_height - flickable.height), 
-                        Math.min(0px, root.scroll_y_target + event.delta-y)
-                    );
+                    let max_scroll = Math.min(0px, -(flickable.viewport_height - flickable.height));
+                    root.scroll_y_target = Math.max(max_scroll, Math.min(0px, root.scroll_y_target + adjusted_delta));
+                    root.scroll_x_target = 0px;
                 }
                 return accept;
             }
@@ -214,7 +222,7 @@ export component ScrollView {
         height: root.vertical_scrollbar_policy != ScrollBarPolicy.always_off ? (root.overlay_scrollbars ? parent.height : parent.height - horizontal_bar.height) : parent.height;
         horizontal: false;
 
-        value: root.horizontal_scroll ? 0px : root.scroll_y_target;
+        value <=> root.scroll_y_target;
         maximum: root.horizontal_scroll ? 0px : (flickable.viewport_height - flickable.height);
         page-size: flickable.height;
 
@@ -232,7 +240,7 @@ export component ScrollView {
         y: root.overlay_scrollbars ? parent.height - self.height : flickable.height + root.scroll_bar_padding;
         horizontal: true;
 
-        value: root.scroll_x_target;
+        value <=> root.scroll_x_target;
         maximum: flickable.viewport_width - flickable.width;
         page_size: flickable.width;
 

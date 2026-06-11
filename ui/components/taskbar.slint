@@ -6,7 +6,7 @@ import {
     MaterialStyleMetrics,
 } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
-import { MaterialText } from "../material-1.0/material.slint";
+import { MaterialText, MaterialPalette } from "../material-1.0/material.slint";
 
 export struct Window {
     id: int,
@@ -23,13 +23,17 @@ export struct Workspace {
 
 export component Taskbar inherits Rectangle {
     in property <[Workspace]> workspaces;
+    in property <length> icon-size;
+    in property <length> max-text-lenght;
     callback dispatch_command(string);
+        width: 60%;
 
     ScrollView {
         overlay_scrollbars: true;
         horizontal_scroll: true;
 
         HorizontalLayout {
+            alignment: center;
             height: 100%;
             spacing: 16px;
             padding-left: 8px;
@@ -37,7 +41,7 @@ export component Taskbar inherits Rectangle {
 
             for ws[i] in root.workspaces: Rectangle {
                 border_radius: MaterialStyleMetrics.border_radius_28;
-                background: @linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05));
+                background: MaterialPalette.surface_bright;
                 height: 100%;
 
                 width: layout.preferred-width;
@@ -68,7 +72,8 @@ export component Taskbar inherits Rectangle {
 
                         base := BaseButton {
                             icon: win.icon;
-                            text_length: 80px;
+                            icon-size: root.icon-size;
+                            text_length: root.max-text-lenght;
                             text: (self.has-hover || self.pressed) || self.pressed ? win.title : "";
                             icon_color: transparent;
                             border_radius: elevation.border_radius;
@@ -77,7 +82,7 @@ export component Taskbar inherits Rectangle {
                             button_horizontal_padding: MaterialStyleMetrics.padding_8;
                             pointer-event(event) => {
                                 if (event.button == PointerEventButton.left) {
-                                    dispatch_command("niri msg action focus-window --id \{win.id}");
+                                    dispatch_command("niri msg action focus-window --id \{win.id}" );
                                 }
                                 if (event.button == PointerEventButton.middle) {
                                     dispatch_command("niri msg action close-window --id \{win.id}");

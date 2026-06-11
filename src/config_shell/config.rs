@@ -1,12 +1,13 @@
 use config::{Config as ConfigLoader, File};
 use dirs::config_dir;
+use log::error;
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
     path::{Path, PathBuf},
 };
 
-use crate::config_shell::components::taskbar::{default_taskbar, TaskbarConfig};
+use crate::{ConfigSlint, TaskbarConfigSlint, barWindow, config_shell::components::taskbar::{TaskbarConfig, default_taskbar}};
 use crate::config_shell::components::theme::{
     default_dark_scheme, default_light_scheme, MaterialScheme,
 };
@@ -83,8 +84,8 @@ pub fn load_or_create_config() -> Result<Config, Box<dyn std::error::Error>> {
     match loaded {
         Ok(cfg) => Ok(cfg),
         Err(_) => {
+            error!("failed loading config: restoring default");
             let default = Config::default();
-            write_config(&path, &default)?;
             Ok(default)
         }
     }
@@ -107,13 +108,14 @@ pub fn load_or_create_theme_config() -> Result<ThemeConfig, Box<dyn std::error::
     match loaded {
         Ok(cfg) => Ok(cfg),
         Err(_) => {
+            error!("failed loading theme: restoring default");
             let default = ThemeConfig::default();
-            write_config(&path, &default)?;
             Ok(default)
         }
     }
 }
 
+#[derive(Debug, Clone)] // <--- Add Clone here
 pub struct AppConfig {
     pub config: Config,
     pub theme: ThemeConfig,
@@ -124,4 +126,18 @@ pub fn load_app_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
         config: load_or_create_config()?,
         theme: load_or_create_theme_config()?,
     })
+}
+
+pub fn write_config_slint(
+    config: &crate::config::AppConfig,
+    ui_weak: slint::Weak<barWindow>,
+) {
+    if let Some(ui) = ui_weak.upgrade() {
+        ui.set_config(ConfigSlint {
+            taskbar: TaskbarConfigSlint {
+                icon_size: config.config.taskbar_config.icon_size as f32,
+                max_text_lenght: config.config.taskbar_config.max_text_lenght as f32,
+            },
+        });
+    }
 }

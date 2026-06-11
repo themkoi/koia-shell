@@ -2,19 +2,16 @@ use clap::Parser;
 use slint::{language::ColorScheme, ComponentHandle};
 use spell_framework::{
     self, cast_spell,
-    layer_properties::{LayerAnchor, LayerType, WindowConf},
+    layer_properties::{Dimension, LayerAnchor, LayerType, WindowConf},
 };
 use std::{env, error::Error};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 struct Args {
-    /// Monitor width (default: 2560)
-    #[arg(short = 'w', long, default_value = "2560")]
-    monitor_width: u32,
 
     /// Monitor name (default: focused)
-    #[arg(short, long, default_value = "")]
+    #[arg(short, long, default_value = "DP-3")]
     monitor: String,
 
     /// Theme mode: dark or light (default: dark)
@@ -24,14 +21,14 @@ struct Args {
 
 slint::include_modules!();
 // Generating Spell widgets/windows from slint windows.
-spell_framework::generate_widgets![AppWindow];
+spell_framework::generate_widgets![barWindow];
 
 mod config_shell;
 use config_shell::components::theme;
 use config_shell::config;
 
 mod services;
-use crate::services::taskbar::taskbar::run_taskbar;
+use crate::{config_shell::config::write_config_slint, services::taskbar::taskbar::run_taskbar};
 
 mod helpers;
 use crate::helpers::commands::runner::start_command_handler;
@@ -41,8 +38,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let config = config::load_app_config().unwrap();
     let args = Args::parse();
 
-    let window_conf = WindowConf::builder()
-        .width(args.monitor_width)
+    let bar_conf = WindowConf::builder()
+        .width(Dimension::Full)
         .height(40_u32)
         .anchor_1(LayerAnchor::TOP)
         .margins(5, 0, 0, 10)
@@ -53,24 +50,17 @@ fn main() -> Result<(), Box<dyn Error>> {
         .unwrap();
 
     // Initialising Slint Window and corresponding wayland part.
-    let ui = AppWindowSpell::invoke_spell("bar", window_conf);
+    let ui = barWindowSpell::invoke_spell("bar", bar_conf);
 
     if args.theme == "dark" {
-        ui.set_color_scheme(ColorScheme::Dark);
+        Palette::get(&ui).set_color_scheme(ColorScheme::Dark);
+
     }
     theme::apply_config_palette(&ui, &config);
+    write_config_slint(&config, ui.as_weak());
 
     run_taskbar(&config, ui.as_weak());
     start_command_handler(ui.as_weak());
-
-    // Setting the callback closure value which will be called on when the button is clicked.
-    ui.on_request_increase_value({
-        let ui_handle = ui.as_weak();
-        move || {
-            let ui = ui_handle.unwrap();
-            ui.set_counter(ui.get_counter() + 1);
-        }
-    });
 
     // Calling the event loop function for running the window
     cast_spell!(ui)
