@@ -12,9 +12,15 @@ import {
 import { Workspace, Taskbar } from "components/taskbar.slint";
 import { TaskbarConfigSlint, ConfigSlint } from "shared-items.slint";
 
+export struct DataSlint {
+    volume: int,
+    brightness: int,
+}
+
 export component barWindow inherits Window {
     in property <[Workspace]> workspaces;
     in property <ConfigSlint> config;
+    in property <DataSlint> data;
     in-out property <length> window_width <=> self.width;
 
     default-font-size: 10px;
@@ -36,7 +42,7 @@ export component barWindow inherits Window {
             spacing: 0px;
 
             FilledButton {
-                text: "text button";
+                text: data.volume;
             }
 
             Rectangle {

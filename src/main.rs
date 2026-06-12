@@ -29,7 +29,7 @@ use config_shell::config;
 mod services;
 use crate::{
     config_shell::{components::theme::build_config_palette, config::build_config_slint},
-    services::taskbar::taskbar::run_taskbar,
+    services::{taskbar::taskbar::run_taskbar, volume::listener::listen_volume_changes},
 };
 
 mod helpers;
@@ -88,6 +88,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     run_taskbar(&config, bar_ui.as_weak());
     start_command_handler(bar_ui.as_weak());
+    listen_volume_changes(bar_ui.as_weak());
 
     // clipboard init
     let clipboard_ui = clipboardWindowSpell::invoke_spell("clipboardWindow", clipboard_conf);
