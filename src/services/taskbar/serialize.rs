@@ -1,20 +1,16 @@
 use std::{
     collections::HashMap,
-    fs,
     path::Path,
 };
 
 use crate::config_shell::components::taskbar::SortingMode;
-use crate::services::taskbar::cache::{CacheMap, get_cache_folder, save_cache, set_path};
+use crate::services::taskbar::cache::{CacheMap, save_cache, set_path};
 use crate::services::taskbar::taskbar::State;
 
 use freedesktop_desktop_entry::{
     default_paths, get_languages_from_env, DesktopEntry, Iter,
 };
 use freedesktop_icons::lookup;
-
-use serde::Serialize;
-
 
 #[derive(Clone)]
 pub struct SerializeState {

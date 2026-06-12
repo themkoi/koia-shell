@@ -67,10 +67,10 @@ export component BaseButton inherits StateLayerArea {
         MaterialText {
             width: root.text == "" ? 0px : (text_length == 0px ? self.preferred-width : text_length);
             animate width {
-                duration: 200ms;
-                easing: ease-in-out;
+                duration: 150ms;
+                easing: ease-in-out-quart;
             }
-
+            horizontal-alignment: center;
             text: root.text;
             style: MaterialTypography.label_large;
             color: root.color;

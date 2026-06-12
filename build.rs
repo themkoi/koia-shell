@@ -4,5 +4,5 @@ fn main() {
         std::collections::HashMap::from([("material".to_string(), manifest_dir.join("ui/material-1.0"))]);
     let config = slint_build::CompilerConfiguration::new()
         .with_library_paths(library_paths);
-    slint_build::compile_with_config("ui/app-window.slint", config).expect("Slint build failed");
+    slint_build::compile_with_config("ui/ui.slint", config).expect("Slint build failed");
 }

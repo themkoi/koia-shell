@@ -167,14 +167,14 @@ fn rgb(c: [u8; 3]) -> Color {
     Color::from_rgb_u8(c[0], c[1], c[2])
 }
 
-pub fn apply_config_palette(ui: &barWindow, config: &crate::config::AppConfig) {
-    let palette = ui.global::<MaterialPalette>();
-
+pub fn build_config_palette(
+    config: &crate::config::AppConfig,
+) -> MaterialSchemes {
     let light = &config.theme.light_scheme;
     let dark = &config.theme.dark_scheme;
 
-    let schemes = MaterialSchemes {
-        light: crate::slint_generatedbarWindow::MaterialScheme {
+    MaterialSchemes {
+        light: crate::MaterialScheme {
             primary: rgb(light.primary),
             surfaceTint: rgb(light.surface_tint),
             onPrimary: rgb(light.on_primary),
@@ -226,7 +226,7 @@ pub fn apply_config_palette(ui: &barWindow, config: &crate::config::AppConfig) {
             surfaceContainerHighest: rgb(light.surface_container_highest),
         },
 
-        dark: crate::slint_generatedbarWindow::MaterialScheme {
+        dark: crate::MaterialScheme {
             primary: rgb(dark.primary),
             surfaceTint: rgb(dark.surface_tint),
             onPrimary: rgb(dark.on_primary),
@@ -277,7 +277,5 @@ pub fn apply_config_palette(ui: &barWindow, config: &crate::config::AppConfig) {
             surfaceContainerHigh: rgb(dark.surface_container_high),
             surfaceContainerHighest: rgb(dark.surface_container_highest),
         },
-    };
-
-    MaterialPalette::get(ui).set_schemes(schemes);
+    }
 }

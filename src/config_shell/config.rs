@@ -7,14 +7,21 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{ConfigSlint, TaskbarConfigSlint, barWindow, config_shell::components::taskbar::{TaskbarConfig, default_taskbar}};
 use crate::config_shell::components::theme::{
     default_dark_scheme, default_light_scheme, MaterialScheme,
+};
+use slint::ComponentHandle;
+use crate::{
+    config_shell::components::taskbar::{default_taskbar, TaskbarConfig},
+    ConfigSlint, TaskbarConfigSlint,
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
     pub icon_theme: String,
+    pub default_display: String,
+    pub total_bar_height: u16,
+    pub bar_height: u16,
     pub taskbar_config: TaskbarConfig,
 }
 
@@ -22,6 +29,9 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             icon_theme: "Papirus-Dark".to_string(),
+            default_display: "DP-3".to_string(),
+            total_bar_height: 100,
+            bar_height: 40,
             taskbar_config: default_taskbar(),
         }
     }
@@ -84,7 +94,7 @@ pub fn load_or_create_config() -> Result<Config, Box<dyn std::error::Error>> {
     match loaded {
         Ok(cfg) => Ok(cfg),
         Err(_) => {
-            error!("failed loading config: restoring default");
+            error!("failed loading config: continuing with default");
             let default = Config::default();
             Ok(default)
         }
@@ -108,14 +118,14 @@ pub fn load_or_create_theme_config() -> Result<ThemeConfig, Box<dyn std::error::
     match loaded {
         Ok(cfg) => Ok(cfg),
         Err(_) => {
-            error!("failed loading theme: restoring default");
+            error!("failed loading theme: continuing with default");
             let default = ThemeConfig::default();
             Ok(default)
         }
     }
 }
 
-#[derive(Debug, Clone)] // <--- Add Clone here
+#[derive(Debug, Clone)]
 pub struct AppConfig {
     pub config: Config,
     pub theme: ThemeConfig,
@@ -128,16 +138,14 @@ pub fn load_app_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
     })
 }
 
-pub fn write_config_slint(
+pub fn build_config_slint(
     config: &crate::config::AppConfig,
-    ui_weak: slint::Weak<barWindow>,
-) {
-    if let Some(ui) = ui_weak.upgrade() {
-        ui.set_config(ConfigSlint {
-            taskbar: TaskbarConfigSlint {
-                icon_size: config.config.taskbar_config.icon_size as f32,
-                max_text_lenght: config.config.taskbar_config.max_text_lenght as f32,
-            },
-        });
+) -> ConfigSlint {
+    ConfigSlint {
+        bar_height: config.config.bar_height as f32,
+        taskbar: TaskbarConfigSlint {
+            icon_size: config.config.taskbar_config.icon_size as f32,
+            max_text_lenght: config.config.taskbar_config.max_text_lenght as f32,
+        },
     }
 }
