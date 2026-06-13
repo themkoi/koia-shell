@@ -1,6 +1,8 @@
 import { Palette } from "std-widgets.slint";
 
-import { FilledButton } from "@material/material.slint";
+import { FilledButton, Elevation } from "@material/material.slint";
+import { BaseButton } from "@material/ui/components/base_button.slint";
+
 import { MaterialPalette } from "@material/material.slint";
 import { MaterialScheme } from "@material/material.slint";
 import { MaterialSchemes } from "@material/material.slint";
@@ -12,8 +14,13 @@ import {
 import { Workspace, Taskbar } from "components/taskbar.slint";
 import { TaskbarConfigSlint, ConfigSlint } from "shared-items.slint";
 
-export struct DataSlint {
+export struct VolumeDataSlint {
     volume: int,
+    muted: bool,
+}
+
+export struct DataSlint {
+    volumeData: VolumeDataSlint,
     brightness: int,
 }
 
@@ -27,6 +34,7 @@ export component barWindow inherits Window {
     background: transparent;
 
     callback run_command(string);
+    callback set_volume(int,int);
 
     Rectangle {
         x: 0px;
@@ -41,8 +49,32 @@ export component barWindow inherits Window {
             padding: 0px;
             spacing: 0px;
 
-            FilledButton {
-                text: data.volume;
+            Rectangle {
+                height: 100%;
+                width: 100px;
+                elevation := Elevation {
+                    border_radius: root.height / 2;
+                    background: MaterialPalette.primary;
+                    width: 100%;
+                    height: 100%;
+                }
+
+                base := BaseButton {
+                    text: data.volumeData.volume;
+                    color: black;
+                    width: 100%;
+                    height: 100%;
+
+                    scroll-event(event) => {
+                        if event.delta_y < 0px {
+                            set_volume(data.volumeData.volume, config.volume-scroll-step);
+                        } else if event.delta_y > 0px {
+                            set_volume(data.volumeData.volume,-config.volume-scroll-step);
+                        }
+                        accept
+                    }
+
+                }
             }
 
             Rectangle {
@@ -92,4 +124,3 @@ export component barWindow inherits Window {
         commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
     }
 }
-

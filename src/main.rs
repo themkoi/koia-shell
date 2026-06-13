@@ -5,7 +5,7 @@ use spell_framework::{
     self, cast_spell,
     layer_properties::{Dimension, LayerAnchor, LayerType, WindowConf},
 };
-use std::{env, error::Error};
+use std::{env, error::Error, sync::{Arc, Mutex}};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
@@ -29,7 +29,10 @@ use config_shell::config;
 mod services;
 use crate::{
     config_shell::{components::theme::build_config_palette, config::build_config_slint},
-    services::{taskbar::taskbar::run_taskbar, volume::listener::listen_volume_changes},
+    services::{
+        taskbar::taskbar::run_taskbar,
+        volume::{adjuster::start_volume_adjuster, listener::listen_volume_changes},
+    },
 };
 
 mod helpers;
@@ -50,10 +53,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let bar_conf = WindowConf::builder()
         .width(Dimension::Full)
-        .height(config.config.total_bar_height as u32)
+        .height(config.config.window_config.total_bar_height as u32)
         .anchor_1(LayerAnchor::TOP)
         .margins(0, 0, 0, 0)
-        .exclusive_zone(config.config.bar_height.into())
+        .exclusive_zone(config.config.window_config.bar_height.into())
         .layer_type(LayerType::Top)
         .monitor(monitor.clone())
         .build()
@@ -75,9 +78,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let window_width = bar_ui.get_window_width();
     bar_ui.subtract_input_region(
         0,
-        config.config.bar_height.into(),
+        config.config.window_config.bar_height.into(),
         window_width as i32,
-        config.config.total_bar_height as i32 - config.config.bar_height as i32,
+        config.config.window_config.total_bar_height as i32 - config.config.window_config.bar_height as i32,
     );
 
     if args.theme == "dark" {
@@ -88,7 +91,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     run_taskbar(&config, bar_ui.as_weak());
     start_command_handler(bar_ui.as_weak());
+
     listen_volume_changes(bar_ui.as_weak());
+    start_volume_adjuster(bar_ui.as_weak());
 
     // clipboard init
     let clipboard_ui = clipboardWindowSpell::invoke_spell("clipboardWindow", clipboard_conf);

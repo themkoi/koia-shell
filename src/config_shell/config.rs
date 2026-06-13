@@ -10,18 +10,30 @@ use std::{
 use crate::config_shell::components::theme::{
     default_dark_scheme, default_light_scheme, MaterialScheme,
 };
-use slint::ComponentHandle;
 use crate::{
     config_shell::components::taskbar::{default_taskbar, TaskbarConfig},
     ConfigSlint, TaskbarConfigSlint,
 };
 
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct InterractionConfig {
+    pub volume_scroll_step: u8,
+    pub brightness_scroll_step: u8,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct WindowConfig {
+    pub total_bar_height: u16,
+    pub bar_height: u16,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
     pub icon_theme: String,
     pub default_display: String,
-    pub total_bar_height: u16,
-    pub bar_height: u16,
+    pub window_config: WindowConfig,
+    pub interraction_config: InterractionConfig,
     pub taskbar_config: TaskbarConfig,
 }
 
@@ -30,8 +42,8 @@ impl Default for Config {
         Self {
             icon_theme: "Papirus-Dark".to_string(),
             default_display: "DP-3".to_string(),
-            total_bar_height: 100,
-            bar_height: 40,
+            window_config: WindowConfig { total_bar_height: 100, bar_height: 35 },
+            interraction_config: InterractionConfig { volume_scroll_step: 3, brightness_scroll_step: 5 },
             taskbar_config: default_taskbar(),
         }
     }
@@ -142,7 +154,13 @@ pub fn build_config_slint(
     config: &crate::config::AppConfig,
 ) -> ConfigSlint {
     ConfigSlint {
-        bar_height: config.config.bar_height as f32,
+        window: WindowConfigSlint {
+            bar_height: config.config.window_config.bar_height as f32,
+        }
+        interraction: InterractionConfigSlint {
+            volume_scroll_step: config.config.volume_scroll_step as i32,
+            brightness_scroll_step: config.config.brightness_scroll_step as i32,
+        }
         taskbar: TaskbarConfigSlint {
             icon_size: config.config.taskbar_config.icon_size as f32,
             max_text_lenght: config.config.taskbar_config.max_text_lenght as f32,

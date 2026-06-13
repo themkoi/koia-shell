@@ -3,8 +3,17 @@ export struct TaskbarConfigSlint {
     max-text-lenght: length,
 }
 
+export struct WindowConfigSlint {
+    bar_height: length,
+}
+
+export struct InterractionConfigSlint {
+    volume_scroll_step: int,
+}
+
 
 export struct ConfigSlint {
-    bar_height: length,
+    window: WindowConfigSlint,
+    interraction: InterractionConfigSlint,
     taskbar: TaskbarConfigSlint,
 }

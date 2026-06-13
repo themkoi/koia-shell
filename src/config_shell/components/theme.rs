@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
-use slint::{Color, ComponentHandle, Global};
-use crate::{barWindow, MaterialPalette, MaterialSchemes};
+use slint::{Color};
+use crate::{MaterialSchemes};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MaterialScheme {

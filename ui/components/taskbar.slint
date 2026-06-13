@@ -74,6 +74,7 @@ export component Taskbar inherits Rectangle {
                             icon-size: root.icon-size;
                             text_length: root.max-text-lenght;
                             text: (self.has-hover || self.pressed) || self.pressed ? win.title : "";
+                            padding-right: 1rem;
                             icon_color: transparent;
                             border_radius: elevation.border_radius;
                             color: MaterialPalette.on_primary;
