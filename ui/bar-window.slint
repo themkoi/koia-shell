@@ -41,7 +41,7 @@ export component barWindow inherits Window {
         y: 0px;
         background: MaterialPalette.surface_container;
         width: 100%;
-        height: config.bar-height;
+        height: config.window.bar-height;
 
         HorizontalLayout {
             width: 100%;
@@ -67,9 +67,9 @@ export component barWindow inherits Window {
 
                     scroll-event(event) => {
                         if event.delta_y < 0px {
-                            set_volume(data.volumeData.volume, config.volume-scroll-step);
+                            set_volume(data.volumeData.volume, config.interraction.volume-scroll-step);
                         } else if event.delta_y > 0px {
-                            set_volume(data.volumeData.volume,-config.volume-scroll-step);
+                            set_volume(data.volumeData.volume,-config.interraction.volume-scroll-step);
                         }
                         accept
                     }
@@ -105,7 +105,7 @@ export component barWindow inherits Window {
     Path {
         width: 10px;
         height: 10px;
-        y: config.bar-height;
+        y: config.window.bar-height;
         x: window_width - self.width;
         fill: MaterialPalette.surface_container;
         fill-rule: evenodd;
@@ -116,7 +116,7 @@ export component barWindow inherits Window {
     Path {
         width: 10px;
         height: 10px;
-        y: config.bar-height;
+        y: config.window.bar-height;
         x: 0px;
         fill: MaterialPalette.surface_container;
         fill-rule: evenodd;

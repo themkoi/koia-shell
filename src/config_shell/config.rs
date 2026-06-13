@@ -7,9 +7,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::config_shell::components::theme::{
-    default_dark_scheme, default_light_scheme, MaterialScheme,
-};
+use crate::{InterractionConfigSlint, WindowConfigSlint, config_shell::components::theme::{
+    MaterialScheme, default_dark_scheme, default_light_scheme
+}};
 use crate::{
     config_shell::components::taskbar::{default_taskbar, TaskbarConfig},
     ConfigSlint, TaskbarConfigSlint,
@@ -156,11 +156,11 @@ pub fn build_config_slint(
     ConfigSlint {
         window: WindowConfigSlint {
             bar_height: config.config.window_config.bar_height as f32,
-        }
+        },
         interraction: InterractionConfigSlint {
-            volume_scroll_step: config.config.volume_scroll_step as i32,
-            brightness_scroll_step: config.config.brightness_scroll_step as i32,
-        }
+            volume_scroll_step: config.config.interraction_config.volume_scroll_step as i32,
+            brightness_scroll_step: config.config.interraction_config.brightness_scroll_step as i32,
+        },
         taskbar: TaskbarConfigSlint {
             icon_size: config.config.taskbar_config.icon_size as f32,
             max_text_lenght: config.config.taskbar_config.max_text_lenght as f32,
