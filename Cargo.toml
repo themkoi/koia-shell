@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-brightness = { version = "0.8.0", features = ["blocking"] }
 clap = { version = "4.6.0", features = ["derive"] }
 clap_derive = { version = "4.0.0-rc.1" }
 config = "0.15.23"
@@ -12,8 +11,10 @@ dirs = "6.0.0"
 env_logger = "0.11.10"
 freedesktop-desktop-entry = "0.8.1"
 freedesktop-icons = "0.4.0"
+image = "0.25.10"
 log = "0.4.32"
 niri-ipc = "26.4.0"
+notify = "8.2.0"
 serde = "1.0.228"
 slint = { version = "=1.16.1", default-features = false, features = [
     "accessibility",
@@ -24,6 +25,8 @@ slint = { version = "=1.16.1", default-features = false, features = [
     "gettext",
 ] }
 spell-framework = { git = "https://github.com/VimYoung/Spell", ver = "f44fcf91539aef28a886dbc4da6a3a7c4bb2361a" }
+system-tray = "0.8.6"
+tokio = "1.52.3"
 
 toml = "1.1.2"
 

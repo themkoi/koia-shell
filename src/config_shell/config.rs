@@ -29,10 +29,17 @@ pub struct WindowConfig {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct HardwareConfig {
+    pub brightness_device: String,
+}
+
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
     pub icon_theme: String,
     pub default_display: String,
     pub window_config: WindowConfig,
+    pub hardware_config: HardwareConfig,
     pub interraction_config: InterractionConfig,
     pub taskbar_config: TaskbarConfig,
 }
@@ -42,7 +49,8 @@ impl Default for Config {
         Self {
             icon_theme: "Papirus-Dark".to_string(),
             default_display: "DP-3".to_string(),
-            window_config: WindowConfig { total_bar_height: 100, bar_height: 35 },
+            window_config: WindowConfig { total_bar_height: 800, bar_height: 35 },
+            hardware_config: HardwareConfig { brightness_device: "amdgpu_bl1".to_string() },
             interraction_config: InterractionConfig { volume_scroll_step: 3, brightness_scroll_step: 5 },
             taskbar_config: default_taskbar(),
         }

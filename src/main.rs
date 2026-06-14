@@ -1,11 +1,10 @@
-use clap::{builder::Str, Parser};
-use log::error;
+use clap::Parser;
 use slint::{language::ColorScheme, ComponentHandle};
 use spell_framework::{
     self, cast_spell,
     layer_properties::{Dimension, LayerAnchor, LayerType, WindowConf},
 };
-use std::{env, error::Error, sync::{Arc, Mutex}};
+use std::{env, error::Error};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
@@ -30,15 +29,17 @@ mod services;
 use crate::{
     config_shell::{components::theme::build_config_palette, config::build_config_slint},
     services::{
+        brightness::{adjuster::start_brightness_adjuster, listener::listen_brightness_changes},
         taskbar::taskbar::run_taskbar,
+        tray::manager::start_system_tray,
         volume::{adjuster::start_volume_adjuster, listener::listen_volume_changes},
     },
 };
 
 mod helpers;
 use crate::helpers::commands::runner::start_command_handler;
-
-fn main() -> Result<(), Box<dyn Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
     let config = config::load_app_config().unwrap();
     let args = Args::parse();
@@ -80,7 +81,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         0,
         config.config.window_config.bar_height.into(),
         window_width as i32,
-        config.config.window_config.total_bar_height as i32 - config.config.window_config.bar_height as i32,
+       config.config.window_config.total_bar_height as i32
+           - config.config.window_config.bar_height as i32,
     );
 
     if args.theme == "dark" {
@@ -94,6 +96,15 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     listen_volume_changes(bar_ui.as_weak());
     start_volume_adjuster(bar_ui.as_weak());
+
+    listen_brightness_changes(&config, bar_ui.as_weak());
+    start_brightness_adjuster(&config, bar_ui.as_weak());
+
+    // 1. Create a dedicated clone that can be moved
+    let config_clone = config.clone();
+
+    // 2. Use an async move block to transfer ownership of the clone into the background
+    start_system_tray(&config, bar_ui.as_weak()).await;
 
     // clipboard init
     let clipboard_ui = clipboardWindowSpell::invoke_spell("clipboardWindow", clipboard_conf);

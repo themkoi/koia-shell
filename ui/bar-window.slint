@@ -1,104 +1,156 @@
 import { Palette } from "std-widgets.slint";
-
 import { FilledButton, Elevation } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
-
 import { MaterialPalette } from "@material/material.slint";
-import { MaterialScheme } from "@material/material.slint";
-import { MaterialSchemes } from "@material/material.slint";
-import {
-    MaterialTypography,
-    MaterialStyleMetrics,
-} from "@material/material.slint";
-
 import { Workspace, Taskbar } from "components/taskbar.slint";
 import { TaskbarConfigSlint, ConfigSlint } from "shared-items.slint";
 
-export struct VolumeDataSlint {
-    volume: int,
-    muted: bool,
-}
+// Import the decoupled widgets directly
+import {
+    TrayRow,
+    TrayContextMenu,
+    DataSlint,
+    TrayItemSlint,
+    ContextMenuActionSlint,
+    ContextMenuDataSlint,
+} from "components/tray.slint";
 
-export struct DataSlint {
-    volumeData: VolumeDataSlint,
-    brightness: int,
-}
+// Keep runtime bindings intact for your Rust compilation step
+export { DataSlint, TrayItemSlint, ContextMenuActionSlint, ContextMenuDataSlint }
 
 export component barWindow inherits Window {
     in property <[Workspace]> workspaces;
     in property <ConfigSlint> config;
-    in property <DataSlint> data;
+    in-out property <DataSlint> data;
     in-out property <length> window_width <=> self.width;
 
     default-font-size: 10px;
     background: transparent;
 
     callback run_command(string);
-    callback set_volume(int,int);
+    callback set_volume(int, int);
+    callback set_brightness(int, int);
+    callback tray_item_clicked(string, string);
+    callback menu_action_executed(string, string);
+    callback tray_exit();
 
     Rectangle {
-        x: 0px;
-        y: 0px;
-        background: MaterialPalette.surface_container;
         width: 100%;
-        height: config.window.bar-height;
+        height: 100%;
 
-        HorizontalLayout {
+        // Named reference to pull the absolute coordinates for relative popup placement
+        main_bar := Rectangle {
+            x: 0px;
+            y: 0px;
+            background: MaterialPalette.surface_container;
             width: 100%;
-            height: 100%;
-            padding: 0px;
-            spacing: 0px;
+            height: config.window.bar-height;
 
-            Rectangle {
+            HorizontalLayout {
+                width: 100%;
                 height: 100%;
-                width: 100px;
-                elevation := Elevation {
-                    border_radius: root.height / 2;
-                    background: MaterialPalette.primary;
-                    width: 100%;
-                    height: 100%;
-                }
+                padding: 0px;
+                spacing: 0px;
 
-                base := BaseButton {
-                    text: data.volumeData.volume;
-                    color: black;
-                    width: 100%;
+                Rectangle {
                     height: 100%;
-
-                    scroll-event(event) => {
-                        if event.delta_y < 0px {
-                            set_volume(data.volumeData.volume, config.interraction.volume-scroll-step);
-                        } else if event.delta_y > 0px {
-                            set_volume(data.volumeData.volume,-config.interraction.volume-scroll-step);
-                        }
-                        accept
+                    width: 100px;
+                    elevation := Elevation {
+                        border_radius: root.height / 2;
+                        background: MaterialPalette.primary;
+                        width: 100%;
+                        height: 100%;
                     }
 
+                    base := BaseButton {
+                        text: data.volumeData.volume;
+                        color: black;
+                        width: 100%;
+                        height: 100%;
+
+                        scroll-event(event) => {
+                            if event.delta_y < 0px {
+                                set_volume(data.volumeData.volume, config.interraction.volume-scroll-step);
+                            } else if event.delta_y > 0px {
+                                set_volume(data.volumeData.volume,-config.interraction.volume-scroll-step);
+                            }
+                            accept
+                        }
+                    }
+                }
+
+                Rectangle {
+                    height: 100%;
+                    width: 100px;
+                    Elevation {
+                        border_radius: root.height / 2;
+                        background: MaterialPalette.primary;
+                        width: 100%;
+                        height: 100%;
+                    }
+
+                    BaseButton {
+                        text: data.brightness;
+                        color: black;
+                        width: 100%;
+                        height: 100%;
+
+                        scroll-event(event) => {
+                            if event.delta_y < 0px {
+                                set_brightness(data.brightness, config.interraction.brightness-scroll-step);
+                            } else if event.delta_y > 0px {
+                                set_brightness(data.brightness,-config.interraction.brightness-scroll-step);
+                            }
+                            accept
+                        }
+                    }
+                }
+
+                Rectangle {
+                    horizontal-stretch: 1;
+                }
+
+                Taskbar {
+                    width: 60%;
+                    height: 70%;
+                    icon-size: config.taskbar.icon-size;
+                    max-text-lenght: config.taskbar.max-text-lenght;
+                    workspaces: workspaces;
+                    dispatch_command(cmd) => {
+                        root.run_command(cmd);
+                    }
+                }
+
+                Rectangle {
+                    horizontal-stretch: 1;
+                }
+
+                // 1. Just the Tray Row widget inline with your bar elements
+                TrayRow {
+                    height: 100%;
+                    items: root.data.tray-items;
+                    shared-data <=> root.data;
+                    item_clicked(id, btn) => {
+                        root.tray_item_clicked(id, btn);
+                    }
+                }
+
+                FilledButton {
+                    text: "Test button";
                 }
             }
+        }
+    }
 
-            Rectangle {
-                horizontal-stretch: 1;
-            }
-
-            Taskbar {
-                width: 60%;
-                height: 70%;
-                icon-size: config.taskbar.icon-size;
-                max-text-lenght: config.taskbar.max-text-lenght;
-                workspaces: workspaces;
-                dispatch_command(cmd) => {
-                    root.run_command(cmd);
-                }
-            }
-
-            Rectangle {
-                horizontal-stretch: 1;
-            }
-
-            FilledButton {
-                text: "Test button";
-            }
+        if root.data.menuData.visible: TrayContextMenu {
+        menu-data: root.data.menuData;
+        parent-absolute-x: main_bar.absolute-position.x;
+        x: root.width - self.width;
+        y: config.window.bar-height + 4px;
+        height: self.preferred-height * 8;
+        width: 280px;
+        menu_action_executed(item_id, action_id) => {
+            root.menu_action_executed(item_id, action_id);
         }
     }
 
@@ -109,7 +161,6 @@ export component barWindow inherits Window {
         x: window_width - self.width;
         fill: MaterialPalette.surface_container;
         fill-rule: evenodd;
-
         commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
     }
 
@@ -120,7 +171,6 @@ export component barWindow inherits Window {
         x: 0px;
         fill: MaterialPalette.surface_container;
         fill-rule: evenodd;
-
         commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
     }
 }
