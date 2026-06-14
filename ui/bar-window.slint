@@ -30,7 +30,7 @@ export component barWindow inherits Window {
     callback run_command(string);
     callback set_volume(int, int);
     callback set_brightness(int, int);
-    callback tray_item_clicked(string, string);
+    callback tray_item_clicked(string, string, length);
     callback menu_action_executed(string, string);
     callback tray_exit();
 
@@ -130,8 +130,8 @@ export component barWindow inherits Window {
                     height: 100%;
                     items: root.data.tray-items;
                     shared-data <=> root.data;
-                    item_clicked(id, btn) => {
-                        root.tray_item_clicked(id, btn);
+                    item_clicked(id, btn, button_x) => {
+                        root.tray_item_clicked(id, btn, button_x);
                     }
                 }
 
@@ -142,10 +142,10 @@ export component barWindow inherits Window {
         }
     }
 
-        if root.data.menuData.visible: TrayContextMenu {
+    if root.data.menuData.visible: TrayContextMenu {
         menu-data: root.data.menuData;
         parent-absolute-x: main_bar.absolute-position.x;
-        x: root.width - self.width;
+        x: root.data.menuData.x-pos - self.width / 2;
         y: config.window.bar-height + 4px;
         height: self.preferred-height * 8;
         width: 280px;

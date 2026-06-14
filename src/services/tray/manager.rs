@@ -30,7 +30,7 @@ pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<
             let client_clone = Arc::clone(&client);
             let config_clone = config.clone();
             
-            move |compound_id, button_type| {
+            move |compound_id, button_type, button_x| {
                 let ui = match ui_weak.upgrade() {
                     Some(val) => val,
                     None => return,
@@ -79,10 +79,10 @@ pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<
                             );
 
                             current_data.menuData = ContextMenuDataSlint {
-                                visible: true,
+                                visible: !current_data.menuData.visible,
                                 item_id: compound_id.clone(),
                                 title: window_title.into(),
-                                x_pos: ui.get_window_width() - 260.0,
+                                x_pos: button_x,
                                 actions: ModelRc::from(Rc::new(VecModel::from(actions))), 
                             };
                             ui.set_data(current_data);
@@ -242,6 +242,9 @@ fn flatten_menu_tree(
     target_list: &mut Vec<ContextMenuActionSlint>,
     config: &crate::config::AppConfig
 ) {
+    // Read the static size configured for context menu options
+    let target_size = config.config.tray_config.icon_menu_size as i32;
+
     for item in menu_items {
         if !item.visible {
             continue;
@@ -252,15 +255,17 @@ fn flatten_menu_tree(
         let compound_action_id = format!("{}|{}|{}", address, menu_path, item.id);
         let is_destructive = item.label.as_deref() == Some("Quit") || item.label.as_deref() == Some("Exit");
 
-        let mut slint_icon = if let Some(ref encoded_bytes) = item.icon_data {
-            decode_dbus_menu_icon(encoded_bytes)
-        } else {
-            Image::default()
-        };
+        let mut slint_icon = Image::default();
 
+        // 1. Theme lookup first for menu icons
+        if let Some(ref name) = item.icon_name {
+            slint_icon = lookup_fallback_theme_icon(name, target_size, config);
+        }
+
+        // 2. DBus pixel mapping fallback if theme lookup was unresolvable
         if slint_icon.size().width == 0 {
-            if let Some(ref name) = item.icon_name {
-                slint_icon = lookup_fallback_theme_icon(name, 16, config);
+            if let Some(ref encoded_bytes) = item.icon_data {
+                slint_icon = decode_dbus_menu_icon(encoded_bytes);
             }
         }
 
@@ -332,17 +337,18 @@ fn populate_ui_items(client: &Arc<Client>, ui_weak: &Weak<barWindow>, config: &c
     let config_clone = config.clone();
     let _ = ui_weak.upgrade_in_event_loop(move |ui| {
         let mut ui_items = Vec::new();
+        let target_size = config_clone.config.tray_config.icon_size as i32;
 
         for raw_item in thread_safe_items {
-            let mut tray_icon = if let Some(ref pixmaps) = raw_item.raw_pixmaps {
-                create_best_image_from_pixmaps(pixmaps, 24)
-            } else {
-                Image::default()
-            };
+            let mut tray_icon = Image::default();
+
+            if let Some(ref name) = raw_item.icon_name {
+                tray_icon = lookup_fallback_theme_icon(name, target_size, &config_clone);
+            }
 
             if tray_icon.size().width == 0 {
-                if let Some(ref name) = raw_item.icon_name {
-                    tray_icon = lookup_fallback_theme_icon(name, 24, &config_clone);
+                if let Some(ref pixmaps) = raw_item.raw_pixmaps {
+                    tray_icon = create_best_image_from_pixmaps(pixmaps, target_size);
                 }
             }
 

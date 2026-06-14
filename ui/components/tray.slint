@@ -55,13 +55,13 @@ export component TrayItem inherits Rectangle {
 export component TrayRow inherits Rectangle {
     in property <[TrayItemSlint]> items;
     in-out property <DataSlint> shared-data;
-    callback item_clicked(string, string);
+    callback item_clicked(string, string, length);
 
     HorizontalLayout {
         padding: MaterialStyleMetrics.padding_8;
         spacing: 4px;
 
-        for tray-item in root.items: Rectangle {
+        for tray-item in root.items: top_rect := Rectangle {
             border_radius: MaterialStyleMetrics.border_radius_8;
 
             elevation := Elevation {
@@ -78,10 +78,12 @@ export component TrayRow inherits Rectangle {
                 icon_color: transparent;
 
                 pointer-event(event) => {
-                    if (event.button == PointerEventButton.left) {
-                        root.item_clicked(tray-item.id, "left");
-                    } else if (event.button == PointerEventButton.right) {
-                        root.item_clicked(tray-item.id, "right");
+                    if (event.kind == PointerEventKind.up) {
+                        if (event.button == PointerEventButton.left) {
+                            root.item_clicked(tray-item.id, "left", 0);
+                        } else if (event.button == PointerEventButton.right) {
+                            root.item_clicked(tray-item.id, "right", root.x + top_rect.x + top_rect.width / 2);
+                        }
                     }
                 }
             }
@@ -177,11 +179,11 @@ export component TrayContextMenu inherits Rectangle {
 
                                         if action.toggle_state == 2 || action.toggle_state == 3: CheckBox {
                                             check_state: action.toggle_state == 2 ? CheckState.checked : CheckState.unchecked;
-                                            enabled: false;
+                                            enabled: true;
                                         }
                                         if action.toggle_state == 4: RadioButton {
                                             checked: true;
-                                            enabled: false;
+                                            enabled: true;
                                         }
                                     }
 

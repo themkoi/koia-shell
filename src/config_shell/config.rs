@@ -7,9 +7,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{InterractionConfigSlint, WindowConfigSlint, config_shell::components::theme::{
+use crate::{InterractionConfigSlint, WindowConfigSlint, config_shell::components::{theme::{
     MaterialScheme, default_dark_scheme, default_light_scheme
-}};
+}, tray::{TrayConfig, default_tray}}};
 use crate::{
     config_shell::components::taskbar::{default_taskbar, TaskbarConfig},
     ConfigSlint, TaskbarConfigSlint,
@@ -42,6 +42,7 @@ pub struct Config {
     pub hardware_config: HardwareConfig,
     pub interraction_config: InterractionConfig,
     pub taskbar_config: TaskbarConfig,
+    pub tray_config: TrayConfig,
 }
 
 impl Default for Config {
@@ -53,6 +54,7 @@ impl Default for Config {
             hardware_config: HardwareConfig { brightness_device: "amdgpu_bl1".to_string() },
             interraction_config: InterractionConfig { volume_scroll_step: 3, brightness_scroll_step: 5 },
             taskbar_config: default_taskbar(),
+            tray_config: default_tray(),
         }
     }
 }
