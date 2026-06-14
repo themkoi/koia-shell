@@ -20,7 +20,6 @@ fn get_brightness_status(device_name: &str) -> u32 {
         .and_then(|s| s.trim().parse::<u32>().ok())
         .unwrap_or(100);
     
-    // Return as percentage (0-100)
     ((brightness as f32 / max_brightness as f32) * 100.0) as u32
 }
 

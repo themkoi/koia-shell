@@ -5,7 +5,6 @@ import { MaterialPalette } from "@material/material.slint";
 import { Workspace, Taskbar } from "components/taskbar.slint";
 import { TaskbarConfigSlint, ConfigSlint } from "shared-items.slint";
 
-// Import the decoupled widgets directly
 import {
     TrayRow,
     TrayContextMenu,
@@ -15,7 +14,6 @@ import {
     ContextMenuDataSlint,
 } from "components/tray.slint";
 
-// Keep runtime bindings intact for your Rust compilation step
 export { DataSlint, TrayItemSlint, ContextMenuActionSlint, ContextMenuDataSlint }
 
 export component barWindow inherits Window {
@@ -38,7 +36,6 @@ export component barWindow inherits Window {
         width: 100%;
         height: 100%;
 
-        // Named reference to pull the absolute coordinates for relative popup placement
         main_bar := Rectangle {
             x: 0px;
             y: 0px;
@@ -125,7 +122,6 @@ export component barWindow inherits Window {
                     horizontal-stretch: 1;
                 }
 
-                // 1. Just the Tray Row widget inline with your bar elements
                 TrayRow {
                     height: 100%;
                     items: root.data.tray-items;
@@ -142,35 +138,34 @@ export component barWindow inherits Window {
         }
     }
 
-    if root.data.menuData.visible: TrayContextMenu {
-        menu-data: root.data.menuData;
-        parent-absolute-x: main_bar.absolute-position.x;
+    TrayContextMenu {
         x: root.data.menuData.x-pos - self.width / 2;
         y: config.window.bar-height + 4px;
-        height: self.preferred-height * 8;
+        menu-data: root.data.menuData;
+        parent-absolute-x: main_bar.absolute-position.x;
         width: 280px;
         menu_action_executed(item_id, action_id) => {
             root.menu_action_executed(item_id, action_id);
         }
-    }
 
-    Path {
-        width: 10px;
-        height: 10px;
-        y: config.window.bar-height;
-        x: window_width - self.width;
-        fill: MaterialPalette.surface_container;
-        fill-rule: evenodd;
-        commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
-    }
+        Path {
+            width: 10px;
+            height: 10px;
+            y: config.window.bar-height;
+            x: window_width - self.width;
+            fill: MaterialPalette.surface_container;
+            fill-rule: evenodd;
+            commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
+        }
 
-    Path {
-        width: 10px;
-        height: 10px;
-        y: config.window.bar-height;
-        x: 0px;
-        fill: MaterialPalette.surface_container;
-        fill-rule: evenodd;
-        commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
+        Path {
+            width: 10px;
+            height: 10px;
+            y: config.window.bar-height;
+            x: 0px;
+            fill: MaterialPalette.surface_container;
+            fill-rule: evenodd;
+            commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
+        }
     }
 }

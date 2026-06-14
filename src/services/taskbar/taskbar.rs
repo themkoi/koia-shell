@@ -61,7 +61,6 @@ pub fn run_taskbar(
                     if !path_str.is_empty() {
                         let path = Path::new(&path_str);
                         if path.exists() {
-                            // This pre-caches the image inside Slint's core system from the background thread
                             let _ = Image::load_from_path(path);
                         }
                     }

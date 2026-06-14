@@ -17,7 +17,6 @@ pub fn start_brightness_adjuster(
 
             if let Ok(max_brightness_str) = fs::read_to_string(&max_brightness_path) {
                 if let Ok(max_brightness) = max_brightness_str.trim().parse::<u32>() {
-                    // brightness_calc is percentage (0-100), convert to actual value
                     let actual_brightness =
                         (brightness_calc as f32 / 100.0 * max_brightness as f32) as u32;
                     let _ = fs::write(&brightness_path, actual_brightness.to_string());

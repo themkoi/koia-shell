@@ -18,6 +18,7 @@ use crate::{
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct InterractionConfig {
+    pub animation_multiplier: f32,
     pub volume_scroll_step: u8,
     pub brightness_scroll_step: u8,
 }
@@ -52,7 +53,7 @@ impl Default for Config {
             default_display: "DP-3".to_string(),
             window_config: WindowConfig { total_bar_height: 800, bar_height: 35 },
             hardware_config: HardwareConfig { brightness_device: "amdgpu_bl1".to_string() },
-            interraction_config: InterractionConfig { volume_scroll_step: 3, brightness_scroll_step: 5 },
+            interraction_config: InterractionConfig {animation_multiplier: 1.0, volume_scroll_step: 3, brightness_scroll_step: 5 },
             taskbar_config: default_taskbar(),
             tray_config: default_tray(),
         }

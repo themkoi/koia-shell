@@ -260,7 +260,6 @@ fn flatten_menu_tree(
     target_list: &mut Vec<ContextMenuActionSlint>,
     config: &crate::config::AppConfig,
 ) {
-    // Read the static size configured for context menu options
     let target_size = config.config.tray_config.icon_menu_size as i32;
 
     for item in menu_items {
@@ -276,12 +275,10 @@ fn flatten_menu_tree(
 
         let mut slint_icon = Image::default();
 
-        // 1. Theme lookup first for menu icons
         if let Some(ref name) = item.icon_name {
             slint_icon = lookup_fallback_theme_icon(name, target_size, config);
         }
 
-        // 2. DBus pixel mapping fallback if theme lookup was unresolvable
         if slint_icon.size().width == 0 {
             if let Some(ref encoded_bytes) = item.icon_data {
                 slint_icon = decode_dbus_menu_icon(encoded_bytes);
