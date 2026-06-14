@@ -1,9 +1,9 @@
 use crate::{barWindow, ContextMenuActionSlint, ContextMenuDataSlint, TrayItemSlint};
-use slint::{ModelRc, VecModel, Weak, Image, SharedPixelBuffer, Rgba8Pixel};
+use slint::{Image, ModelRc, Rgba8Pixel, SharedPixelBuffer, VecModel, Weak};
 use std::rc::Rc;
 use std::sync::Arc;
 
-use system_tray::client::{Client, ActivateRequest};
+use system_tray::client::{ActivateRequest, Client};
 use system_tray::item::IconPixmap;
 use system_tray::menu::{MenuItem, MenuType, ToggleState};
 
@@ -29,7 +29,7 @@ pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<
             let ui_weak = ui_weak.clone();
             let client_clone = Arc::clone(&client);
             let config_clone = config.clone();
-            
+
             move |compound_id, button_type, button_x| {
                 let ui = match ui_weak.upgrade() {
                     Some(val) => val,
@@ -67,23 +67,33 @@ pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<
                             let menu_path = system_item.menu.clone().unwrap_or_else(|| {
                                 format!("/org/ayatana/NotificationItem/{}/Menu", system_item.id)
                             });
-                            let window_title = system_item.title.clone().unwrap_or_else(|| "Tray Options".into());
-                            
+                            let window_title = system_item
+                                .title
+                                .clone()
+                                .unwrap_or_else(|| "Tray Options".into());
+
                             flatten_menu_tree(
-                                &tray_menu.submenus, 
-                                &address, 
-                                &menu_path, 
-                                0, 
+                                &tray_menu.submenus,
+                                &address,
+                                &menu_path,
+                                0,
                                 &mut actions,
-                                &config_clone
+                                &config_clone,
                             );
+                            let visible: bool;
+
+                            if current_data.menuData.item_id != compound_id {
+                                visible = true
+                            } else {
+                                visible = !current_data.menuData.visible;
+                            }
 
                             current_data.menuData = ContextMenuDataSlint {
-                                visible: !current_data.menuData.visible,
+                                visible: visible,
                                 item_id: compound_id.clone(),
                                 title: window_title.into(),
                                 x_pos: button_x,
-                                actions: ModelRc::from(Rc::new(VecModel::from(actions))), 
+                                actions: ModelRc::from(Rc::new(VecModel::from(actions))),
                             };
                             ui.set_data(current_data);
                         }
@@ -95,7 +105,7 @@ pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<
         ui.on_menu_action_executed({
             let ui_weak = ui_weak.clone();
             let client_clone = Arc::clone(&client);
-            
+
             move |_item_id, action_id| {
                 let ui = match ui_weak.upgrade() {
                     Some(val) => val,
@@ -108,10 +118,10 @@ pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<
                 if parts.len() == 3 {
                     let address = parts[0].to_string();
                     let menu_path = parts[1].to_string();
-                    
+
                     if let Ok(submenu_id) = parts[2].parse::<i32>() {
                         let client_exec = Arc::clone(&client_clone);
-                        
+
                         tokio::spawn(async move {
                             let req = ActivateRequest::MenuItem {
                                 address,
@@ -145,10 +155,10 @@ fn create_slint_image_from_argb(raw_argb: &[u8], width: i32, height: i32) -> Ima
     if raw_argb.is_empty() || width <= 0 || height <= 0 {
         return Image::default();
     }
-    
+
     let mut buffer = SharedPixelBuffer::<Rgba8Pixel>::new(width as u32, height as u32);
     let buffer_stride = buffer.make_mut_bytes();
-    
+
     let total_bytes = (width * height * 4) as usize;
     let available_bytes = std::cmp::min(raw_argb.len(), total_bytes);
 
@@ -159,13 +169,13 @@ fn create_slint_image_from_argb(raw_argb: &[u8], width: i32, height: i32) -> Ima
             let g = raw_argb[i + 2];
             let b = raw_argb[i + 3];
 
-            buffer_stride[i]     = r;
+            buffer_stride[i] = r;
             buffer_stride[i + 1] = g;
             buffer_stride[i + 2] = b;
             buffer_stride[i + 3] = a;
         }
     }
-    
+
     Image::from_rgba8(buffer)
 }
 
@@ -177,7 +187,7 @@ fn decode_dbus_menu_icon(encoded_bytes: &[u8]) -> Image {
     if let Ok(dynamic_img) = image::load_from_memory(encoded_bytes) {
         let rgba_img = dynamic_img.to_rgba8();
         let (w, h) = rgba_img.dimensions();
-        
+
         let mut buffer = SharedPixelBuffer::<Rgba8Pixel>::new(w, h);
         buffer.make_mut_bytes().copy_from_slice(rgba_img.as_raw());
         return Image::from_rgba8(buffer);
@@ -198,7 +208,10 @@ fn decode_dbus_menu_icon(encoded_bytes: &[u8]) -> Image {
     let width_le = i32::from_le_bytes(width_bytes);
     let height_le = i32::from_le_bytes(height_bytes);
 
-    if width_le > 0 && height_le > 0 && (encoded_bytes.len() - 8) >= (width_le * height_le * 4) as usize {
+    if width_le > 0
+        && height_le > 0
+        && (encoded_bytes.len() - 8) >= (width_le * height_le * 4) as usize
+    {
         return create_slint_image_from_argb(&encoded_bytes[8..], width_le, height_le);
     }
 
@@ -210,14 +223,19 @@ fn create_best_image_from_pixmaps(pixmaps: &[IconPixmap], target_size: i32) -> I
         return Image::default();
     }
 
-    let best_pixmap = pixmaps.iter().min_by_key(|p| {
-        (p.width - target_size).abs()
-    }).unwrap_or(&pixmaps[0]);
+    let best_pixmap = pixmaps
+        .iter()
+        .min_by_key(|p| (p.width - target_size).abs())
+        .unwrap_or(&pixmaps[0]);
 
     create_slint_image_from_argb(&best_pixmap.pixels, best_pixmap.width, best_pixmap.height)
 }
 
-fn lookup_fallback_theme_icon(icon_name: &str, target_size: i32, config: &crate::config::AppConfig) -> Image {
+fn lookup_fallback_theme_icon(
+    icon_name: &str,
+    target_size: i32,
+    config: &crate::config::AppConfig,
+) -> Image {
     if icon_name.is_empty() {
         return Image::default();
     }
@@ -225,7 +243,7 @@ fn lookup_fallback_theme_icon(icon_name: &str, target_size: i32, config: &crate:
     if let Some(path_buf) = freedesktop_icons::lookup(icon_name)
         .with_theme(&config.config.icon_theme)
         .with_size(target_size as u16)
-        .find() 
+        .find()
     {
         if let Ok(slint_img) = Image::load_from_path(&path_buf) {
             return slint_img;
@@ -235,12 +253,12 @@ fn lookup_fallback_theme_icon(icon_name: &str, target_size: i32, config: &crate:
 }
 
 fn flatten_menu_tree(
-    menu_items: &[MenuItem], 
+    menu_items: &[MenuItem],
     address: &str,
     menu_path: &str,
     depth: i32,
     target_list: &mut Vec<ContextMenuActionSlint>,
-    config: &crate::config::AppConfig
+    config: &crate::config::AppConfig,
 ) {
     // Read the static size configured for context menu options
     let target_size = config.config.tray_config.icon_menu_size as i32;
@@ -253,7 +271,8 @@ fn flatten_menu_tree(
         let is_separator = item.menu_type == MenuType::Separator;
         let display_label = item.label.clone().unwrap_or_default();
         let compound_action_id = format!("{}|{}|{}", address, menu_path, item.id);
-        let is_destructive = item.label.as_deref() == Some("Quit") || item.label.as_deref() == Some("Exit");
+        let is_destructive =
+            item.label.as_deref() == Some("Quit") || item.label.as_deref() == Some("Exit");
 
         let mut slint_icon = Image::default();
 
@@ -295,7 +314,14 @@ fn flatten_menu_tree(
         });
 
         if !item.submenu.is_empty() {
-            flatten_menu_tree(&item.submenu, address, menu_path, depth + 1, target_list, config);
+            flatten_menu_tree(
+                &item.submenu,
+                address,
+                menu_path,
+                depth + 1,
+                target_list,
+                config,
+            );
         }
     }
 }
@@ -309,14 +335,18 @@ struct ThreadSafeTrayData {
     raw_pixmaps: Option<Vec<IconPixmap>>,
 }
 
-fn populate_ui_items(client: &Arc<Client>, ui_weak: &Weak<barWindow>, config: &crate::config::AppConfig) {
+fn populate_ui_items(
+    client: &Arc<Client>,
+    ui_weak: &Weak<barWindow>,
+    config: &crate::config::AppConfig,
+) {
     let mut thread_safe_items = Vec::new();
 
     if let Ok(guard) = client.items().lock() {
         for (address, (system_item, _menu_option)) in guard.iter() {
             let status_str = format!("{:?}", system_item.status);
             let is_active = status_str == "NeedsAttention";
-            
+
             let menu_path = system_item.menu.clone().unwrap_or_else(|| {
                 format!("/org/ayatana/NotificationItem/{}/Menu", system_item.id)
             });
