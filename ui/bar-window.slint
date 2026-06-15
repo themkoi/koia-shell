@@ -31,7 +31,6 @@ export component barWindow inherits Window {
     callback tray_item_clicked(string, string, length);
     callback menu_action_executed(string, string);
     callback manage_touch(bool,length,length,length,length);
-    callback tray_exit();
 
     Rectangle {
         width: 100%;
@@ -49,7 +48,7 @@ export component barWindow inherits Window {
                 height: 100%;
                 padding-top: 2px;
                 padding-bottom: 2px;
-                spacing: 0px;
+                spacing: 4px;
 
                 Rectangle {
                     height: 100%;

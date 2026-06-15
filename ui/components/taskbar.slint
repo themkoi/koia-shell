@@ -15,6 +15,7 @@ export struct Window {
     title: string,
     icon: image,
     is_focused: bool,
+    is_hovered_slint: bool,
 }
 
 export struct Workspace {
@@ -23,9 +24,10 @@ export struct Workspace {
 }
 
 export component Taskbar inherits Rectangle {
-    in property <[Workspace]> workspaces;
+    in-out property <[Workspace]> workspaces;
     in property <TaskbarConfigSlint> config;
     in property <float> animation_multiplier;
+    
     callback dispatch_command(string);
 
     ScrollView {
@@ -43,7 +45,6 @@ export component Taskbar inherits Rectangle {
                 border_radius: MaterialStyleMetrics.border_radius_28;
                 background: MaterialPalette.surface_bright;
                 height: 100%;
-
                 width: layout.preferred-width;
 
                 layout := HorizontalLayout {
@@ -75,21 +76,27 @@ export component Taskbar inherits Rectangle {
                             icon-size: config.icon-size;
                             text_length: config.max-text-lenght;
                             animation_multiplier: animation_multiplier;
-                            text: (self.has-hover || self.pressed) || self.pressed ? win.title : "";
+                            
+                            text: win.is_hovered_slint ? win.title : "";
+                            
                             padding-right: 1rem;
                             icon_color: transparent;
                             border_radius: elevation.border_radius;
                             color: MaterialPalette.on_primary;
                             height: 100%;
                             button_horizontal_padding: MaterialStyleMetrics.padding_8;
+
+                            property <bool> hover_sentinel: self.has-hover;
+                            changed hover_sentinel => {
+                                win.is_hovered_slint = hover_sentinel;
+                            }
+
                             pointer-event(event) => {
                                 if (event.button == PointerEventButton.left) {
                                     dispatch_command("niri msg action focus-window --id \{win.id}" );
                                 }
                                 if (event.button == PointerEventButton.middle) {
                                     dispatch_command("niri msg action close-window --id \{win.id}");
-                                }
-                                if (event.button == PointerEventButton.right) {
                                 }
                             }
                         }
@@ -99,7 +106,8 @@ export component Taskbar inherits Rectangle {
                                 elevation.background: transparent;
                                 base.color: MaterialPalette.on_surface;
                             }
-                            hover when base.has_hover && !base.pressed && !base.enter_pressed: {
+                            // Visuals match your model state for perfect sync
+                            hover when win.is_hovered_slint && !base.pressed && !base.enter_pressed: {
                                 elevation.level: 2;
                             }
                         ]

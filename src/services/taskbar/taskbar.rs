@@ -4,11 +4,11 @@ use std::{fs, thread};
 
 use log::{debug, info};
 use niri_ipc::{socket::Socket, Event, Request, Window};
-use slint::{Image, ModelRc, VecModel};
+use slint::{Image, ModelRc, VecModel, Model};
 
+use crate::barWindow;
 use crate::services::taskbar::cache::{get_cache_folder, load_cache};
-use crate::services::taskbar::serialize::SerializeState;
-use crate::barWindow; // Import directly from here
+use crate::services::taskbar::serialize::SerializeState; // Import directly from here
 
 pub fn run_taskbar(
     config: &crate::config::AppConfig,
@@ -89,6 +89,21 @@ pub fn run_taskbar(
                 );
 
                 if let Some(ui) = ui_weak_clone.upgrade() {
+                    // 1. Extract the currently hovered window ID from the existing UI model before replacing it
+                    let mut currently_hovered_id: Option<i32> = None;
+
+                    for workspace in ui.get_workspaces().iter() {
+                        for window in workspace.windows.iter() {
+                            if window.is_hovered_slint {
+                                currently_hovered_id = Some(window.id);
+                                break;
+                            }
+                        }
+                        if currently_hovered_id.is_some() {
+                            break;
+                        }
+                    }
+
                     let workspaces_vec: Vec<crate::Workspace> = paths_to_pass
                         .into_iter()
                         .map(|(ws_id, windows)| {
@@ -102,12 +117,16 @@ pub fn run_taskbar(
                                         Image::default()
                                     };
 
+                                    // 2. Check if this specific window ID was the one being hovered
+                                    let is_hovered = Some(w_id) == currently_hovered_id;
+
                                     crate::Window {
                                         id: w_id,
                                         app_id,
                                         title,
                                         icon: icon_image,
                                         is_focused,
+                                        is_hovered_slint: is_hovered, // Pass it down cleanly into the new struct instance
                                     }
                                 })
                                 .collect();

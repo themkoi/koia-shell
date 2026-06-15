@@ -32,3 +32,10 @@ toml = "1.1.2"
 
 [build-dependencies]
 slint-build = "=1.16.1"
+
+[profile.release]
+lto = "thin"
+opt-level = 3
+strip = true
+debug = 0
+debug-assertions = false
