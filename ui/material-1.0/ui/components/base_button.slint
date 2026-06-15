@@ -26,6 +26,7 @@ export component BaseButton inherits StateLayerArea {
     in property <image> avatar_icon;
     in property <length> avatar_size;
     in property <color> avatar_background: #00000000;
+    in property <float> animation_multiplier: 0.0;
     out property <bool> has_icon: root.icon.width > 0 && root.icon.height > 0;
     out property <bool> has_avatar: root.avatar_icon.width > 0 && root.avatar_icon.height > 0;
 
@@ -67,7 +68,7 @@ export component BaseButton inherits StateLayerArea {
         MaterialText {
             width: root.text == "" ? 0px : (text_length == 0px ? self.preferred-width : text_length);
             animate width {
-                duration: 150ms;
+                duration: 150ms * animation_multiplier;
                 easing: ease-in-out-quart;
             }
             horizontal-alignment: center;

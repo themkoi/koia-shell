@@ -7,6 +7,7 @@ import {
 } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
 import { MaterialText, MaterialPalette } from "../material-1.0/material.slint";
+import { TaskbarConfigSlint } from "../shared-items.slint";
 
 export struct Window {
     id: int,
@@ -23,8 +24,8 @@ export struct Workspace {
 
 export component Taskbar inherits Rectangle {
     in property <[Workspace]> workspaces;
-    in property <length> icon-size;
-    in property <length> max-text-lenght;
+    in property <TaskbarConfigSlint> config;
+    in property <float> animation_multiplier;
     callback dispatch_command(string);
 
     ScrollView {
@@ -71,8 +72,9 @@ export component Taskbar inherits Rectangle {
 
                         base := BaseButton {
                             icon: win.icon;
-                            icon-size: root.icon-size;
-                            text_length: root.max-text-lenght;
+                            icon-size: config.icon-size;
+                            text_length: config.max-text-lenght;
+                            animation_multiplier: animation_multiplier;
                             text: (self.has-hover || self.pressed) || self.pressed ? win.title : "";
                             padding-right: 1rem;
                             icon_color: transparent;

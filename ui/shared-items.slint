@@ -3,11 +3,20 @@ export struct TaskbarConfigSlint {
     max-text-lenght: length,
 }
 
+export struct TrayConfigSlint {
+    icon_size: length,
+    menu_icon_size: length,
+    width: length,
+    max-height: length,
+}
+
+
 export struct WindowConfigSlint {
     bar_height: length,
 }
 
 export struct InterractionConfigSlint {
+    animation_multiplier: float,
     volume_scroll_step: int,
     brightness_scroll_step: int,
 }
@@ -17,4 +26,5 @@ export struct ConfigSlint {
     window: WindowConfigSlint,
     interraction: InterractionConfigSlint,
     taskbar: TaskbarConfigSlint,
+    tray: TrayConfigSlint,
 }

@@ -7,7 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{InterractionConfigSlint, WindowConfigSlint, config_shell::components::{theme::{
+use crate::{InterractionConfigSlint, TrayConfigSlint, WindowConfigSlint, config_shell::components::{theme::{
     MaterialScheme, default_dark_scheme, default_light_scheme
 }, tray::{TrayConfig, default_tray}}};
 use crate::{
@@ -169,6 +169,7 @@ pub fn build_config_slint(
             bar_height: config.config.window_config.bar_height as f32,
         },
         interraction: InterractionConfigSlint {
+            animation_multiplier: config.config.interraction_config.animation_multiplier,
             volume_scroll_step: config.config.interraction_config.volume_scroll_step as i32,
             brightness_scroll_step: config.config.interraction_config.brightness_scroll_step as i32,
         },
@@ -176,5 +177,11 @@ pub fn build_config_slint(
             icon_size: config.config.taskbar_config.icon_size as f32,
             max_text_lenght: config.config.taskbar_config.max_text_lenght as f32,
         },
+        tray: TrayConfigSlint {
+            icon_size: config.config.tray_config.icon_size as f32,
+            max_height: config.config.tray_config.max_menu_height as f32,
+            width: config.config.tray_config.menu_width as f32,
+            menu_icon_size: config.config.tray_config.menu_icon_size as f32,
+        }
     }
 }

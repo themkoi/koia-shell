@@ -10,6 +10,7 @@ import {
     VerticalDivider,
 } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
+import { TrayConfigSlint } from "../shared-items.slint";
 
 export struct VolumeDataSlint { volume: int, muted: bool}
 export struct TrayItemSlint { id: string, title: string, icon: image, status: string, active: bool}
@@ -54,6 +55,7 @@ export component TrayItem inherits Rectangle {
 export component TrayRow inherits Rectangle {
     in property <[TrayItemSlint]> items;
     in-out property <DataSlint> shared-data;
+    in property <TrayConfigSlint> config;
     callback item_clicked(string, string, length);
 
     HorizontalLayout {
@@ -73,7 +75,7 @@ export component TrayRow inherits Rectangle {
                 height: 100%;
                 border_radius: parent.border_radius;
                 icon: tray-item.icon;
-                icon-size: 20px;
+                icon-size: config.icon-size;
                 icon_color: transparent;
 
                 pointer-event(event) => {
@@ -99,19 +101,20 @@ export component TrayRow inherits Rectangle {
 
 export component TrayContextMenu inherits Rectangle {
     in property <ContextMenuDataSlint> menu-data;
-    in property <length> bar-height;
-    in property <length> parent-absolute-x;
+    in property <TrayConfigSlint> config;
+    in property <float> animation_multiplier;
     callback menu_action_executed(string, string);
     animate x {
-        duration: 150ms;
+        duration: 150ms * animation_multiplier;
         easing: ease-in-out-quart;
     }
     clip: true;
     animate height {
-        duration: 300ms;
+        duration: 300ms * animation_multiplier;
         easing: ease-in-out-quart;
     }
-    height: root.menu-data.visible ? Math.min(layout.preferred-height + 10px, 500px) : 0px;
+    width: config.width;
+    height: root.menu-data.visible ? Math.min(layout.preferred-height + 10px, config.max-height) : 0px;
 
     elevation := Elevation {
         level: 2;
@@ -200,8 +203,8 @@ export component TrayContextMenu inherits Rectangle {
                                         alignment: center;
                                         Image {
                                             source: action.icon;
-                                            width: 14px;
-                                            height: 14px;
+                                            width: config.menu-icon-size;
+                                            height: config.menu-icon-size;
                                         }
                                     }
 

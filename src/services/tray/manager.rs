@@ -260,7 +260,7 @@ fn flatten_menu_tree(
     target_list: &mut Vec<ContextMenuActionSlint>,
     config: &crate::config::AppConfig,
 ) {
-    let target_size = config.config.tray_config.icon_menu_size as i32;
+    let target_size = config.config.tray_config.menu_icon_size as i32;
 
     for item in menu_items {
         if !item.visible {

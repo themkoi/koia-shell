@@ -110,8 +110,8 @@ export component barWindow inherits Window {
                 Taskbar {
                     width: 60%;
                     height: 70%;
-                    icon-size: config.taskbar.icon-size;
-                    max-text-lenght: config.taskbar.max-text-lenght;
+                    config: config.taskbar;
+                    animation_multiplier: config.interraction.animation-multiplier;
                     workspaces: workspaces;
                     dispatch_command(cmd) => {
                         root.run_command(cmd);
@@ -124,6 +124,7 @@ export component barWindow inherits Window {
 
                 TrayRow {
                     height: 100%;
+                    config: config.tray;
                     items: root.data.tray-items;
                     shared-data <=> root.data;
                     item_clicked(id, btn, button_x) => {
@@ -141,31 +142,32 @@ export component barWindow inherits Window {
     TrayContextMenu {
         x: root.data.menuData.x-pos - self.width / 2;
         y: config.window.bar-height + 4px;
+        config: config.tray;
         menu-data: root.data.menuData;
-        parent-absolute-x: main_bar.absolute-position.x;
-        width: 280px;
+        animation_multiplier: config.interraction.animation-multiplier;
+
         menu_action_executed(item_id, action_id) => {
             root.menu_action_executed(item_id, action_id);
         }
+    }
 
-        Path {
-            width: 10px;
-            height: 10px;
-            y: config.window.bar-height;
-            x: window_width - self.width;
-            fill: MaterialPalette.surface_container;
-            fill-rule: evenodd;
-            commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
-        }
+    Path {
+        width: 10px;
+        height: 10px;
+        y: config.window.bar-height;
+        x: window_width - self.width;
+        fill: MaterialPalette.surface_container;
+        fill-rule: evenodd;
+        commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
+    }
 
-        Path {
-            width: 10px;
-            height: 10px;
-            y: config.window.bar-height;
-            x: 0px;
-            fill: MaterialPalette.surface_container;
-            fill-rule: evenodd;
-            commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
-        }
+    Path {
+        width: 10px;
+        height: 10px;
+        y: config.window.bar-height;
+        x: 0px;
+        fill: MaterialPalette.surface_container;
+        fill-rule: evenodd;
+        commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
     }
 }
