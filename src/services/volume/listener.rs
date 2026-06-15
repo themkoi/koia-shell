@@ -1,6 +1,6 @@
 use log::info;
 
-use crate::barWindow;
+use crate::{barWindow, VolumeDataSlint};
 use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
 
@@ -35,10 +35,10 @@ pub fn listen_volume_changes(ui_weak: slint::Weak<barWindow>) {
         let ui_init = ui_weak.clone();
         let _ = slint::invoke_from_event_loop(move || {
             if let Some(ui) = ui_init.upgrade() {
-                let mut data = ui.get_data();
-                data.volumeData.volume = initial_vol;
-                data.volumeData.muted = initial_mute;
-                ui.set_data(data);
+                let volume = initial_vol;
+                let muted = initial_mute;
+                let volume_data = VolumeDataSlint { volume, muted };
+                ui.set_volumeData(volume_data);
             }
         });
 
@@ -59,15 +59,10 @@ pub fn listen_volume_changes(ui_weak: slint::Weak<barWindow>) {
 
                     let _ = slint::invoke_from_event_loop(move || {
                         if let Some(ui) = ui_update.upgrade() {
-                            let mut data = ui.get_data();
-
-                            if data.volumeData.volume != current_vol
-                                || data.volumeData.muted != current_mute
-                            {
-                                data.volumeData.volume = current_vol;
-                                data.volumeData.muted = current_mute;
-                                ui.set_data(data);
-                            }
+                            let volume = current_vol;
+                            let muted = current_mute;
+                            let volume_data = VolumeDataSlint { volume, muted };
+                            ui.set_volumeData(volume_data);
                         }
                     });
                 }
