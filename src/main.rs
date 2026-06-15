@@ -27,13 +27,12 @@ use config_shell::config;
 
 mod services;
 use crate::{
-    config_shell::{components::theme::build_config_palette, config::build_config_slint},
-    services::{
+    config_shell::{components::theme::build_config_palette, config::build_config_slint}, helpers::touch_area::manager::start_touch_manager, services::{
         brightness::{adjuster::start_brightness_adjuster, listener::listen_brightness_changes},
         taskbar::taskbar::run_taskbar,
         tray::manager::start_system_tray,
         volume::{adjuster::start_volume_adjuster, listener::listen_volume_changes},
-    },
+    }
 };
 
 mod helpers;
@@ -60,6 +59,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .exclusive_zone(config.config.window_config.bar_height.into())
         .layer_type(LayerType::Top)
         .monitor(monitor.clone())
+        .natural_scroll(true)
         .build()
         .unwrap();
 
@@ -100,10 +100,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     listen_brightness_changes(&config, bar_ui.as_weak());
     start_brightness_adjuster(&config, bar_ui.as_weak());
 
-    // 1. Create a dedicated clone that can be moved
-    let config_clone = config.clone();
+    start_touch_manager(&bar_ui);
 
-    // 2. Use an async move block to transfer ownership of the clone into the background
     start_system_tray(&config, bar_ui.as_weak()).await;
 
     // clipboard init

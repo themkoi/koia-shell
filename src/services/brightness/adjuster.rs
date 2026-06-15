@@ -1,3 +1,5 @@
+use log::info;
+
 use crate::barWindow;
 use std::fs;
 
@@ -5,6 +7,7 @@ pub fn start_brightness_adjuster(
     config: &crate::config::AppConfig,
     ui_weak: slint::Weak<barWindow>,
 ) {
+    info!("starting brightness adjuster");
     if let Some(ui) = ui_weak.upgrade() {
         let brightness_device = config.config.hardware_config.brightness_device.clone();
 

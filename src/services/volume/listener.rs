@@ -1,6 +1,8 @@
+use log::info;
+
+use crate::barWindow;
 use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
-use crate::barWindow;
 
 fn get_volume_status() -> (i32, bool) {
     let output = Command::new("pamixer")
@@ -18,7 +20,7 @@ fn get_volume_status() -> (i32, bool) {
             .unwrap();
         let vol_str = String::from_utf8_lossy(&vol_output.stdout);
         let vol = vol_str.trim().parse::<i32>().unwrap_or(0);
-        
+
         (vol, true)
     } else {
         let vol = trimmed.trim_end_matches('%').parse::<i32>().unwrap_or(0);
@@ -27,6 +29,7 @@ fn get_volume_status() -> (i32, bool) {
 }
 
 pub fn listen_volume_changes(ui_weak: slint::Weak<barWindow>) {
+    info!("starting volume listener");
     std::thread::spawn(move || {
         let (initial_vol, initial_mute) = get_volume_status();
         let ui_init = ui_weak.clone();
@@ -53,12 +56,14 @@ pub fn listen_volume_changes(ui_weak: slint::Weak<barWindow>) {
                 if line.contains("on sink") {
                     let (current_vol, current_mute) = get_volume_status();
                     let ui_update = ui_weak.clone();
-                    
+
                     let _ = slint::invoke_from_event_loop(move || {
                         if let Some(ui) = ui_update.upgrade() {
                             let mut data = ui.get_data();
-                            
-                            if data.volumeData.volume != current_vol || data.volumeData.muted != current_mute {
+
+                            if data.volumeData.volume != current_vol
+                                || data.volumeData.muted != current_mute
+                            {
                                 data.volumeData.volume = current_vol;
                                 data.volumeData.muted = current_mute;
                                 ui.set_data(data);

@@ -106,7 +106,6 @@ export component Taskbar inherits Rectangle {
                                 elevation.background: transparent;
                                 base.color: MaterialPalette.on_surface;
                             }
-                            // Visuals match your model state for perfect sync
                             hover when win.is_hovered_slint && !base.pressed && !base.enter_pressed: {
                                 elevation.level: 2;
                             }

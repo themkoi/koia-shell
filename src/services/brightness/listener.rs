@@ -1,4 +1,4 @@
-use log::error;
+use log::{error, info};
 use notify::event::{CreateKind, ModifyKind, RemoveKind};
 use notify::{recommended_watcher, EventKind, RecursiveMode, Watcher};
 
@@ -28,6 +28,7 @@ pub fn listen_brightness_changes(
     config: &crate::config::AppConfig,
     ui_weak: slint::Weak<barWindow>,
 ) {
+        info!("starting brightness listener");
     let brightness_device = config.config.hardware_config.brightness_device.clone();
 
     std::thread::spawn(move || {

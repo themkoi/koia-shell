@@ -1,7 +1,10 @@
+use log::info;
+
 use crate::barWindow;
 use std::process::Command;
 
 pub fn start_volume_adjuster(ui_weak: slint::Weak<barWindow>) {
+    info!("starting volume adjuster");
     if let Some(ui) = ui_weak.upgrade() {
         ui.on_set_volume(move |volume, delta| {
             let volume_calc = volume + delta;

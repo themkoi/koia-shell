@@ -1,4 +1,5 @@
 use crate::{barWindow, ContextMenuActionSlint, ContextMenuDataSlint, TrayItemSlint};
+use log::{error, info};
 use slint::{Image, ModelRc, Rgba8Pixel, SharedPixelBuffer, VecModel, Weak};
 use std::rc::Rc;
 use std::sync::Arc;
@@ -8,12 +9,12 @@ use system_tray::item::IconPixmap;
 use system_tray::menu::{MenuItem, MenuType, ToggleState};
 
 pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<barWindow>) {
-    println!("[Tray Manager] Initializing full featured system-tray backend...");
+    info!("starting tray manager");
 
     let client_raw = match Client::new().await {
         Ok(c) => c,
         Err(e) => {
-            eprintln!("[Tray Manager] Connection failure: {}", e);
+            error!("Tray connection failure: {}", e);
             return;
         }
     };
@@ -44,7 +45,7 @@ pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<
 
                 if button_type.as_str() == "left" {
                     let mut current_data = ui.get_data();
-                    current_data.menuData.visible = false;
+                    current_data.trayData.menuData.visible = false;
                     ui.set_data(current_data);
 
                     let client_exec = Arc::clone(&client_clone);
@@ -82,13 +83,13 @@ pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<
                             );
                             let visible: bool;
 
-                            if current_data.menuData.item_id != compound_id {
+                            if current_data.trayData.menuData.item_id != compound_id {
                                 visible = true
                             } else {
-                                visible = !current_data.menuData.visible;
+                                visible = !current_data.trayData.menuData.visible;
                             }
 
-                            current_data.menuData = ContextMenuDataSlint {
+                            current_data.trayData.menuData = ContextMenuDataSlint {
                                 visible: visible,
                                 item_id: compound_id.clone(),
                                 title: window_title.into(),
@@ -136,7 +137,7 @@ pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<
                 }
 
                 let mut current_data = ui.get_data();
-                current_data.menuData.visible = false;
+                current_data.trayData.menuData.visible = false;
                 ui.set_data(current_data);
             }
         });
@@ -389,7 +390,7 @@ fn populate_ui_items(
         }
 
         let mut d = ui.get_data();
-        d.tray_items = ModelRc::from(Rc::new(VecModel::from(ui_items)));
+        d.trayData.tray_items = ModelRc::from(Rc::new(VecModel::from(ui_items)));
         ui.set_data(d);
     });
 }

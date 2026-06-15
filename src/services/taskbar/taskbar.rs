@@ -14,6 +14,7 @@ pub fn run_taskbar(
     config: &crate::config::AppConfig,
     ui_weak: slint::Weak<barWindow>,
 ) -> thread::JoinHandle<()> {
+    info!("starting taskbar");
     let config_internal = config.config.clone();
     let mut cache_folder = get_cache_folder();
     cache_folder.push("icons");
@@ -38,7 +39,6 @@ pub fn run_taskbar(
         let mut events = socket.read_events();
 
         while let Ok(event) = events() {
-            let loop_start = std::time::Instant::now();
 
             state.update_with_event(event, &config_internal);
 
@@ -75,21 +75,11 @@ pub fn run_taskbar(
                 paths_to_pass.push((ws.id, windows_paths));
             }
 
-            let bg_elapsed = loop_start.elapsed();
             let ui_weak_clone = ui_weak.clone();
 
             slint::invoke_from_event_loop(move || {
-                let dispatch_elapsed = loop_start.elapsed();
-                let slint_closure_start = std::time::Instant::now();
-
-                info!(
-                    "PERF UI START -> Background Sync/Warmup: {:?} | Queue Latency: {:?}",
-                    bg_elapsed,
-                    dispatch_elapsed - bg_elapsed
-                );
 
                 if let Some(ui) = ui_weak_clone.upgrade() {
-                    // 1. Extract the currently hovered window ID from the existing UI model before replacing it
                     let mut currently_hovered_id: Option<i32> = None;
 
                     for workspace in ui.get_workspaces().iter() {
@@ -117,7 +107,6 @@ pub fn run_taskbar(
                                         Image::default()
                                     };
 
-                                    // 2. Check if this specific window ID was the one being hovered
                                     let is_hovered = Some(w_id) == currently_hovered_id;
 
                                     crate::Window {
@@ -126,7 +115,7 @@ pub fn run_taskbar(
                                         title,
                                         icon: icon_image,
                                         is_focused,
-                                        is_hovered_slint: is_hovered, // Pass it down cleanly into the new struct instance
+                                        is_hovered_slint: is_hovered, 
                                     }
                                 })
                                 .collect();
@@ -143,11 +132,6 @@ pub fn run_taskbar(
                     let workspaces_model = Rc::new(VecModel::from(workspaces_vec));
                     ui.set_workspaces(ModelRc::from(workspaces_model));
                 }
-
-                info!(
-                    "PERF UI END -> Total Main Event Execution: {:?}",
-                    slint_closure_start.elapsed()
-                );
             })
             .unwrap();
         }

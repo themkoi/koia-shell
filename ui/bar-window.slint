@@ -2,19 +2,18 @@ import { Palette } from "std-widgets.slint";
 import { FilledButton, Elevation } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
 import { MaterialPalette } from "@material/material.slint";
-import { Workspace, Taskbar } from "components/taskbar.slint";
 import { TaskbarConfigSlint, ConfigSlint } from "shared-items.slint";
 
-import {
-    TrayRow,
-    TrayContextMenu,
-    DataSlint,
-    TrayItemSlint,
-    ContextMenuActionSlint,
-    ContextMenuDataSlint,
-} from "components/tray.slint";
+import { Workspace, Taskbar } from "components/taskbar.slint";
+import {TrayRow, TrayContextMenu, TrayDataSlint } from "components/tray.slint";
 
-export { DataSlint, TrayItemSlint, ContextMenuActionSlint, ContextMenuDataSlint }
+
+export struct VolumeDataSlint { volume: int, muted: bool}
+export struct DataSlint {
+    volumeData: VolumeDataSlint,
+    brightness: int,
+    trayData: TrayDataSlint,
+}
 
 export component barWindow inherits Window {
     in property <[Workspace]> workspaces;
@@ -30,7 +29,7 @@ export component barWindow inherits Window {
     callback set_brightness(int, int);
     callback tray_item_clicked(string, string, length);
     callback menu_action_executed(string, string);
-    callback manage_touch(bool,length,length,length,length);
+    callback manage_touch(bool, length, length, length, length);
 
     Rectangle {
         width: 100%;
@@ -124,8 +123,7 @@ export component barWindow inherits Window {
 
                 TrayRow {
                     config: config.tray;
-                    items: root.data.tray-items;
-                    shared-data <=> root.data;
+                    items: root.data.trayData.tray-items;
                     item_clicked(id, btn, button_x) => {
                         root.tray_item_clicked(id, btn, button_x);
                     }
@@ -139,11 +137,17 @@ export component barWindow inherits Window {
     }
 
     TrayContextMenu {
-        x: root.data.menuData.x-pos - self.width / 2;
+        x: root.data.trayData.menuData.x-pos - self.width / 2;
         y: config.window.bar-height + 4px;
         config: config.tray;
-        menu-data: root.data.menuData;
+        menu-data: root.data.trayData.menuData;
         animation_multiplier: config.interraction.animation-multiplier;
+        changed height => {
+            root.manage_touch(root.data.trayData.menuData.visible, self.x, self.y, self.width, self.height);
+        }
+        changed x => {
+            root.manage_touch(root.data.trayData.menuData.visible, self.x, self.y, self.width, self.height);
+        }
 
         menu_action_executed(item_id, action_id) => {
             root.menu_action_executed(item_id, action_id);
