@@ -5,18 +5,19 @@ import { MaterialPalette } from "@material/material.slint";
 import { TaskbarConfigSlint, ConfigSlint } from "shared-items.slint";
 
 import { Workspace, Taskbar } from "components/taskbar.slint";
-import {TrayRow, TrayContextMenu, TrayDataSlint } from "components/tray.slint";
+import {TrayRow, TrayContextMenu, TrayItemSlint, ContextMenuDataSlint } from "components/tray.slint";
 
 
 export struct VolumeDataSlint { volume: int, muted: bool}
 export struct DataSlint {
     volumeData: VolumeDataSlint,
     brightness: int,
-    trayData: TrayDataSlint,
 }
 
 export component barWindow inherits Window {
     in property <[Workspace]> workspaces;
+    in property <[TrayItemSlint]> tray;
+    in property <ContextMenuDataSlint> trayMenu;
     in property <ConfigSlint> config;
     in-out property <DataSlint> data;
     in-out property <length> window_width <=> self.width;
@@ -123,7 +124,7 @@ export component barWindow inherits Window {
 
                 TrayRow {
                     config: config.tray;
-                    items: root.data.trayData.tray-items;
+                    items: root.tray;
                     item_clicked(id, btn, button_x) => {
                         root.tray_item_clicked(id, btn, button_x);
                     }
@@ -137,16 +138,16 @@ export component barWindow inherits Window {
     }
 
     TrayContextMenu {
-        x: root.data.trayData.menuData.x-pos - self.width / 2;
+        x: root.trayMenu.x-pos - self.width / 2;
         y: config.window.bar-height + 4px;
         config: config.tray;
-        menu-data: root.data.trayData.menuData;
+        menu-data: root.trayMenu;
         animation_multiplier: config.interraction.animation-multiplier;
         changed height => {
-            root.manage_touch(root.data.trayData.menuData.visible, self.x, self.y, self.width, self.height);
+            root.manage_touch(root.trayMenu.visible, self.x, self.y, self.width, self.height);
         }
         changed x => {
-            root.manage_touch(root.data.trayData.menuData.visible, self.x, self.y, self.width, self.height);
+            root.manage_touch(root.trayMenu.visible, self.x, self.y, self.width, self.height);
         }
 
         menu_action_executed(item_id, action_id) => {

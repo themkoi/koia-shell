@@ -31,8 +31,6 @@ export struct ContextMenuDataSlint {
     actions: [ContextMenuActionSlint]
 }
 
-export struct TrayDataSlint { tray-items: [TrayItemSlint], menuData: ContextMenuDataSlint}
-
 export component TrayItem inherits Rectangle {
     in property <TrayItemSlint> item;
     in property <length> icon-size;
@@ -124,7 +122,7 @@ export component TrayContextMenu inherits Rectangle {
         easing: ease-in-out-quart;
     }
     width: config.width;
-    height: root.menu-data.visible ? Math.min(layout.preferred-height + 10px, config.max-height) : 0px;
+    height: root.menu-data.visible ? Math.min(layout.preferred-height + 20px, config.max-height) : 0px;
 
     elevation := Elevation {
         level: 2;

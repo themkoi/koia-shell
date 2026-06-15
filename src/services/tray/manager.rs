@@ -3,10 +3,34 @@ use log::{error, info};
 use slint::{Image, ModelRc, Rgba8Pixel, SharedPixelBuffer, VecModel, Weak};
 use std::rc::Rc;
 use std::sync::Arc;
+use tokio::time::{sleep, Duration, Instant};
 
 use system_tray::client::{ActivateRequest, Client};
 use system_tray::item::IconPixmap;
 use system_tray::menu::{MenuItem, MenuType, ToggleState};
+
+struct IntermediateTrayItem {
+    id: String,
+    title: String,
+    status: String,
+    active: bool,
+    icon_source: IconSource,
+}
+
+enum IconSource {
+    Path(String),
+    Buffer(SharedPixelBuffer<Rgba8Pixel>),
+    None,
+}
+
+struct ThreadSafeTrayData {
+    id: String,
+    title: String,
+    status: String,
+    active: bool,
+    icon_name: Option<String>,
+    raw_pixmaps: Option<Vec<IconPixmap>>,
+}
 
 pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<barWindow>) {
     info!("starting tray manager");
@@ -44,9 +68,9 @@ pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<
                 };
 
                 if button_type.as_str() == "left" {
-                    let mut current_data = ui.get_data();
-                    current_data.trayData.menuData.visible = false;
-                    ui.set_data(current_data);
+                    let mut current_menu = ui.get_trayMenu();
+                    current_menu.visible = false;
+                    ui.set_trayMenu(current_menu);
 
                     let client_exec = Arc::clone(&client_clone);
                     tokio::spawn(async move {
@@ -60,7 +84,7 @@ pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<
                         }
                     });
                 } else if button_type.as_str() == "right" {
-                    let mut current_data = ui.get_data();
+                    let mut current_menu = ui.get_trayMenu();
                     let mut actions = Vec::new();
 
                     if let Ok(guard) = client_clone.items().lock() {
@@ -83,20 +107,20 @@ pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<
                             );
                             let visible: bool;
 
-                            if current_data.trayData.menuData.item_id != compound_id {
+                            if current_menu.item_id != compound_id {
                                 visible = true
                             } else {
-                                visible = !current_data.trayData.menuData.visible;
+                                visible = !current_menu.visible;
                             }
 
-                            current_data.trayData.menuData = ContextMenuDataSlint {
-                                visible: visible,
+                            current_menu = ContextMenuDataSlint {
+                                visible,
                                 item_id: compound_id.clone(),
                                 title: window_title.into(),
                                 x_pos: button_x,
                                 actions: ModelRc::from(Rc::new(VecModel::from(actions))),
                             };
-                            ui.set_data(current_data);
+                            ui.set_trayMenu(current_menu);
                         }
                     }
                 }
@@ -136,25 +160,54 @@ pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<
                     }
                 }
 
-                let mut current_data = ui.get_data();
-                current_data.trayData.menuData.visible = false;
-                ui.set_data(current_data);
+                let mut current_menu = ui.get_trayMenu();
+                current_menu.visible = false;
+                ui.set_trayMenu(current_menu);
             }
         });
     }
 
     let client_bg = Arc::clone(&client);
     let config_bg = config.clone();
+    
     tokio::spawn(async move {
+        let debounce_duration = Duration::from_millis(20);
+        let max_throttle_interval = Duration::from_millis(50);
+        let mut last_ui_write = Instant::now();
+
         while let Ok(_event) = tray_rx.recv().await {
+            let start_debounce = Instant::now();
+            
+            loop {
+                tokio::select! {
+                    _ = sleep(debounce_duration) => {
+                        break; 
+                    }
+                    next_event = tray_rx.recv() => {
+                        if next_event.is_err() { break; }
+                        if start_debounce.elapsed() >= max_throttle_interval {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            while tray_rx.try_recv().is_ok() {}
+
+            let elapsed_since_write = last_ui_write.elapsed();
+            if elapsed_since_write < debounce_duration {
+                sleep(debounce_duration - elapsed_since_write).await;
+            }
+
             populate_ui_items(&client_bg, &ui_weak_clone, &config_bg);
+            last_ui_write = Instant::now();
         }
     });
 }
 
-fn create_slint_image_from_argb(raw_argb: &[u8], width: i32, height: i32) -> Image {
+fn create_slint_buffer_from_argb(raw_argb: &[u8], width: i32, height: i32) -> Option<SharedPixelBuffer<Rgba8Pixel>> {
     if raw_argb.is_empty() || width <= 0 || height <= 0 {
-        return Image::default();
+        return None;
     }
 
     let mut buffer = SharedPixelBuffer::<Rgba8Pixel>::new(width as u32, height as u32);
@@ -177,12 +230,12 @@ fn create_slint_image_from_argb(raw_argb: &[u8], width: i32, height: i32) -> Ima
         }
     }
 
-    Image::from_rgba8(buffer)
+    Some(buffer)
 }
 
-fn decode_dbus_menu_icon(encoded_bytes: &[u8]) -> Image {
+fn decode_dbus_menu_buffer(encoded_bytes: &[u8]) -> Option<SharedPixelBuffer<Rgba8Pixel>> {
     if encoded_bytes.len() < 8 {
-        return Image::default();
+        return None;
     }
 
     if let Ok(dynamic_img) = image::load_from_memory(encoded_bytes) {
@@ -191,7 +244,7 @@ fn decode_dbus_menu_icon(encoded_bytes: &[u8]) -> Image {
 
         let mut buffer = SharedPixelBuffer::<Rgba8Pixel>::new(w, h);
         buffer.make_mut_bytes().copy_from_slice(rgba_img.as_raw());
-        return Image::from_rgba8(buffer);
+        return Some(buffer);
     }
 
     let mut width_bytes = [0u8; 4];
@@ -203,25 +256,15 @@ fn decode_dbus_menu_icon(encoded_bytes: &[u8]) -> Image {
     let height = i32::from_be_bytes(height_bytes);
 
     if width > 0 && height > 0 && (encoded_bytes.len() - 8) >= (width * height * 4) as usize {
-        return create_slint_image_from_argb(&encoded_bytes[8..], width, height);
+        return create_slint_buffer_from_argb(&encoded_bytes[8..], width, height);
     }
 
-    let width_le = i32::from_le_bytes(width_bytes);
-    let height_le = i32::from_le_bytes(height_bytes);
-
-    if width_le > 0
-        && height_le > 0
-        && (encoded_bytes.len() - 8) >= (width_le * height_le * 4) as usize
-    {
-        return create_slint_image_from_argb(&encoded_bytes[8..], width_le, height_le);
-    }
-
-    Image::default()
+    None
 }
 
-fn create_best_image_from_pixmaps(pixmaps: &[IconPixmap], target_size: i32) -> Image {
+fn create_best_buffer_from_pixmaps(pixmaps: &[IconPixmap], target_size: i32) -> Option<SharedPixelBuffer<Rgba8Pixel>> {
     if pixmaps.is_empty() {
-        return Image::default();
+        return None;
     }
 
     let best_pixmap = pixmaps
@@ -229,28 +272,23 @@ fn create_best_image_from_pixmaps(pixmaps: &[IconPixmap], target_size: i32) -> I
         .min_by_key(|p| (p.width - target_size).abs())
         .unwrap_or(&pixmaps[0]);
 
-    create_slint_image_from_argb(&best_pixmap.pixels, best_pixmap.width, best_pixmap.height)
+    create_slint_buffer_from_argb(&best_pixmap.pixels, best_pixmap.width, best_pixmap.height)
 }
 
-fn lookup_fallback_theme_icon(
+fn lookup_fallback_theme_path(
     icon_name: &str,
     target_size: i32,
     config: &crate::config::AppConfig,
-) -> Image {
+) -> Option<String> {
     if icon_name.is_empty() {
-        return Image::default();
+        return None;
     }
 
-    if let Some(path_buf) = freedesktop_icons::lookup(icon_name)
+    freedesktop_icons::lookup(icon_name)
         .with_theme(&config.config.icon_theme)
         .with_size(target_size as u16)
         .find()
-    {
-        if let Ok(slint_img) = Image::load_from_path(&path_buf) {
-            return slint_img;
-        }
-    }
-    Image::default()
+        .map(|path_buf| path_buf.to_string_lossy().into_owned())
 }
 
 fn flatten_menu_tree(
@@ -277,12 +315,16 @@ fn flatten_menu_tree(
         let mut slint_icon = Image::default();
 
         if let Some(ref name) = item.icon_name {
-            slint_icon = lookup_fallback_theme_icon(name, target_size, config);
+            if let Some(path_str) = lookup_fallback_theme_path(name, target_size, config) {
+                slint_icon = Image::load_from_path(std::path::Path::new(&path_str)).unwrap_or_default();
+            }
         }
 
         if slint_icon.size().width == 0 {
             if let Some(ref encoded_bytes) = item.icon_data {
-                slint_icon = decode_dbus_menu_icon(encoded_bytes);
+                if let Some(buf) = decode_dbus_menu_buffer(encoded_bytes) {
+                    slint_icon = Image::from_rgba8(buf);
+                }
             }
         }
 
@@ -324,15 +366,6 @@ fn flatten_menu_tree(
     }
 }
 
-struct ThreadSafeTrayData {
-    id: String,
-    title: String,
-    status: String,
-    active: bool,
-    icon_name: Option<String>,
-    raw_pixmaps: Option<Vec<IconPixmap>>,
-}
-
 fn populate_ui_items(
     client: &Arc<Client>,
     ui_weak: &Weak<barWindow>,
@@ -363,34 +396,59 @@ fn populate_ui_items(
     }
 
     let config_clone = config.clone();
-    let _ = ui_weak.upgrade_in_event_loop(move |ui| {
-        let mut ui_items = Vec::new();
-        let target_size = config_clone.config.tray_config.icon_size as i32;
+    let ui_weak_clone = ui_weak.clone();
 
-        for raw_item in thread_safe_items {
-            let mut tray_icon = Image::default();
+    let mut intermediate_items = Vec::new();
+    let target_size = config_clone.config.tray_config.icon_size as i32;
 
-            if let Some(ref name) = raw_item.icon_name {
-                tray_icon = lookup_fallback_theme_icon(name, target_size, &config_clone);
+    for raw_item in thread_safe_items {
+        let mut icon_source = IconSource::None;
+
+        if let Some(ref name) = raw_item.icon_name {
+            if let Some(path_string) = lookup_fallback_theme_path(name, target_size, &config_clone) {
+                icon_source = IconSource::Path(path_string);
             }
+        }
 
-            if tray_icon.size().width == 0 {
-                if let Some(ref pixmaps) = raw_item.raw_pixmaps {
-                    tray_icon = create_best_image_from_pixmaps(pixmaps, target_size);
+        if matches!(icon_source, IconSource::None) {
+            if let Some(ref pixmaps) = raw_item.raw_pixmaps {
+                if let Some(buf) = create_best_buffer_from_pixmaps(pixmaps, target_size) {
+                    icon_source = IconSource::Buffer(buf);
                 }
             }
+        }
+
+        intermediate_items.push(IntermediateTrayItem {
+            id: raw_item.id,
+            title: raw_item.title,
+            status: raw_item.status,
+            active: raw_item.active,
+            icon_source,
+        });
+    }
+
+    let _ = ui_weak_clone.upgrade_in_event_loop(move |ui| {
+        let mut ui_items = Vec::new();
+
+        for item in intermediate_items {
+            let tray_icon = match item.icon_source {
+                IconSource::Path(path_str) => {
+                    Image::load_from_path(std::path::Path::new(&path_str)).unwrap_or_default()
+                }
+                IconSource::Buffer(buf) => Image::from_rgba8(buf),
+                IconSource::None => Image::default(),
+            };
 
             ui_items.push(TrayItemSlint {
-                id: raw_item.id.into(),
-                title: raw_item.title.into(),
+                id: item.id.into(),
+                title: item.title.into(),
                 icon: tray_icon,
-                status: raw_item.status.into(),
-                active: raw_item.active,
+                status: item.status.into(),
+                active: item.active,
             });
         }
 
-        let mut d = ui.get_data();
-        d.trayData.tray_items = ModelRc::from(Rc::new(VecModel::from(ui_items)));
-        ui.set_data(d);
+        let model = ModelRc::from(Rc::new(VecModel::from(ui_items)));
+        ui.set_tray(model);
     });
 }
