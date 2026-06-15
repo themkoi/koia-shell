@@ -30,6 +30,7 @@ export component barWindow inherits Window {
     callback set_brightness(int, int);
     callback tray_item_clicked(string, string, length);
     callback menu_action_executed(string, string);
+    callback manage_touch(bool,length,length,length,length);
     callback tray_exit();
 
     Rectangle {
@@ -46,7 +47,8 @@ export component barWindow inherits Window {
             HorizontalLayout {
                 width: 100%;
                 height: 100%;
-                padding: 0px;
+                padding-top: 2px;
+                padding-bottom: 2px;
                 spacing: 0px;
 
                 Rectangle {
@@ -109,7 +111,6 @@ export component barWindow inherits Window {
 
                 Taskbar {
                     width: 60%;
-                    height: 70%;
                     config: config.taskbar;
                     animation_multiplier: config.interraction.animation-multiplier;
                     workspaces: workspaces;
@@ -123,7 +124,6 @@ export component barWindow inherits Window {
                 }
 
                 TrayRow {
-                    height: 100%;
                     config: config.tray;
                     items: root.data.tray-items;
                     shared-data <=> root.data;
