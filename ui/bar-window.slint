@@ -27,7 +27,7 @@ export component barWindow inherits Window {
     callback set_brightness(int, int);
     callback tray_item_clicked(string, string, length);
     callback menu_action_executed(string, string);
-    callback manage_touch(bool, length, length, length, length);
+    callback manage_touch(string ,bool, length, length, length, length);
 
     Rectangle {
         width: 100%;
@@ -141,10 +141,10 @@ export component barWindow inherits Window {
         menu-data: root.trayMenu;
         animation_multiplier: config.interraction.animation-multiplier;
         changed height => {
-            root.manage_touch(root.trayMenu.visible, self.x, self.y, self.width, self.height);
+            root.manage_touch("TrayMenu" ,root.trayMenu.visible, self.x, self.y, self.width, self.height);
         }
         changed x => {
-            root.manage_touch(root.trayMenu.visible, self.x, self.y, self.width, self.height);
+            root.manage_touch("TrayMenu" ,root.trayMenu.visible, self.x, self.y, self.width, self.height);
         }
 
         menu_action_executed(item_id, action_id) => {

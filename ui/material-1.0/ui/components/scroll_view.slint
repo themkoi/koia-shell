@@ -160,11 +160,11 @@ export component ScrollView {
 
                 if (root.horizontal_scroll) {
                     let max_scroll = Math.min(0px, -(flickable.viewport_width - flickable.width));
-                    root.scroll_x_target = Math.max(max_scroll, Math.min(0px, root.scroll_x_target + adjusted_delta));
+                    root.scroll_x_target = Math.max(max_scroll, Math.min(0px, root.scroll_x_target - adjusted_delta));
                     root.scroll_y_target = 0px;
                 } else {
                     let max_scroll = Math.min(0px, -(flickable.viewport_height - flickable.height));
-                    root.scroll_y_target = Math.max(max_scroll, Math.min(0px, root.scroll_y_target + adjusted_delta));
+                    root.scroll_y_target = Math.max(max_scroll, Math.min(0px, root.scroll_y_target - adjusted_delta));
                     root.scroll_x_target = 0px;
                 }
                 return accept;

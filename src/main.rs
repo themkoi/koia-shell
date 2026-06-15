@@ -59,7 +59,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .exclusive_zone(config.config.window_config.bar_height.into())
         .layer_type(LayerType::Top)
         .monitor(monitor.clone())
-        .natural_scroll(true)
         .build()
         .unwrap();
 
