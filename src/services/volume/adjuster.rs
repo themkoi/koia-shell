@@ -12,6 +12,7 @@ pub async fn start_volume_adjuster(
 
     if let Some(ui) = ui_weak.upgrade() {
         let audio_service = Arc::clone(&audio_service);
+        let audio_service_on_mute = Arc::clone(&audio_service);
 
         ui.on_set_volume(move |volume, delta| {
             let volume_calc = volume + delta;
@@ -23,6 +24,18 @@ pub async fn start_volume_adjuster(
                 if let Some(device) = audio_service.default_output.get() {
                     let _ = device
                         .set_volume(Volume::stereo(normalized, normalized))
+                        .await;
+                }
+            });
+        });
+
+        ui.on_set_muted(move |muted | {
+            let audio_service = Arc::clone(&audio_service_on_mute);
+
+            tokio::spawn(async move {
+                if let Some(device) = audio_service.default_output.get() {
+                    let _ = device
+                        .set_mute(muted)
                         .await;
                 }
             });
