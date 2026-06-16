@@ -10,6 +10,7 @@ import {TrayRow, TrayContextMenu, TrayItemSlint, ContextMenuDataSlint } from "co
 export struct VolumeDataSlint { volume: int, muted: bool}
 
 export component barWindow inherits Window {
+    cache-rendering-hint: true;
     in property <[Workspace]> workspaces;
     in property <[TrayItemSlint]> tray;
     in property <ContextMenuDataSlint> trayMenu;

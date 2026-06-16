@@ -1,15 +1,10 @@
-use std::{
-    collections::HashMap,
-    path::Path,
-};
+use std::{collections::HashMap, path::Path};
 
 use crate::config_shell::components::taskbar::SortingMode;
-use crate::services::taskbar::cache::{CacheMap, save_cache, set_path};
+use crate::services::taskbar::cache::{save_cache, set_path, CacheMap};
 use crate::services::taskbar::taskbar::State;
 
-use freedesktop_desktop_entry::{
-    default_paths, get_languages_from_env, DesktopEntry, Iter,
-};
+use freedesktop_desktop_entry::{default_paths, get_languages_from_env, DesktopEntry, Iter};
 use freedesktop_icons::lookup;
 
 #[derive(Clone)]
@@ -105,8 +100,18 @@ impl SerializeState {
                 if let Some(cache) = icon_cache.get(&key) {
                     icon_path = cache.icon_path.clone();
 
-                    if *check_cache_validity && Path::new(&icon_path).exists() {
-                        run_lookup = false;
+                    if icon_path.is_empty() {
+                        if *check_cache_validity {
+                            if Path::new(&icon_path).exists() {
+                                run_lookup = false;
+                            } else {
+                                run_lookup = true;
+                            }
+                        } else {
+                            run_lookup = false;
+                        }
+                    } else {
+                        run_lookup = true;
                     }
                 }
 
@@ -117,10 +122,7 @@ impl SerializeState {
                         .with_theme(icon_theme)
                         .find();
 
-                    icon_path = icon
-                        .unwrap_or_default()
-                        .to_string_lossy()
-                        .into_owned();
+                    icon_path = icon.unwrap_or_default().to_string_lossy().into_owned();
 
                     if icon_path.is_empty() {
                         let lower = key.to_lowercase();
@@ -131,10 +133,7 @@ impl SerializeState {
                             .with_theme(icon_theme)
                             .find();
 
-                        icon_path = icon
-                            .unwrap_or_default()
-                            .to_string_lossy()
-                            .into_owned();
+                        icon_path = icon.unwrap_or_default().to_string_lossy().into_owned();
                     }
 
                     if icon_path.is_empty() {
@@ -154,10 +153,7 @@ impl SerializeState {
                             .with_theme(icon_theme)
                             .find();
 
-                        icon_path = icon
-                            .unwrap_or_default()
-                            .to_string_lossy()
-                            .into_owned();
+                        icon_path = icon.unwrap_or_default().to_string_lossy().into_owned();
                     }
                 }
 
@@ -174,8 +170,7 @@ impl SerializeState {
             resolved.insert(key.clone(), path.clone());
         }
 
-        let mut workspaces_map =
-            std::collections::BTreeMap::<u64, Workspace>::new();
+        let mut workspaces_map = std::collections::BTreeMap::<u64, Workspace>::new();
 
         for win in &state.windows {
             let key = win
@@ -209,20 +204,15 @@ impl SerializeState {
                 .push(window);
         }
 
-        let mut workspaces: Vec<Workspace> =
-            workspaces_map.into_values().collect();
+        let mut workspaces: Vec<Workspace> = workspaces_map.into_values().collect();
 
         workspaces.sort_by_key(|ws| ws.id);
 
         for ws in &mut workspaces {
             match sorting_mode {
                 SortingMode::Default => {}
-                SortingMode::AZ => {
-                    ws.windows.sort_by(|a, b| a.app_id.cmp(&b.app_id))
-                }
-                SortingMode::Id => {
-                    ws.windows.sort_by_key(|w| w.id)
-                }
+                SortingMode::AZ => ws.windows.sort_by(|a, b| a.app_id.cmp(&b.app_id)),
+                SortingMode::Id => ws.windows.sort_by_key(|w| w.id),
             }
         }
 

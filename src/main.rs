@@ -90,13 +90,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     MaterialPalette::get(&bar_ui.ui).set_schemes(schemes.clone());
     bar_ui.set_config(config_slint.clone());
 
-    run_taskbar(&config, bar_ui.as_weak());
+    run_taskbar(&config, bar_ui.as_weak()).await;
     start_command_handler(bar_ui.as_weak());
 
-    listen_volume_changes(bar_ui.as_weak());
+    listen_volume_changes(bar_ui.as_weak()).await;
     start_volume_adjuster(bar_ui.as_weak());
 
-    listen_brightness_changes(&config, bar_ui.as_weak());
+    listen_brightness_changes(&config, bar_ui.as_weak()).await;
     start_brightness_adjuster(&config, bar_ui.as_weak());
 
     start_touch_manager(&bar_ui);

@@ -19,7 +19,7 @@ serde = "1.0.228"
 slint = { version = "=1.16.1", default-features = false, features = [
     "accessibility",
     "compat-1-2",
-    "renderer-skia",
+    "renderer-winit-femtovg",
     "std",
     "backend-winit",
     "gettext",
@@ -29,6 +29,7 @@ system-tray = "0.8.6"
 tokio = "1.52.3"
 
 toml = "1.1.2"
+wayle-battery = "0.1.2"
 
 [build-dependencies]
 slint-build = "=1.16.1"

@@ -27,7 +27,7 @@ export component Taskbar inherits Rectangle {
     in-out property <[Workspace]> workspaces;
     in property <TaskbarConfigSlint> config;
     in property <float> animation_multiplier;
-    
+
     callback dispatch_command(string);
 
     ScrollView {
@@ -76,9 +76,9 @@ export component Taskbar inherits Rectangle {
                             icon-size: config.icon-size;
                             text_length: config.max-text-lenght;
                             animation_multiplier: animation_multiplier;
-                            
+
                             text: win.is_hovered_slint ? win.title : "";
-                            
+
                             padding-right: 1rem;
                             icon_color: transparent;
                             border_radius: elevation.border_radius;
@@ -92,11 +92,14 @@ export component Taskbar inherits Rectangle {
                             }
 
                             pointer-event(event) => {
-                                if (event.button == PointerEventButton.left) {
-                                    dispatch_command("niri msg action focus-window --id \{win.id}" );
-                                }
-                                if (event.button == PointerEventButton.middle) {
-                                    dispatch_command("niri msg action close-window --id \{win.id}");
+                                if (event.kind == PointerEventKind.up) {
+
+                                    if (event.button == PointerEventButton.left) {
+                                        dispatch_command("niri msg action focus-window --id \{win.id}");
+                                    }
+                                    if (event.button == PointerEventButton.middle) {
+                                        dispatch_command("niri msg action close-window --id \{win.id}");
+                                    }
                                 }
                             }
                         }

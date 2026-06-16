@@ -1,46 +1,59 @@
 use std::path::Path;
 use std::rc::Rc;
-use std::{fs, thread};
 
 use log::{debug, info};
 use niri_ipc::{socket::Socket, Event, Request, Window};
-use slint::{Image, ModelRc, VecModel, Model};
+use slint::{Image, Model, ModelRc, VecModel};
 
 use crate::barWindow;
 use crate::services::taskbar::cache::{get_cache_folder, load_cache};
-use crate::services::taskbar::serialize::SerializeState; // Import directly from here
+use crate::services::taskbar::serialize::SerializeState;
 
-pub fn run_taskbar(
+pub async fn run_taskbar(
     config: &crate::config::AppConfig,
     ui_weak: slint::Weak<barWindow>,
-) -> thread::JoinHandle<()> {
+) -> tokio::task::JoinHandle<()> {
     info!("starting taskbar");
-    let config_internal = config.config.clone();
+    
     let mut cache_folder = get_cache_folder();
     cache_folder.push("icons");
-    fs::create_dir_all(&cache_folder).ok();
+    
+    tokio::fs::create_dir_all(&cache_folder).await.unwrap();
 
-    thread::spawn(move || {
+    let config_internal = config.config.clone();
+    let config_internal_task = config_internal.clone();
+    let ui_weak_task = ui_weak.clone();
+
+    tokio::spawn(async move {
         let mut state = State::new();
         let mut icon_cache = load_cache();
 
-        let icon_size = config_internal.taskbar_config.icon_size;
-        let icon_theme = config_internal.icon_theme.clone();
-        let separate_workspaces = config_internal.taskbar_config.seperate_workspaces;
-        let sorting_mode = config_internal.taskbar_config.sorting_mode.clone();
+        let icon_size = config_internal_task.taskbar_config.icon_size;
+        let icon_theme = config_internal_task.icon_theme.clone();
+        let separate_workspaces = config_internal_task.taskbar_config.separate_workspaces;
+        let sorting_mode = config_internal_task.taskbar_config.sorting_mode.clone();
         let check_cache_validity = true;
 
-        let mut socket = match std::env::var("NIRI_SOCKET") {
-            Ok(sock) => Socket::connect_to(sock).unwrap_or_else(|_| Socket::connect().unwrap()),
-            Err(_) => Socket::connect().unwrap(),
-        };
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<Event>();
 
-        let _ = socket.send(Request::EventStream);
-        let mut events = socket.read_events();
+        tokio::task::spawn_blocking(move || {
+            let mut socket = match std::env::var("NIRI_SOCKET") {
+                Ok(sock) => Socket::connect_to(sock).unwrap_or_else(|_| Socket::connect().unwrap()),
+                Err(_) => Socket::connect().unwrap(),
+            };
 
-        while let Ok(event) = events() {
+            let _ = socket.send(Request::EventStream);
+            let mut events = socket.read_events();
 
-            state.update_with_event(event, &config_internal);
+            while let Ok(event) = events() {
+                if tx.send(event).is_err() {
+                    break;
+                }
+            }
+        });
+
+        while let Some(event) = rx.recv().await {
+            state.update_with_event(event, &config_internal_task);
 
             let serialized_state = SerializeState::from_parts(
                 &state,
@@ -75,10 +88,9 @@ pub fn run_taskbar(
                 paths_to_pass.push((ws.id, windows_paths));
             }
 
-            let ui_weak_clone = ui_weak.clone();
+            let ui_weak_clone = ui_weak_task.clone();
 
             slint::invoke_from_event_loop(move || {
-
                 if let Some(ui) = ui_weak_clone.upgrade() {
                     let mut currently_hovered_id: Option<i32> = None;
 
