@@ -8,6 +8,7 @@ import { Workspace, Taskbar } from "components/taskbar.slint";
 import {TrayRow, TrayContextMenu, TrayItemSlint, ContextMenuDataSlint } from "components/tray.slint";
 
 export struct VolumeDataSlint { volume: int, muted: bool}
+export struct BatteryDataSlint { percentage: int, state: string}
 
 export component barWindow inherits Window {
     cache-rendering-hint: true;
@@ -15,6 +16,7 @@ export component barWindow inherits Window {
     in property <[TrayItemSlint]> tray;
     in property <ContextMenuDataSlint> trayMenu;
     in property <int> brightness;
+    in property <BatteryDataSlint> batteryData;
     in property <VolumeDataSlint> volumeData;
 
     in property <ConfigSlint> config;
