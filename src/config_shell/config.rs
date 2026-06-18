@@ -25,7 +25,6 @@ pub struct InterractionConfig {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct WindowConfig {
-    pub total_bar_height: u16,
     pub bar_height: u16,
 }
 
@@ -51,7 +50,7 @@ impl Default for Config {
         Self {
             icon_theme: "Papirus-Dark".to_string(),
             default_display: "DP-3".to_string(),
-            window_config: WindowConfig { total_bar_height: 550, bar_height: 38 },
+            window_config: WindowConfig { bar_height: 38 },
             hardware_config: HardwareConfig { brightness_device: "amdgpu_bl1".to_string() },
             interraction_config: InterractionConfig {animation_multiplier: 1.0, volume_scroll_step: 3, brightness_scroll_step: 5 },
             taskbar_config: default_taskbar(),

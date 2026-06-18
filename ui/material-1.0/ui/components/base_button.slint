@@ -69,7 +69,7 @@ export component BaseButton inherits StateLayerArea {
             width: root.text == "" ? 0px : (text_length == 0px ? self.preferred-width : text_length);
             animate width {
                 duration: 150ms * animation_multiplier;
-                easing: ease-in-out-quart;
+                easing: ease-in-out-back;
             }
             horizontal-alignment: center;
             text: root.text;

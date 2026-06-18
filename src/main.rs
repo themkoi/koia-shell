@@ -4,7 +4,7 @@ use spell_framework::{
     self, cast_spell,
     layer_properties::{Dimension, LayerAnchor, LayerType, WindowConf},
 };
-use std::{env};
+use std::env;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
@@ -30,7 +30,7 @@ use crate::{
     config_shell::{components::theme::build_config_palette, config::build_config_slint},
     helpers::touch_area::manager::start_touch_manager,
     services::{
-        battery::listener::listen_battery_changes, brightness::start_brightness_management, taskbar::taskbar::run_taskbar, tray::manager::start_system_tray, volume::start_volume_management
+        battery::listener::listen_battery_changes, brightness::start_brightness_management, power_profiles::start_power_profile_management, taskbar::taskbar::run_taskbar, tray::manager::start_system_tray, volume::start_volume_management
     },
 };
 
@@ -52,7 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let bar_conf = WindowConf::builder()
         .width(Dimension::Full)
-        .height(config.config.window_config.total_bar_height as u32)
+        .height(Dimension::Full)
         .anchor_1(LayerAnchor::TOP)
         .margins(0, 0, 0, 0)
         .exclusive_zone(config.config.window_config.bar_height.into())
@@ -75,12 +75,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // bar init
     let bar_ui = barWindowSpell::invoke_spell("bar", bar_conf);
     let window_width = bar_ui.get_window_width();
+    let window_height = bar_ui.get_window_height();
+
     bar_ui.subtract_input_region(
         0,
         config.config.window_config.bar_height.into(),
         window_width as i32,
-        config.config.window_config.total_bar_height as i32
-            - config.config.window_config.bar_height as i32,
+        (window_height - config.config.window_config.bar_height as f32) as i32,
     );
 
     if args.theme == "dark" {
@@ -92,12 +93,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     run_taskbar(&config, bar_ui.as_weak()).await;
 
     start_volume_management(bar_ui.as_weak()).await;
-
     start_brightness_management(&config, bar_ui.as_weak()).await;
+    start_power_profile_management(bar_ui.as_weak()).await;
 
     listen_battery_changes(bar_ui.as_weak()).await;
 
-    start_touch_manager(&bar_ui);
+    start_touch_manager(&config, window_width,window_height, &bar_ui);
     start_command_handler(bar_ui.as_weak());
 
     start_system_tray(&config, bar_ui.as_weak()).await;

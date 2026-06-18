@@ -113,13 +113,13 @@ export component TrayContextMenu inherits Rectangle {
 
     callback menu_action_executed(string, string);
     animate x {
-        duration: 150ms * animation_multiplier;
-        easing: ease-in-out-quart;
+        duration: 300ms * animation_multiplier;
+        easing: ease-in-out-back;
     }
     clip: true;
     animate height {
-        duration: 300ms * animation_multiplier;
-        easing: ease-in-out-quart;
+        duration: 350ms * animation_multiplier;
+        easing: ease-in-out-back;
     }
     width: config.width;
     height: root.menu-data.visible ? Math.min(layout.preferred-height + 30px, config.max-height) : 0px;
@@ -225,6 +225,7 @@ export component TrayContextMenu inherits Rectangle {
                                             font-size: MaterialTypography.label_medium.font-size;
                                             font-weight: action.depth > 0 ? MaterialTypography.label_small.font_weight : MaterialTypography.label_medium.font_weight;
                                             vertical-alignment: center;
+                                            overflow: elide;
                                         }
                                     }
                                 }

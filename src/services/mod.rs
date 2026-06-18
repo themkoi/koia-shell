@@ -3,3 +3,4 @@ pub(crate) mod volume;
 pub(crate) mod brightness;
 pub(crate) mod tray;
 pub(crate) mod battery;
+pub(crate) mod power_profiles;

@@ -5,7 +5,12 @@ import { MaterialPalette } from "@material/material.slint";
 import { TaskbarConfigSlint, ConfigSlint } from "shared-items.slint";
 
 import { Workspace, Taskbar } from "components/taskbar.slint";
-import {TrayRow, TrayContextMenu, TrayItemSlint, ContextMenuDataSlint } from "components/tray.slint";
+import {
+    TrayRow,
+    TrayContextMenu,
+    TrayItemSlint,
+    ContextMenuDataSlint,
+} from "components/tray.slint";
 
 export struct VolumeDataSlint { volume: int, muted: bool}
 export struct BatteryDataSlint { percentage: int, state: string}
@@ -13,27 +18,32 @@ export struct BatteryDataSlint { percentage: int, state: string}
 export component barWindow inherits Window {
     in property <[Workspace]> workspaces;
     in property <[TrayItemSlint]> tray;
-    in property <ContextMenuDataSlint> trayMenu;
+    in-out property <ContextMenuDataSlint> trayMenu;
     in property <int> brightness;
     in property <BatteryDataSlint> batteryData;
     in property <VolumeDataSlint> volumeData;
+    in property <string> powerProfile;
 
     in property <ConfigSlint> config;
     in-out property <length> window_width <=> self.width;
+    in-out property <length> window_height <=> self.height;
 
     default-font-size: 10px;
     background: transparent;
 
     callback run_command(string);
+
     callback set_volume(int, int);
     callback set_muted(bool);
     callback set_brightness(int, int);
+    callback set_power_profile(string);
+
     callback tray_item_clicked(string, string, length);
     callback menu_action_executed(string, string);
-    callback manage_touch(string ,bool, length, length, length, length);
+
+    callback manage_touch(string, bool);
 
     Rectangle {
-        cache-rendering-hint: true;
         width: 100%;
         height: 100%;
 
@@ -140,17 +150,24 @@ export component barWindow inherits Window {
         }
     }
 
+    TouchArea {
+        width: 100%;
+        height: 100%;
+        y: config.window.bar-height;
+        
+        clicked => {
+            root.trayMenu.visible = false;
+        }
+    }
+
     TrayContextMenu {
         x: root.trayMenu.x-pos - self.width / 2;
         y: config.window.bar-height + 4px;
         config: config.tray;
         menu-data: root.trayMenu;
         animation_multiplier: config.interraction.animation-multiplier;
-        changed height => {
-            root.manage_touch("TrayMenu" ,root.trayMenu.visible, self.x, self.y, self.width, self.height);
-        }
-        changed x => {
-            root.manage_touch("TrayMenu" ,root.trayMenu.visible, self.x, self.y, self.width, self.height);
+        changed menu-data => {
+            root.manage_touch("TrayMenu",root.trayMenu.visible);
         }
 
         menu_action_executed(item_id, action_id) => {

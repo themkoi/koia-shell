@@ -20,18 +20,20 @@ serde = "1.0.228"
 slint = { version = "=1.16.1", default-features = false, features = [
     "accessibility",
     "compat-1-2",
-    "renderer-winit-femtovg",
+    "renderer-winit-software",
     "std",
     "backend-winit",
     "gettext",
 ] }
 spell-framework = { git = "https://github.com/VimYoung/Spell", ver = "f44fcf91539aef28a886dbc4da6a3a7c4bb2361a" }
-system-tray = "0.8.6"
 tokio = "1.52.3"
-
 toml = "1.1.2"
+
 wayle-audio = "0.1.4"
 wayle-battery = "0.1.2"
+system-tray = "0.8.6"
+wayle-power-profiles = "0.1.4"
+
 
 [build-dependencies]
 slint-build = "=1.16.1"
