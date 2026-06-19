@@ -15,7 +15,6 @@ use crate::{
     ConfigSlint, TaskbarConfigSlint,
 };
 
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct InterractionConfig {
     pub animation_multiplier: f32,

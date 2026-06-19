@@ -116,6 +116,8 @@ export component ScrollView {
     in property <bool> overlay_scrollbars: false;
     in property <bool> horizontal_scroll: false;
 
+    in property <bool> hide_scrollbars: false;
+
     in_out property <bool> has_focus;
     callback scrolled <=> flickable.flicked;
 
@@ -131,6 +133,7 @@ export component ScrollView {
     vertical_stretch: 1;
     preferred_height: 100%;
     preferred_width: 100%;
+
     flickable := Flickable {
         x: 0;
         y: 0;
@@ -174,21 +177,20 @@ export component ScrollView {
         @children
     }
 
-
     left_shadow := Rectangle {
         x: 0;
         y: 0;
         width: 15px;
-        height: flickable.height + horizontal_bar.height;
+        height: root.height;
         opacity: flickable.viewport_x < 0px ? 1.0 : 0.0;
         animate opacity { duration: 200ms; }
-        clip: true; 
+        clip: true;
 
         Rectangle {
             x: -5px;
-            y: 25px;
+            y: 0px;
             width: 5px;
-            height: parent.height - 50px; 
+            height: parent.height;
             background: rgba(0, 0, 0, 0.60);
             drop-shadow-blur: 12px;
             drop-shadow-color: rgba(0, 0, 0, 0.90);
@@ -199,16 +201,16 @@ export component ScrollView {
         x: flickable.width - self.width;
         y: 0;
         width: 15px;
-        height: flickable.height + horizontal_bar.height;
+        height: root.height;
         opacity: (flickable.viewport_width + flickable.viewport_x) > flickable.width ? 1.0 : 0.0;
         animate opacity { duration: 200ms; }
         clip: true;
 
         Rectangle {
             x: parent.width;
-            y: 25px;
+            y: 0px;
             width: 5px;
-            height: parent.height - 50px;
+            height: parent.height;
             background: rgba(0, 0, 0, 0.60);
             drop-shadow-blur: 12px;
             drop-shadow-color: rgba(0, 0, 0, 0.90);
@@ -218,16 +220,16 @@ export component ScrollView {
     top_shadow := Rectangle {
         x: 0;
         y: 0;
-        width: flickable.width + vertical_bar.width;
+        width: root.width;
         height: 15px;
         opacity: root.horizontal_scroll ? 0.0 : (flickable.viewport_y < 0px ? 1.0 : 0.0);
         animate opacity { duration: 200ms; }
         clip: true;
 
         Rectangle {
-            x: 25px;
-            y: -5px; 
-            width: parent.width - 50px; 
+            x: 0px;
+            y: -5px;
+            width: parent.width;
             height: 5px;
             background: rgba(0, 0, 0, 0.60);
             drop-shadow-blur: 12px;
@@ -238,16 +240,16 @@ export component ScrollView {
     bottom_shadow := Rectangle {
         x: 0;
         y: flickable.height - self.height;
-        width: flickable.width + vertical_bar.width;
+        width: root.width;
         height: 15px;
         opacity: root.horizontal_scroll ? 0.0 : ((flickable.viewport_height + flickable.viewport_y) > flickable.height ? 1.0 : 0.0);
         animate opacity { duration: 200ms; }
         clip: true;
 
         Rectangle {
-            x: 25px;
+            x: 0px;
             y: parent.height;
-            width: parent.width - 50px;
+            width: parent.width;
             height: 5px;
             background: rgba(0, 0, 0, 0.60);
             drop-shadow-blur: 12px;
@@ -255,9 +257,9 @@ export component ScrollView {
         }
     }
 
-
     vertical_bar := ScrollBar {
         enabled: root.enabled && !root.horizontal_scroll;
+        visible: !hide_scrollbars;
         x: root.overlay_scrollbars ? parent.width - self.width - root.scroll_bar_padding : flickable.width + root.scroll_bar_padding;
         y: 0;
         width: root.vertical_scrollbar_policy != ScrollBarPolicy.always_off && !root.horizontal_scroll ? root.scroll_bar_size : 0;
@@ -276,6 +278,7 @@ export component ScrollView {
 
     horizontal_bar := ScrollBar {
         enabled: root.enabled;
+        visible: !hide_scrollbars;
         width: root.overlay_scrollbars ? parent.width : (vertical_bar.visible ? parent.width - vertical_bar.width : parent.width);
         height: root.horizontal_scrollbar_policy != ScrollBarPolicy.always_off || root.horizontal_scroll ? root.scroll_bar_size : 0;
         x: 0;

@@ -31,147 +31,168 @@ export component Taskbar inherits Rectangle {
     in-out property <[Workspace]> workspaces;
     in property <ConfigSlint> config;
     in property <float> animation_multiplier;
+    
+    in property <length> indicator_max_width: 1500px; 
+    in property <length> taskbar_max_width: 1000px;
 
     callback dispatch_command(string);
 
-    property <bool> is_expanded: touch.has-hover;
+    out property <bool> is_expanded: touch.has-hover;
 
     height: is_expanded ? config.window.bar-height : 7px;
-    max-width: 100px;
 
     animate height {
-        duration: 200ms * animation_multiplier;
+        duration: 100ms * animation_multiplier;
         easing: ease-in-out;
     }
 
     touch := TouchArea {
-        width: 100%;
+        width: is_expanded ? clamp(taskLay.preferred-width,0px,taskbar_max_width) + 40px : clamp(indicatorRect.preferred-width,0px,indicator_max_width);
         height: 100%;
 
         init-layout := VerticalLayout {
             height: 100%;
             width: 100%;
 
-            Rectangle {
-                height: is_expanded ? config.window.bar-height : 0px;
-                width: taskLay.preferred-width + 30px;
-                opacity: is_expanded ? 1.0 : 0.0;
+            HorizontalLayout {
+                alignment: center;
+                
+                Rectangle {
+                    width: 100%;
+                    height: is_expanded ? config.window.bar-height : 0px;
 
-                animate opacity {
-                    duration: 150ms * animation_multiplier;
-                    easing: ease-in-out;
-                }
-                animate height {
-                    duration: 200ms * animation_multiplier;
-                    easing: ease-in-out;
-                }
-
-                Path {
-                    width: is_expanded ? (config.window.bar-height + 5px) - MaterialStyleMetrics.border_radius_16 : 0px;
-                    height: is_expanded ? (config.window.bar-height + 5px) - MaterialStyleMetrics.border_radius_16 : 0px;
-                    y: 0px;
-                    x: -self.width + 1px;
-                    animate height {
-                        duration: 200ms * animation_multiplier;
-                        easing: ease-in-out;
-                    }
                     animate width {
-                        duration: 200ms * animation_multiplier;
+                        duration: 150ms * animation_multiplier;
+                        easing: ease-in-out;
+                    }
+                    animate height {
+                        duration: 100ms * animation_multiplier;
                         easing: ease-in-out;
                     }
 
-                    fill: MaterialPalette.surface_container;
-                    fill-rule: evenodd;
-                    commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
-                }
+                    Path {
+                        width: is_expanded ? (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16 : 0px;
+                        height: is_expanded ? (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16 : 0px;
+                        y: 0px;
+                        x: -self.width;
+                        animate height {
+                            duration: 100ms * animation_multiplier;
+                            easing: ease-in-out;
+                        }
+                        animate width {
+                            duration: 100ms * animation_multiplier;
+                            easing: ease-in-out;
+                        }
 
-                taskRect := Rectangle {
-                    background: MaterialPalette.surface_container;
-                    border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
-                    border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
+                        fill: MaterialPalette.surface_container;
+                        fill-rule: evenodd;
+                        commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
+                    }
 
-                    HorizontalLayout {
-                        padding-left: 15px;
-                        padding-right: 15px;
-                        padding-bottom: 2px;
-                        scroll := ScrollView {
-                            overlay_scrollbars: true;
-                            horizontal_scroll: true;
+                    Path {
+                        width: is_expanded ? (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16 : 0px;
+                        height: is_expanded ? (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16 : 0px;
+                        y: 0px;
+                        x: taskRect.width;
+                        animate height {
+                            duration: 100ms * animation_multiplier;
+                            easing: ease-in-out;
+                        }
+                        animate width {
+                            duration: 100ms * animation_multiplier;
+                            easing: ease-in-out;
+                        }
+                        fill: MaterialPalette.surface_container;
+                        commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
+                    }
 
-                            taskLay := HorizontalLayout {
-                                alignment: center;
-                                height: 100%;
-                                spacing: 4px;
-                                padding-left: 8px;
-                                padding-right: 8px;
+                    taskRect := Rectangle {
+                        background: MaterialPalette.surface_container;
+                        border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
+                        border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
 
-                                for ws[i] in root.workspaces: Rectangle {
-                                    border_radius: MaterialStyleMetrics.border_radius_28;
-                                    background: MaterialPalette.surface_bright;
+                        HorizontalLayout {
+                            padding-left: 20px;
+                            padding-right: 20px;
+                            padding-bottom: 2px;
+                            scroll := ScrollView {
+                                overlay_scrollbars: true;
+                                horizontal_scroll: true;
+
+                                taskLay := HorizontalLayout {
+                                    alignment: center;
                                     height: 100%;
-                                    width: layout.preferred-width;
+                                    spacing: 4px;
+                                    padding-left: 8px;
+                                    padding-right: 8px;
 
-                                    layout := HorizontalLayout {
+                                    for ws[i] in root.workspaces: Rectangle {
+                                        border_radius: MaterialStyleMetrics.border_radius_28;
+                                        background: MaterialPalette.surface_bright;
                                         height: 100%;
-                                        spacing: 4px;
-                                        padding: 2px;
+                                        width: layout.preferred-width;
 
-                                        for win[j] in ws.windows: Rectangle {
+                                        layout := HorizontalLayout {
                                             height: 100%;
-                                            width: base.preferred-width;
+                                            spacing: 4px;
+                                            padding: 2px;
 
-                                            callback clicked <=> base.clicked;
-
-                                            accessible-role: button;
-                                            accessible-enabled: win.is_focused;
-                                            accessible-action-default => {
-                                                base.clicked();
-                                            }
-
-                                            elevation := Elevation {
-                                                border_radius: MaterialStyleMetrics.border_radius_28;
-                                                background: MaterialPalette.primary;
-                                                width: 100%;
+                                            for win[j] in ws.windows: Rectangle {
                                                 height: 100%;
-                                            }
+                                                width: base.preferred-width;
 
-                                            base := BaseButton {
-                                                icon: win.icon;
-                                                icon-size: config.taskbar.icon-size;
+                                                callback clicked <=> base.clicked;
 
-                                                icon_color: transparent;
-                                                border_radius: elevation.border_radius;
-                                                color: MaterialPalette.on_primary;
-                                                height: 100%;
-                                                button_horizontal_padding: 3px;
-
-                                                property <bool> hover_sentinel: self.has-hover;
-                                                changed hover_sentinel => {
-                                                    win.is_hovered_slint = hover_sentinel;
+                                                accessible-role: button;
+                                                accessible-enabled: win.is_focused;
+                                                accessible-action-default => {
+                                                    base.clicked();
                                                 }
 
-                                                pointer-event(event) => {
-                                                    if (event.kind == PointerEventKind.up) {
-                                                        if (event.button == PointerEventButton.left) {
-                                                            dispatch_command("niri msg action focus-window --id \{win.id}");
-                                                        }
-                                                        if (event.button == PointerEventButton.middle) {
-                                                            dispatch_command("niri msg action close-window --id \{win.id}");
+                                                elevation := Elevation {
+                                                    border_radius: MaterialStyleMetrics.border_radius_28;
+                                                    background: MaterialPalette.primary;
+                                                    width: 100%;
+                                                    height: 100%;
+                                                }
+
+                                                base := BaseButton {
+                                                    icon: win.icon;
+                                                    icon-size: config.taskbar.icon-size;
+
+                                                    icon_color: transparent;
+                                                    border_radius: elevation.border_radius;
+                                                    color: MaterialPalette.on_primary;
+                                                    height: 100%;
+                                                    button_horizontal_padding: 3px;
+
+                                                    property <bool> hover_sentinel: self.has-hover;
+                                                    changed hover_sentinel => {
+                                                        win.is_hovered_slint = hover_sentinel;
+                                                    }
+
+                                                    pointer-event(event) => {
+                                                        if (event.kind == PointerEventKind.up) {
+                                                            if (event.button == PointerEventButton.left) {
+                                                                dispatch_command("niri msg action focus-window --id \{win.id}");
+                                                            }
+                                                            if (event.button == PointerEventButton.middle) {
+                                                                dispatch_command("niri msg action close-window --id \{win.id}");
+                                                            }
                                                         }
                                                     }
                                                 }
+
+                                                states [
+                                                    disabled when !win.is_focused: {
+                                                        elevation.background: transparent;
+                                                        base.color: MaterialPalette.on_surface;
+                                                    }
+                                                    hover when win.is_hovered_slint && !base.pressed && !base.enter_pressed: {
+                                                        elevation.level: 2;
+                                                    }
+                                                ]
                                             }
-
-
-                                            states [
-                                                disabled when !win.is_focused: {
-                                                    elevation.background: transparent;
-                                                    base.color: MaterialPalette.on_surface;
-                                                }
-                                                hover when win.is_hovered_slint && !base.pressed && !base.enter_pressed: {
-                                                    elevation.level: 2;
-                                                }
-                                            ]
                                         }
                                     }
                                 }
@@ -179,70 +200,78 @@ export component Taskbar inherits Rectangle {
                         }
                     }
                 }
-
-                Path {
-                    width: is_expanded ? (config.window.bar-height + 5px) - MaterialStyleMetrics.border_radius_16 : 0px;
-                    height: is_expanded ? (config.window.bar-height + 5px) - MaterialStyleMetrics.border_radius_16 : 0px;
-                    y: 0px;
-                    x: taskRect.width - 1px;
-                    animate height {
-                        duration: 200ms * animation_multiplier;
-                        easing: ease-in-out;
-                    }
-                    animate width {
-                        duration: 200ms * animation_multiplier;
-                        easing: ease-in-out;
-                    }
-                    fill: MaterialPalette.surface_container;
-                    commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
-                }
             }
 
             HorizontalLayout {
                 alignment: center;
-
-                height: !is_expanded ? 12px : 0px;
-                opacity: !is_expanded ? 1.0 : 0.0;
-
-                animate opacity {
-                    duration: 5ms * animation_multiplier;
-                    easing: ease-in-out;
-                }
-                animate height {
-                    duration: 200ms * animation_multiplier;
-                    easing: ease-in-out;
-                }
-
-                spacing: 6px;
-
-                for ws[i] in root.workspaces: Rectangle {
-                    background: MaterialPalette.surface_bright;
+                
+                Rectangle {
+                    width: 100%;                    
+                    background: rgba(
+                        MaterialPalette.surface_tint.red,
+                        MaterialPalette.surface_tint.green,
+                        MaterialPalette.surface_tint.blue,
+                        0.5
+                    );
                     height: 7px;
+                    opacity: !is_expanded ? 1.0 : 0.0;
 
-                    y: 0px;
+                    animate opacity {
+                        duration: 100ms * animation_multiplier;
+                        easing: ease-in-out;
+                    }
 
                     border-top-left-radius: 0px;
                     border-top-right-radius: 0px;
                     border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
                     border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
-
-                    HorizontalLayout {
-                        padding-left: 3px;
-                        padding-right: 3px;
-                        padding-bottom: 0px;
-                        padding-top: 0px;
-                        spacing: 3px;
+                    clip:true;
+                    
+                    ScrollView {
+                        width: 100%;
                         height: 100%;
+                        horizontal_scroll: true;
+                        overlay_scrollbars: true; 
+                        hide_scrollbars: true;
 
-                        for win[j] in ws.windows: Rectangle {
-                            width: 25px;
-                            height: 5px;
-                            background: win.is_focused ? MaterialPalette.primary : MaterialPalette.surface_variant;
+                        indicatorRect :=  HorizontalLayout {
+                            spacing: 10px;
+                            alignment: center;
+                            
+                            for ws[i] in root.workspaces: Rectangle {
+                                background: MaterialPalette.surface_container;
+                                height: 7px;
+                                y: 0px;
 
-                            border-top-left-radius: 0px;
-                            border-top-right-radius: 0px;
-                            border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
-                            border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
+                                border-top-left-radius: 0px;
+                                border-top-right-radius: 0px;
+                                border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
+                                border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
+
+                                HorizontalLayout {
+                                    padding-left: 3px;
+                                    padding-right: 3px;
+                                    padding-bottom: 0px;
+                                    padding-top: 0px;
+                                    spacing: 3px;
+                                    height: 100%;
+
+                                    for win[j] in ws.windows: Rectangle {
+                                        width: win.is_focused ? 25px : 17px;
+                                        height: 5px;
+                                        background: win.is_focused ? MaterialPalette.primary : MaterialPalette.surface_variant;
+                                        animate width {
+                                            duration: 1000ms * animation_multiplier;
+                                            easing: ease-in-out;
+                                        }
+
+                                        border-top-left-radius: 0px;
+                                        border-top-right-radius: 0px;
+                                        border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
+                                        border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
+                                    }
+                                }
+                            }
                         }
                     }
                 }

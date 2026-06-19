@@ -30,7 +30,7 @@ use crate::{
     config_shell::{components::theme::build_config_palette, config::build_config_slint},
     helpers::touch_area::manager::start_touch_manager,
     services::{
-        battery::listener::listen_battery_changes, brightness::start_brightness_management, power_profiles::start_power_profile_management, taskbar::taskbar::run_taskbar, tray::manager::start_system_tray, volume::start_volume_management
+        battery::listener::listen_battery_changes, brightness::start_brightness_management, power_profiles::start_power_profile_management, taskbar::taskbar::run_taskbar, time::provider::provide_time, tray::manager::start_system_tray, volume::start_volume_management
     },
 };
 
@@ -95,8 +95,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     start_volume_management(bar_ui.as_weak()).await;
     start_brightness_management(&config, bar_ui.as_weak()).await;
     start_power_profile_management(bar_ui.as_weak()).await;
-
     listen_battery_changes(bar_ui.as_weak()).await;
+    provide_time(bar_ui.as_weak()).await;
 
     start_touch_manager(&config, window_width,window_height, &bar_ui);
     start_command_handler(bar_ui.as_weak());

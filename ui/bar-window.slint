@@ -1,7 +1,11 @@
 import { Palette } from "std-widgets.slint";
 import { FilledButton, Elevation } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
-import { MaterialPalette } from "@material/material.slint";
+import {
+    MaterialPalette,
+    MaterialStyleMetrics,
+    MaterialTypography,
+} from "@material/material.slint";
 import { TaskbarConfigSlint, ConfigSlint } from "shared-items.slint";
 
 import { Workspace, Taskbar } from "components/taskbar.slint";
@@ -11,9 +15,16 @@ import {
     TrayItemSlint,
     ContextMenuDataSlint,
 } from "components/tray.slint";
+import { ProfilesRow } from "components/profiles.slint";
+
 
 export struct VolumeDataSlint { volume: int, muted: bool}
 export struct BatteryDataSlint { percentage: int, state: string}
+
+export struct TimeDataSlint { hour: int, minute: int}
+export struct DateDataSlint { day: int, month: int, year: int}
+export struct StringDateDataSlint { day: string, month: string, year: string}
+
 
 export component barWindow inherits Window {
     in property <[Workspace]> workspaces;
@@ -23,6 +34,10 @@ export component barWindow inherits Window {
     in property <BatteryDataSlint> batteryData;
     in property <VolumeDataSlint> volumeData;
     in property <string> powerProfile;
+
+    in property <TimeDataSlint> timeData;
+    in property <DateDataSlint> dateData;
+    in property <StringDateDataSlint> stringDateData;
 
     in property <ConfigSlint> config;
     in-out property <length> window_width <=> self.width;
@@ -56,62 +71,32 @@ export component barWindow inherits Window {
             HorizontalLayout {
                 width: 100%;
                 height: 100%;
-                padding-top: 2px;
-                padding-bottom: 2px;
                 spacing: 4px;
-
-                Rectangle {
+                rectLeft := Rectangle {
                     height: 100%;
-                    width: 100px;
-                    elevation := Elevation {
-                        border_radius: root.height / 2;
-                        background: MaterialPalette.primary;
-                        width: 100%;
-                        height: 100%;
+
+                    background: MaterialPalette.surface_container;
+                    border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
+
+                    Path {
+                        width: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
+                        height: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
+                        y: 0px;
+                        x: rectLeft.width;
+                        fill: MaterialPalette.surface_container;
+                        commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
                     }
 
-                    base := BaseButton {
-                        text: volumeData.muted ? "muted" : volumeData.volume;
-                        color: black;
-                        width: 100%;
-                        height: 100%;
-                        clicked() => {
-                            set_muted(!volumeData.muted);
-                        }
-                        scroll-event(event) => {
-                            if event.delta_y < 0px {
-                                set_volume(volumeData.volume, config.interraction.volume-scroll-step);
-                            } else if event.delta_y > 0px {
-                                set_volume(volumeData.volume,-config.interraction.volume-scroll-step);
+                    HorizontalLayout {
+                        padding-left: 10px;
+                        padding-right: 10px;
+                        padding-top: 2px;
+                        padding-bottom: 2px;
+                        ProfilesRow {
+                            set_power_profile(profile) => {
+                                set_power_profile(profile);
                             }
-                            accept
-                        }
-                    }
-                }
-
-                Rectangle {
-                    height: 100%;
-                    width: 100px;
-                    Elevation {
-                        border_radius: root.height / 2;
-                        background: MaterialPalette.primary;
-                        width: 100%;
-                        height: 100%;
-                    }
-
-                    BaseButton {
-                        text: brightness;
-                        color: black;
-                        width: 100%;
-                        height: 100%;
-
-                        scroll-event(event) => {
-                            if event.delta_y < 0px {
-                                set_brightness(brightness, config.interraction.brightness-scroll-step);
-                            } else if event.delta_y > 0px {
-                                set_brightness(brightness,-config.interraction.brightness-scroll-step);
-                            }
-                            accept
+                            powerProfile: powerProfile;
                         }
                     }
                 }
@@ -140,8 +125,60 @@ export component barWindow inherits Window {
     }
 
     HorizontalLayout {
-        y:0px;
-        x:0px;
+        x: 0px;
+        y: 0px;
+        width: 100%;
+        height: config.window.bar-height;
+        alignment: center;
+        Rectangle {
+            width: 100%;
+
+            rectMiddle := Rectangle {
+                width: layoutMiddle.preferred-width;
+                background: MaterialPalette.surface_container;
+                border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
+                border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
+
+                Path {
+                    width: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
+                    height: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
+                    y: 0px;
+                    x: -self.width;
+                    fill: MaterialPalette.surface_container;
+                    fill-rule: evenodd;
+                    commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
+                }
+
+                layoutMiddle := HorizontalLayout {
+                    y: 0px;
+                    x: 0px;
+                    width: 100%;
+                    alignment: center;
+                    padding-left: 10px;
+                    padding-right: 10px;
+                    padding-top: 8px;
+                    Text {
+                        text: (root.timeData.hour < 10 ? "0" : "") + root.timeData.hour + ":" + (root.timeData.minute < 10 ? "0" : "") + root.timeData.minute;
+                        font-size: MaterialTypography.title_medium.font-size;
+                        font-weight: MaterialTypography.title_medium.font-weight;
+                    }
+                }
+
+                Path {
+                    width: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
+                    height: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
+                    y: 0px;
+                    x: rectMiddle.width;
+                    fill: MaterialPalette.surface_container;
+                    commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
+                }
+            }
+        }
+    }
+
+    HorizontalLayout {
+        y: 0px;
+        x: 0px;
         width: 100%;
         height: config.window.bar-height;
         alignment: center;

@@ -1,4 +1,4 @@
-use log::info;
+use log::{info, error};
 use wayle_power_profiles::PowerProfilesService;
 
 use crate::barWindow;
@@ -13,12 +13,22 @@ pub async fn start_profile_adjuster(
     if let Some(ui) = ui_weak.upgrade() {
         ui.on_set_power_profile(move |profile| {
             let profile_service = Arc::clone(&profile_service);
+            let profile_str = profile.to_string(); 
+            info!("Received power profile change request from UI: '{}'", profile_str);
 
             tokio::spawn(async move {
-                let _ = profile_service
+                let target_profile = wayle_power_profiles::types::profile::PowerProfile::from(
+                    profile_str.as_str()
+                );
+
+                match profile_service
                     .power_profiles
-                    .set_active_profile(profile.to_string().as_str().into())
-                    .await;
+                    .set_active_profile(target_profile.clone())
+                    .await 
+                {
+                    Ok(_) => info!("Successfully updated system power profile to {:?}", target_profile),
+                    Err(e) => error!("Failed to set active power profile: {:?}", e),
+                }
             });
         });
     }
