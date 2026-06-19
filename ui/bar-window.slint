@@ -50,7 +50,6 @@ export component barWindow inherits Window {
         main_bar := Rectangle {
             x: 0px;
             y: 0px;
-            background: MaterialPalette.surface_container;
             width: 100%;
             height: config.window.bar-height;
 
@@ -121,16 +120,6 @@ export component barWindow inherits Window {
                     horizontal-stretch: 1;
                 }
 
-                Taskbar {
-                    width: 60%;
-                    config: config.taskbar;
-                    animation_multiplier: config.interraction.animation-multiplier;
-                    workspaces: workspaces;
-                    dispatch_command(cmd) => {
-                        root.run_command(cmd);
-                    }
-                }
-
                 Rectangle {
                     horizontal-stretch: 1;
                 }
@@ -150,11 +139,27 @@ export component barWindow inherits Window {
         }
     }
 
+    HorizontalLayout {
+        y:0px;
+        x:0px;
+        width: 100%;
+        height: config.window.bar-height;
+        alignment: center;
+        Taskbar {
+            config: config;
+            animation_multiplier: config.interraction.animation-multiplier;
+            workspaces: workspaces;
+            dispatch_command(cmd) => {
+                root.run_command(cmd);
+            }
+        }
+    }
+
     TouchArea {
         width: 100%;
         height: 100%;
         y: config.window.bar-height;
-        
+
         clicked => {
             root.trayMenu.visible = false;
         }

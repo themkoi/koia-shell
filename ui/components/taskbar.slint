@@ -4,10 +4,14 @@ import {
     MaterialPalette,
     MaterialTypography,
     MaterialStyleMetrics,
+    ToolTip,
 } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
 import { MaterialText, MaterialPalette } from "../material-1.0/material.slint";
-import { TaskbarConfigSlint } from "../shared-items.slint";
+import { ConfigSlint } from "../shared-items.slint";
+import {
+    MaterialStyleMetrics,
+} from "../material-1.0/ui/styling/material_style_metrics.slint";
 
 export struct Window {
     id: int,
@@ -25,94 +29,221 @@ export struct Workspace {
 
 export component Taskbar inherits Rectangle {
     in-out property <[Workspace]> workspaces;
-    in property <TaskbarConfigSlint> config;
+    in property <ConfigSlint> config;
     in property <float> animation_multiplier;
 
     callback dispatch_command(string);
 
-    ScrollView {
-        overlay_scrollbars: true;
-        horizontal_scroll: true;
+    property <bool> is_expanded: touch.has-hover;
 
-        HorizontalLayout {
-            alignment: center;
+    height: is_expanded ? config.window.bar-height : 7px;
+    max-width: 100px;
+
+    animate height {
+        duration: 200ms * animation_multiplier;
+        easing: ease-in-out;
+    }
+
+    touch := TouchArea {
+        width: 100%;
+        height: 100%;
+
+        init-layout := VerticalLayout {
             height: 100%;
-            spacing: 16px;
-            padding-left: 8px;
-            padding-right: 8px;
+            width: 100%;
 
-            for ws[i] in root.workspaces: Rectangle {
-                border_radius: MaterialStyleMetrics.border_radius_28;
-                background: MaterialPalette.surface_bright;
-                height: 100%;
-                width: layout.preferred-width;
+            Rectangle {
+                height: is_expanded ? config.window.bar-height : 0px;
+                width: taskLay.preferred-width + 30px;
+                opacity: is_expanded ? 1.0 : 0.0;
 
-                layout := HorizontalLayout {
-                    height: 100%;
-                    spacing: 4px;
-                    padding: 2px;
+                animate opacity {
+                    duration: 150ms * animation_multiplier;
+                    easing: ease-in-out;
+                }
+                animate height {
+                    duration: 200ms * animation_multiplier;
+                    easing: ease-in-out;
+                }
 
-                    for win[j] in ws.windows: Rectangle {
-                        height: 100%;
-                        width: base.preferred-width;
+                Path {
+                    width: is_expanded ? (config.window.bar-height + 5px) - MaterialStyleMetrics.border_radius_16 : 0px;
+                    height: is_expanded ? (config.window.bar-height + 5px) - MaterialStyleMetrics.border_radius_16 : 0px;
+                    y: 0px;
+                    x: -self.width + 1px;
+                    animate height {
+                        duration: 200ms * animation_multiplier;
+                        easing: ease-in-out;
+                    }
+                    animate width {
+                        duration: 200ms * animation_multiplier;
+                        easing: ease-in-out;
+                    }
 
-                        callback clicked <=> base.clicked;
+                    fill: MaterialPalette.surface_container;
+                    fill-rule: evenodd;
+                    commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
+                }
 
-                        accessible-role: button;
-                        accessible-enabled: win.is_focused;
-                        accessible-action-default => {
-                            base.clicked();
-                        }
+                taskRect := Rectangle {
+                    background: MaterialPalette.surface_container;
+                    border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
+                    border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
 
-                        elevation := Elevation {
-                            border_radius: root.height / 2;
-                            background: MaterialPalette.primary;
-                            width: 100%;
-                            height: 100%;
-                        }
+                    HorizontalLayout {
+                        padding-left: 15px;
+                        padding-right: 15px;
+                        padding-bottom: 2px;
+                        scroll := ScrollView {
+                            overlay_scrollbars: true;
+                            horizontal_scroll: true;
 
-                        base := BaseButton {
-                            icon: win.icon;
-                            icon-size: config.icon-size;
-                            text_length: config.max-text-lenght;
-                            animation_multiplier: animation_multiplier;
+                            taskLay := HorizontalLayout {
+                                alignment: center;
+                                height: 100%;
+                                spacing: 4px;
+                                padding-left: 8px;
+                                padding-right: 8px;
 
-                            text: win.is_hovered_slint ? win.title : "";
+                                for ws[i] in root.workspaces: Rectangle {
+                                    border_radius: MaterialStyleMetrics.border_radius_28;
+                                    background: MaterialPalette.surface_bright;
+                                    height: 100%;
+                                    width: layout.preferred-width;
 
-                            padding-right: 1rem;
-                            icon_color: transparent;
-                            border_radius: elevation.border_radius;
-                            color: MaterialPalette.on_primary;
-                            height: 100%;
-                            button_horizontal_padding: MaterialStyleMetrics.padding_8;
+                                    layout := HorizontalLayout {
+                                        height: 100%;
+                                        spacing: 4px;
+                                        padding: 2px;
 
-                            property <bool> hover_sentinel: self.has-hover;
-                            changed hover_sentinel => {
-                                win.is_hovered_slint = hover_sentinel;
-                            }
+                                        for win[j] in ws.windows: Rectangle {
+                                            height: 100%;
+                                            width: base.preferred-width;
 
-                            pointer-event(event) => {
-                                if (event.kind == PointerEventKind.up) {
+                                            callback clicked <=> base.clicked;
 
-                                    if (event.button == PointerEventButton.left) {
-                                        dispatch_command("niri msg action focus-window --id \{win.id}");
-                                    }
-                                    if (event.button == PointerEventButton.middle) {
-                                        dispatch_command("niri msg action close-window --id \{win.id}");
+                                            accessible-role: button;
+                                            accessible-enabled: win.is_focused;
+                                            accessible-action-default => {
+                                                base.clicked();
+                                            }
+
+                                            elevation := Elevation {
+                                                border_radius: MaterialStyleMetrics.border_radius_28;
+                                                background: MaterialPalette.primary;
+                                                width: 100%;
+                                                height: 100%;
+                                            }
+
+                                            base := BaseButton {
+                                                icon: win.icon;
+                                                icon-size: config.taskbar.icon-size;
+
+                                                icon_color: transparent;
+                                                border_radius: elevation.border_radius;
+                                                color: MaterialPalette.on_primary;
+                                                height: 100%;
+                                                button_horizontal_padding: 3px;
+
+                                                property <bool> hover_sentinel: self.has-hover;
+                                                changed hover_sentinel => {
+                                                    win.is_hovered_slint = hover_sentinel;
+                                                }
+
+                                                pointer-event(event) => {
+                                                    if (event.kind == PointerEventKind.up) {
+                                                        if (event.button == PointerEventButton.left) {
+                                                            dispatch_command("niri msg action focus-window --id \{win.id}");
+                                                        }
+                                                        if (event.button == PointerEventButton.middle) {
+                                                            dispatch_command("niri msg action close-window --id \{win.id}");
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+
+                                            states [
+                                                disabled when !win.is_focused: {
+                                                    elevation.background: transparent;
+                                                    base.color: MaterialPalette.on_surface;
+                                                }
+                                                hover when win.is_hovered_slint && !base.pressed && !base.enter_pressed: {
+                                                    elevation.level: 2;
+                                                }
+                                            ]
+                                        }
                                     }
                                 }
                             }
                         }
+                    }
+                }
 
-                        states [
-                            disabled when !win.is_focused: {
-                                elevation.background: transparent;
-                                base.color: MaterialPalette.on_surface;
-                            }
-                            hover when win.is_hovered_slint && !base.pressed && !base.enter_pressed: {
-                                elevation.level: 2;
-                            }
-                        ]
+                Path {
+                    width: is_expanded ? (config.window.bar-height + 5px) - MaterialStyleMetrics.border_radius_16 : 0px;
+                    height: is_expanded ? (config.window.bar-height + 5px) - MaterialStyleMetrics.border_radius_16 : 0px;
+                    y: 0px;
+                    x: taskRect.width - 1px;
+                    animate height {
+                        duration: 200ms * animation_multiplier;
+                        easing: ease-in-out;
+                    }
+                    animate width {
+                        duration: 200ms * animation_multiplier;
+                        easing: ease-in-out;
+                    }
+                    fill: MaterialPalette.surface_container;
+                    commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
+                }
+            }
+
+            HorizontalLayout {
+                alignment: center;
+
+                height: !is_expanded ? 12px : 0px;
+                opacity: !is_expanded ? 1.0 : 0.0;
+
+                animate opacity {
+                    duration: 5ms * animation_multiplier;
+                    easing: ease-in-out;
+                }
+                animate height {
+                    duration: 200ms * animation_multiplier;
+                    easing: ease-in-out;
+                }
+
+                spacing: 6px;
+
+                for ws[i] in root.workspaces: Rectangle {
+                    background: MaterialPalette.surface_bright;
+                    height: 7px;
+
+                    y: 0px;
+
+                    border-top-left-radius: 0px;
+                    border-top-right-radius: 0px;
+                    border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
+                    border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
+
+                    HorizontalLayout {
+                        padding-left: 3px;
+                        padding-right: 3px;
+                        padding-bottom: 0px;
+                        padding-top: 0px;
+                        spacing: 3px;
+                        height: 100%;
+
+                        for win[j] in ws.windows: Rectangle {
+                            width: 25px;
+                            height: 5px;
+                            background: win.is_focused ? MaterialPalette.primary : MaterialPalette.surface_variant;
+
+                            border-top-left-radius: 0px;
+                            border-top-right-radius: 0px;
+                            border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
+                            border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
+                        }
                     }
                 }
             }

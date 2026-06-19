@@ -205,7 +205,7 @@ impl SerializeState {
         }
 
         let mut workspaces: Vec<Workspace> = workspaces_map.into_values().collect();
-
+        
         workspaces.sort_by_key(|ws| ws.id);
 
         for ws in &mut workspaces {
