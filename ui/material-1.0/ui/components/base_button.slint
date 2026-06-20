@@ -34,10 +34,6 @@ export component BaseButton inherits StateLayerArea {
     tooltip_offset: root.height / 2 + root.icon_size / 2 + MaterialStyleMetrics.padding_14;
 
     layout := HorizontalLayout {
-        MaterialText {
-            width: 0px;
-        }
-
         padding_left: root.button_padding_left;
         padding_right: root.button_padding_right;
         padding_top: root.button_padding_top;
@@ -63,9 +59,7 @@ export component BaseButton inherits StateLayerArea {
             }
         }
 
-        MaterialText {
-            visible: root.text != "";
-
+        if root.text != "": MaterialText {
             horizontal-alignment: center;
             text: root.text;
             style: MaterialTypography.label_large;
