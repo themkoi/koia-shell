@@ -163,7 +163,7 @@ export component Taskbar inherits Rectangle {
                                                     border_radius: elevation.border_radius;
                                                     color: MaterialPalette.on_primary;
                                                     height: 100%;
-                                                    button_horizontal_padding: 3px;
+                                                    button_horizontal_padding: MaterialStyleMetrics.padding_12;
 
                                                     pointer-event(event) => {
                                                         if (event.kind == PointerEventKind.up) {

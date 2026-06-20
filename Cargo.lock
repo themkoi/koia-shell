@@ -5288,7 +5288,7 @@ dependencies = [
 [[package]]
 name = "spell-framework"
 version = "1.0.5"
-source = "git+https://github.com/VimYoung/Spell#f44fcf91539aef28a886dbc4da6a3a7c4bb2361a"
+source = "git+https://github.com/VimYoung/Spell#e70132ef4727ae4d767e509927b984426e2dead6"
 dependencies = [
  "event-listener",
  "futures-util",
