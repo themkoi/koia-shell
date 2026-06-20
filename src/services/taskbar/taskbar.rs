@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use log::{debug, info};
 use niri_ipc::{socket::Socket, Event, Request, Window};
-use slint::{Image, Model, ModelRc, VecModel};
+use slint::{Image, ModelRc, VecModel};
 
 use crate::barWindow;
 use crate::services::taskbar::cache::{get_cache_folder, load_cache};
@@ -92,19 +92,6 @@ pub async fn run_taskbar(
 
             slint::invoke_from_event_loop(move || {
                 if let Some(ui) = ui_weak_clone.upgrade() {
-                    let mut currently_hovered_id: Option<i32> = None;
-
-                    for workspace in ui.get_workspaces().iter() {
-                        for window in workspace.windows.iter() {
-                            if window.is_hovered_slint {
-                                currently_hovered_id = Some(window.id);
-                                break;
-                            }
-                        }
-                        if currently_hovered_id.is_some() {
-                            break;
-                        }
-                    }
 
                     let workspaces_vec: Vec<crate::Workspace> = paths_to_pass
                         .into_iter()
@@ -119,15 +106,12 @@ pub async fn run_taskbar(
                                         Image::default()
                                     };
 
-                                    let is_hovered = Some(w_id) == currently_hovered_id;
-
                                     crate::Window {
                                         id: w_id,
                                         app_id,
                                         title,
                                         icon: icon_image,
                                         is_focused,
-                                        is_hovered_slint: is_hovered, 
                                     }
                                 })
                                 .collect();

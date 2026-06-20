@@ -173,7 +173,6 @@ pub fn build_config_slint(
         },
         taskbar: TaskbarConfigSlint {
             icon_size: config.config.taskbar_config.icon_size as f32,
-            max_text_lenght: config.config.taskbar_config.max_text_lenght as f32,
         },
         tray: TrayConfigSlint {
             icon_size: config.config.tray_config.icon_size as f32,

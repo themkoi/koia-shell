@@ -1,0 +1,85 @@
+import {
+    Elevation,
+    MaterialPalette,
+    MaterialStyleMetrics,
+} from "@material/material.slint";
+import { BaseButton } from "@material/ui/components/base_button.slint";
+
+export component BrightnessButton inherits Rectangle {
+    height: 100%;
+
+    in property <int> brightness;
+
+    callback brightness_clicked();
+    callback brightness_right_clicked();
+    callback brightness_scroll_up();
+    callback brightness_scroll_down();
+
+    HorizontalLayout {
+        spacing: 4px;
+        padding: 3px;
+        height: 100%;
+
+        Rectangle {
+            border_radius: MaterialStyleMetrics.border_radius_28;
+
+            elevation := Elevation {
+                border_radius: parent.border_radius;
+                width: 100%;
+                height: 100%;
+                background: transparent;
+            }
+
+            base := BaseButton {
+                border_radius: parent.border_radius;
+                width: 100%;
+
+                // Mapping the three brightness icons across the 0-100 range
+                icon: root.brightness <= 33 
+                    ? @image-url("../assets/brightness/brightness_0.svg") 
+                    : root.brightness <= 66 
+                        ? @image-url("../assets/brightness/brightness_1.svg") 
+                        : @image-url("../assets/brightness/brightness_2.svg");
+
+                text: root.brightness + "%";
+
+                spacing: 4px;
+                icon-size: 20px;
+                button_horizontal_padding: MaterialStyleMetrics.padding_8;
+                icon_color: transparent;
+                color: MaterialPalette.on_surface;
+
+                pointer-event(event) => {
+                    if (event.kind == PointerEventKind.up) {
+                        if (event.button == PointerEventButton.left) {
+                            root.brightness_clicked();
+                        }
+                        if (event.button == PointerEventButton.right) {
+                            root.brightness_right_clicked();
+                        }
+                    }
+                }
+
+                scroll-event(event) => {
+                    if (event.delta-y < 0) {
+                        root.brightness_scroll_up();
+                    } else if (event.delta-y > 0) {
+                        root.brightness_scroll_down();
+                    }
+                    accept
+                }
+            }
+
+            states [
+                hover when base.has_hover && !base.pressed && !base.enter_pressed: {
+                    elevation.level: 2;
+                    elevation.background: MaterialPalette.surface_container_high;
+                }
+                pressed when base.pressed || base.enter_pressed: {
+                    elevation.level: 1;
+                    elevation.background: MaterialPalette.surface_container_highest;
+                }
+            ]
+        }
+    }
+}

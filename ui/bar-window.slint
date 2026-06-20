@@ -16,10 +16,19 @@ import {
     ContextMenuDataSlint,
 } from "components/tray.slint";
 import { ProfilesRow } from "components/profiles.slint";
+import {
+    BatteryButton,
+    BatteryDataSlint,
+} from "components/battery.slint";
+import {
+    VolumeButton,
+    VolumeDataSlint,
+} from "components/volume.slint";
+import {
+    BrightnessButton,
+} from "components/brightness.slint";
 
-
-export struct VolumeDataSlint { volume: int, muted: bool}
-export struct BatteryDataSlint { percentage: int, state: string}
+import { MaterialStyleMetrics } from "material-1.0/material.slint";
 
 export struct TimeDataSlint { hour: int, minute: int}
 export struct DateDataSlint { day: int, month: int, year: int}
@@ -92,6 +101,11 @@ export component barWindow inherits Window {
                         padding-right: 10px;
                         padding-top: 2px;
                         padding-bottom: 2px;
+                        spacing: MaterialStyleMetrics.spacing_2;
+                        BatteryButton {
+                            battery: batteryData;
+                        }
+
                         ProfilesRow {
                             set_power_profile(profile) => {
                                 set_power_profile(profile);
@@ -105,20 +119,60 @@ export component barWindow inherits Window {
                     horizontal-stretch: 1;
                 }
 
-                Rectangle {
-                    horizontal-stretch: 1;
-                }
+                rectRight := Rectangle {
+                    height: 100%;
 
-                TrayRow {
-                    config: config.tray;
-                    items: root.tray;
-                    item_clicked(id, btn, button_x) => {
-                        root.tray_item_clicked(id, btn, button_x);
+                    background: MaterialPalette.surface_container;
+                    border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
+
+                    Path {
+                        width: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
+                        height: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
+                        y: 0px;
+                        x: -self.width;
+                        fill: MaterialPalette.surface_container;
+                        fill-rule: evenodd;
+                        commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
                     }
-                }
 
-                FilledButton {
-                    text: "Test button";
+                    HorizontalLayout {
+                        padding-left: 10px;
+                        padding-right: 10px;
+                        padding-top: 2px;
+                        padding-bottom: 2px;
+                        spacing: MaterialStyleMetrics.spacing_2;
+
+                        TrayRow {
+                            config: config.tray;
+                            items: root.tray;
+                            item_clicked(id, btn, button_x) => {
+                                root.tray_item_clicked(id, btn, button_x + rectRight.x);
+                            }
+                        }
+
+                        VolumeButton {
+                            volume: volumeData;
+                            volume_right_clicked() => {
+                                set_muted(!volumeData.muted);
+                            }
+                            volume_scroll_up() => {
+                                set_volume(volumeData.volume,config.interraction.volume-scroll-step)
+                            }
+                            volume_scroll_down() => {
+                                set_volume(volumeData.volume,-config.interraction.volume-scroll-step)
+                            }
+                        }
+
+                        BrightnessButton {
+                            brightness: brightness;
+                            brightness_scroll_up() => {
+                                set_brightness(brightness,config.interraction.brightness-scroll-step)
+                            }
+                            brightness_scroll_down() => {
+                                set_brightness(brightness, -config.interraction.brightness-scroll-step)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -143,10 +197,19 @@ export component barWindow inherits Window {
                     width: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
                     height: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
                     y: 0px;
-                    x: -self.width;
+                    x: -self.width + 1px;
                     fill: MaterialPalette.surface_container;
                     fill-rule: evenodd;
                     commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
+                }
+
+                Path {
+                    width: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
+                    height: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
+                    y: 0px;
+                    x: rectMiddle.width - 1px;
+                    fill: MaterialPalette.surface_container;
+                    commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
                 }
 
                 layoutMiddle := HorizontalLayout {
@@ -154,23 +217,29 @@ export component barWindow inherits Window {
                     x: 0px;
                     width: 100%;
                     alignment: center;
-                    padding-left: 10px;
-                    padding-right: 10px;
-                    padding-top: 8px;
-                    Text {
-                        text: (root.timeData.hour < 10 ? "0" : "") + root.timeData.hour + ":" + (root.timeData.minute < 10 ? "0" : "") + root.timeData.minute;
-                        font-size: MaterialTypography.title_medium.font-size;
-                        font-weight: MaterialTypography.title_medium.font-weight;
-                    }
-                }
+                    padding-left: 15px;
+                    padding-right: 15px;
+                    padding-top: 2px;
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: -3px;
 
-                Path {
-                    width: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
-                    height: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
-                    y: 0px;
-                    x: rectMiddle.width;
-                    fill: MaterialPalette.surface_container;
-                    commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
+                        Text {
+                            vertical-alignment: bottom;
+                            horizontal-alignment: center;
+                            text: (root.timeData.hour < 10 ? "0" : "") + root.timeData.hour + ":" + (root.timeData.minute < 10 ? "0" : "") + root.timeData.minute;
+                            font-size: MaterialTypography.title_small.font-size;
+                            font-weight: MaterialTypography.title_small.font-weight;
+                        }
+
+                        Text {
+                            vertical-alignment: top;
+                            horizontal-alignment: center;
+                            text: root.stringDateData.day + ": " + root.stringDateData.month + " " + root.dateData.day;
+                            font-size: MaterialTypography.label_small.font-size * 1;
+                            font-weight: MaterialTypography.label_small.font-weight * 1;
+                        }
+                    }
                 }
             }
         }

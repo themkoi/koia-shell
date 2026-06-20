@@ -19,7 +19,6 @@ export struct Window {
     title: string,
     icon: image,
     is_focused: bool,
-    is_hovered_slint: bool,
 }
 
 export struct Workspace {
@@ -166,11 +165,6 @@ export component Taskbar inherits Rectangle {
                                                     height: 100%;
                                                     button_horizontal_padding: 3px;
 
-                                                    property <bool> hover_sentinel: self.has-hover;
-                                                    changed hover_sentinel => {
-                                                        win.is_hovered_slint = hover_sentinel;
-                                                    }
-
                                                     pointer-event(event) => {
                                                         if (event.kind == PointerEventKind.up) {
                                                             if (event.button == PointerEventButton.left) {
@@ -188,7 +182,7 @@ export component Taskbar inherits Rectangle {
                                                         elevation.background: transparent;
                                                         base.color: MaterialPalette.on_surface;
                                                     }
-                                                    hover when win.is_hovered_slint && !base.pressed && !base.enter_pressed: {
+                                                    hover when base.has_hover && !base.pressed && !base.enter_pressed: {
                                                         elevation.level: 2;
                                                     }
                                                 ]
@@ -211,7 +205,7 @@ export component Taskbar inherits Rectangle {
                         MaterialPalette.surface_tint.red,
                         MaterialPalette.surface_tint.green,
                         MaterialPalette.surface_tint.blue,
-                        0.5
+                        0.25
                     );
                     height: 7px;
                     opacity: !is_expanded ? 1.0 : 0.0;

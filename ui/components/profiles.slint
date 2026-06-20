@@ -10,7 +10,6 @@ import {
     VerticalDivider,
 } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
-import { TrayConfigSlint } from "../shared-items.slint";
 
 export component ProfilesRow inherits Rectangle {
     height: 100%;
@@ -19,9 +18,9 @@ export component ProfilesRow inherits Rectangle {
     callback set_power_profile(string);
 
     in property <[{ name: string, icon: image}]> profiles: [
-        { name: "power-saver", icon: @image-url("../assets/power_saver.svg") },
-        { name: "balanced", icon: @image-url("../assets/balanced.svg") },
-        { name: "performance", icon: @image-url("../assets/performance.svg") }
+        { name: "power-saver", icon: @image-url("../assets/profiles/power_saver.svg") },
+        { name: "balanced", icon: @image-url("../assets/profiles/balanced.svg") },
+        { name: "performance", icon: @image-url("../assets/profiles/performance.svg") }
     ];
 
     Rectangle {
@@ -48,7 +47,7 @@ export component ProfilesRow inherits Rectangle {
                 base := BaseButton {
                     border_radius: parent.border_radius;
                     icon: profile.icon;
-                    icon-size: 16px;
+                    icon-size: 20px;
                     button_horizontal_padding: 0px;
                     icon_color: root.powerProfile == profile.name ? MaterialPalette.on_primary : transparent;
 
