@@ -76,7 +76,7 @@ pub fn start_notification_service(ui_spell: &notificationWindowSpell, ui_window:
         });
 
         window.on_noti_action(move |id, action_key| {
-            info!("Invoking action via direct framework mapping for ID: {}, action: {}", id,action_key);
+            info!("Invoking action for ID: {}, action: {}", id,action_key);
             thread::spawn(move || {
                 let _ = NOTIFICATION_EVENT.get().unwrap().action_invoked(id, &action_key);
             });
