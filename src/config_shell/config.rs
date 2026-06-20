@@ -7,12 +7,17 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{InterractionConfigSlint, TrayConfigSlint, WindowConfigSlint, config_shell::components::{theme::{
-    MaterialScheme, default_dark_scheme, default_light_scheme
-}, tray::{TrayConfig, default_tray}}};
 use crate::{
     config_shell::components::taskbar::{default_taskbar, TaskbarConfig},
     ConfigSlint, TaskbarConfigSlint,
+};
+use crate::{
+    config_shell::components::{
+        notifications::{default_notificaiton, NotificationConfig},
+        theme::{default_dark_scheme, default_light_scheme, MaterialScheme},
+        tray::{default_tray, TrayConfig},
+    },
+    InterractionConfigSlint, TrayConfigSlint, WindowConfigSlint, NoticificationConfigSlint
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -35,7 +40,6 @@ pub struct HardwareConfig {
     pub brightness_device: String,
 }
 
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
     pub icon_theme: String,
@@ -45,6 +49,7 @@ pub struct Config {
     pub interraction_config: InterractionConfig,
     pub taskbar_config: TaskbarConfig,
     pub tray_config: TrayConfig,
+    pub notification_config: NotificationConfig,
 }
 
 impl Default for Config {
@@ -52,11 +57,23 @@ impl Default for Config {
         Self {
             icon_theme: "Papirus-Dark".to_string(),
             default_display: "DP-3".to_string(),
-            window_config: WindowConfig { bar_height: 38,notification_screen: "eDP-1".to_string(), notification_window_height:850,notification_window_width:400 },
-            hardware_config: HardwareConfig { brightness_device: "amdgpu_bl1".to_string() },
-            interraction_config: InterractionConfig {animation_multiplier: 1.0, volume_scroll_step: 3, brightness_scroll_step: 5 },
+            window_config: WindowConfig {
+                bar_height: 38,
+                notification_screen: "eDP-1".to_string(),
+                notification_window_height: 850,
+                notification_window_width: 400,
+            },
+            hardware_config: HardwareConfig {
+                brightness_device: "amdgpu_bl1".to_string(),
+            },
+            interraction_config: InterractionConfig {
+                animation_multiplier: 1.0,
+                volume_scroll_step: 3,
+                brightness_scroll_step: 5,
+            },
             taskbar_config: default_taskbar(),
             tray_config: default_tray(),
+            notification_config: default_notificaiton(),
         }
     }
 }
@@ -162,9 +179,7 @@ pub fn load_app_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
     })
 }
 
-pub fn build_config_slint(
-    config: &crate::config::AppConfig,
-) -> ConfigSlint {
+pub fn build_config_slint(config: &crate::config::AppConfig) -> ConfigSlint {
     ConfigSlint {
         window: WindowConfigSlint {
             bar_height: config.config.window_config.bar_height as f32,
@@ -182,6 +197,11 @@ pub fn build_config_slint(
             max_height: config.config.tray_config.max_menu_height as f32,
             width: config.config.tray_config.menu_width as f32,
             menu_icon_size: config.config.tray_config.menu_icon_size as f32,
-        }
+        },
+        notification: NoticificationConfigSlint {
+            icon_size: config.config.notification_config.icon_size as f32,
+            notification_height: config.config.notification_config.notification_height as f32,
+            notification_width: config.config.notification_config.notification_width as f32,
+        },
     }
 }

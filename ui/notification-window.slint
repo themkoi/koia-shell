@@ -187,8 +187,8 @@ export component notificationWindow inherits Window {
 
     property <int> nid: 0;
     property <length> pad: 16px;
-    property <length> stride: 300px;
-    property <length> card-width: 300px;
+    property <length> stride: config.notification.notification-height;
+    property <length> card-width: config.notification.notification-width;
     property <length> cx: root.width - card-width - root.pad;
 
     property <[NotifData]> slots: [
