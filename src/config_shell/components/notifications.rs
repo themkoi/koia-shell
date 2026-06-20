@@ -10,7 +10,7 @@ pub struct NotificationConfig {
 pub fn default_notificaiton() -> NotificationConfig {
     NotificationConfig {
         icon_size: 16,
-        notification_width: 400,
+        notification_width: 300,
         notification_height: 150,
     }
 }

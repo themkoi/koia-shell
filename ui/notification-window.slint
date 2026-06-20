@@ -28,24 +28,18 @@ export struct NotifData {
 
 export component NotificationCard inherits Rectangle {
     in-out property <NotifData> data;
-    in property <length> parent-cx;
-    in property <length> calculated-y;
+    
+    in property <length> absolute-x;
+    in property <length> absolute-y;
 
-    callback update_region(length, length, length);
-    callback remove_region(length, length, length);
+    callback update_region(length, length, length, length);
+    callback remove_region(length, length, length, length);
     callback release();
     callback action_clicked(string);
 
     private property <bool> i-alive: data.id >= 0;
     private property <int> last-id: -99;
     private property <float> life: 1.0;
-    private property <bool> needs-init: false;
-    
-    private property <length> last-reg-x: 0px;
-    private property <length> last-reg-y: 0px;
-    private property <bool> is-registered: false;
-
-    out property <bool> alive: i-alive;
 
     background: MaterialPalette.surface_container_high;
     border-radius: 12px;
@@ -53,15 +47,9 @@ export component NotificationCard inherits Rectangle {
     border-width: 1px;
     border-color: i-alive ? MaterialPalette.outline_variant : transparent;
 
-    changed calculated-y => {
-        if (root.i-alive) {
-            if (root.is-registered) {
-                root.remove_region(root.last-reg-x, root.last-reg-y, 300px);
-            }
-            root.update_region(root.parent-cx, root.calculated-y, 300px);
-            root.last-reg-x = root.parent-cx;
-            root.last-reg-y = root.calculated-y;
-            root.is-registered = true;
+    changed absolute-y => {
+        if (root.i-alive && root.absolute-y > 0px) {
+            root.update_region(root.absolute-x, root.absolute-y, root.width, root.height);
         }
     }
 
@@ -71,20 +59,7 @@ export component NotificationCard inherits Rectangle {
             if (data.id >= 0) {
                 i-alive = true;
                 life = 1.0;
-                needs-init = true;
             }
-        }
-    }
-
-    Timer {
-        interval: 1ms;
-        running: root.needs-init && root.i-alive;
-        triggered => {
-            root.needs-init = false;
-            root.update_region(root.parent-cx, root.calculated-y, 300px);
-            root.last-reg-x = root.parent-cx;
-            root.last-reg-y = root.calculated-y;
-            root.is-registered = true;
         }
     }
 
@@ -94,8 +69,7 @@ export component NotificationCard inherits Rectangle {
         triggered => {
             root.life = max(0.0, root.life - (0.1 / (root.data.timeout * 1.0)));
             if (root.life <= 0.0 && root.i-alive) {
-                root.is-registered = false;
-                root.remove_region(root.parent-cx, root.calculated-y, 300px);
+                root.remove_region(root.absolute-x, root.absolute-y, root.width, root.height);
                 root.i-alive = false;
                 root.release();
             }
@@ -152,8 +126,7 @@ export component NotificationCard inherits Rectangle {
                     text: "✕";
                     clicked => {
                         if (root.i-alive) {
-                            root.is-registered = false;
-                            root.remove_region(root.parent-cx, root.calculated-y, 300px);
+                            root.remove_region(root.absolute-x, root.absolute-y, root.width, root.height);
                             root.i-alive = false;
                             root.release();
                         }
@@ -180,10 +153,14 @@ export component notificationWindow inherits Window {
     in-out property <bool> new_notification: false;
 
     title: "Notification Demo";
-    preferred-width: 950px;
-    preferred-height: 830px;
     background: transparent;
     default-font-size: 10px;
+    Rectangle {
+        width: root.card-width + (root.pad * 2);
+        height: root.height;
+        x: root.width - self.width;
+        background: transparent; 
+    }
 
     property <int> nid: 0;
     property <length> pad: 16px;
@@ -229,7 +206,7 @@ export component notificationWindow inherits Window {
         nid += 1;
     }
 
-VerticalLayout {
+    VerticalLayout {
         x: root.cx;
         y: root.pad;
         spacing: 8px;
@@ -240,15 +217,15 @@ VerticalLayout {
             height: card-data.id >= 0 ? root.stride : 0px;
             visible: card-data.id >= 0;
             
-            parent-cx: root.cx;
-            calculated-y: root.calculate_y(index);
+            absolute-x: root.cx;
+            absolute-y: root.calculate_y(index);
 
-            update_region(reg-x, reg-y, reg-h) => {
-                root.a_input_region(reg-x / 1px, reg-y / 1px, root.card-width / 1px, reg-h / 1px);
+            update_region(reg-x, reg-y, reg-w, reg-h) => {
+                root.a_input_region(reg-x / 1px, reg-y / 1px, reg-w / 1px, reg-h / 1px);
             }
 
-            remove_region(reg-x, reg-y, reg-h) => {
-                root.r_input_region(reg-x / 1px, reg-y / 1px, root.card-width / 1px, reg-h / 1px);
+            remove_region(reg-x, reg-y, reg-w, reg-h) => {
+                root.r_input_region(reg-x / 1px, reg-y / 1px, reg-w / 1px, reg-h / 1px);
             }
 
             action_clicked(key) => {
