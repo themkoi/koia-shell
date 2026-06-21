@@ -4,13 +4,15 @@ use serde::{Deserialize, Serialize};
 pub struct NotificationConfig {
     pub icon_size: u16,
     pub notification_width: u16,
-    pub notification_height: u16,
+    pub notification_max_height: u16,
+    pub notification_timeout: u16,
 }
 
 pub fn default_notificaiton() -> NotificationConfig {
     NotificationConfig {
-        icon_size: 16,
-        notification_width: 300,
-        notification_height: 150,
+        icon_size: 36,
+        notification_width: 370,
+        notification_max_height: 250,
+        notification_timeout: 10,
     }
 }

@@ -234,6 +234,7 @@ export component Taskbar inherits Rectangle {
                             
                             for ws[i] in root.workspaces: Rectangle {
                                 background: MaterialPalette.surface_container;
+                                visible: ws.windows.length > 0;
                                 height: 7px;
                                 y: 0px;
 

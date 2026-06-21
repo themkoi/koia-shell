@@ -30,13 +30,10 @@ use crate::{
     config_shell::{components::theme::build_config_palette, config::build_config_slint},
     helpers::touch_area::manager::start_touch_manager,
     services::{
-        battery::listener::listen_battery_changes,
-        brightness::start_brightness_management,
-        notifications::manager::{start_notification_service},
-        power_profiles::start_power_profile_management,
-        taskbar::taskbar::run_taskbar,
-        time::provider::provide_time,
-        tray::manager::start_system_tray,
+        battery::listener::listen_battery_changes, brightness::start_brightness_management,
+        notifications::manager::start_notification_service,
+        power_profiles::start_power_profile_management, taskbar::taskbar::run_taskbar,
+        time::provider::provide_time, tray::manager::start_system_tray,
         volume::start_volume_management,
     },
 };
@@ -96,7 +93,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .anchor_1(LayerAnchor::TOP)
         .anchor_2(LayerAnchor::RIGHT)
         .margins(0, 0, 0, 0)
-        .layer_type(LayerType::Top)
+        .layer_type(LayerType::Overlay)
         .build()
         .unwrap();
 
@@ -154,8 +151,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     notification_ui.set_config(config_slint.clone());
 
-    start_notification_service(&notification_ui, &notification_ui.ui);
-
     notification_ui.subtract_input_region(
         0,
         0,
@@ -170,6 +165,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .notification_window_height
             .clone() as i32,
     );
+    start_notification_service(config, &notification_ui).await;
 
     // Calling the event loop function for running the window
     cast_spell!(

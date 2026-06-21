@@ -1,6 +1,7 @@
 import { Palette } from "std-widgets.slint";
 import {
     FilledButton,
+    FilledIconButton,
     MaterialPalette,
     MaterialScheme,
     MaterialSchemes,
@@ -22,13 +23,14 @@ export struct NotifData {
     subtitle: string,
     message: string,
     timeout: int,
-    icon: bool,
+    icon: image,
     actions: [ActionData],
 }
 
 export component NotificationCard inherits Rectangle {
     in-out property <NotifData> data;
-    
+    in property <length> icon-size;
+
     in property <length> absolute-x;
     in property <length> absolute-y;
 
@@ -41,15 +43,33 @@ export component NotificationCard inherits Rectangle {
     private property <int> last-id: -99;
     private property <float> life: 1.0;
 
+    private property <length> active-reg-x: 0px;
+    private property <length> active-reg-y: 0px;
+    private property <length> active-reg-w: 0px;
+    private property <length> active-reg-h: 0px;
+    private property <bool> is-registered: false;
+    private property <bool> pending-register: false;
+
     background: MaterialPalette.surface_container_high;
     border-radius: 12px;
     clip: true;
     border-width: 1px;
     border-color: i-alive ? MaterialPalette.outline_variant : transparent;
 
+    changed i-alive => {
+        if (root.i-alive && !root.is-registered && !root.pending-register) {
+            root.pending-register = true;
+        }
+    }
+
     changed absolute-y => {
-        if (root.i-alive && root.absolute-y > 0px) {
-            root.update_region(root.absolute-x, root.absolute-y, root.width, root.height);
+        if (root.i-alive && root.is-registered && root.width > 0px && root.height > 0px) {
+            root.remove_region(root.active-reg-x, root.active-reg-y, root.active-reg-w, root.active-reg-h);
+            root.active-reg-x = root.absolute-x;
+            root.active-reg-y = root.absolute-y;
+            root.active-reg-w = root.width;
+            root.active-reg-h = root.height;
+            root.update_region(root.active-reg-x, root.active-reg-y, root.active-reg-w, root.active-reg-h);
         }
     }
 
@@ -64,12 +84,31 @@ export component NotificationCard inherits Rectangle {
     }
 
     Timer {
+        interval: 50ms;
+        running: root.pending-register && root.width > 0px && root.height > 0px;
+        triggered => {
+            if (root.absolute-x >= 0px && root.absolute-y >= 0px) {
+                root.active-reg-x = root.absolute-x;
+                root.active-reg-y = root.absolute-y;
+                root.active-reg-w = root.width;
+                root.active-reg-h = root.height;
+                root.update_region(root.active-reg-x, root.active-reg-y, root.active-reg-w, root.active-reg-h);
+                root.is-registered = true;
+                root.pending-register = false;
+            }
+        }
+    }
+
+    Timer {
         interval: 100ms;
         running: root.i-alive && root.data.timeout > 0;
         triggered => {
             root.life = max(0.0, root.life - (0.1 / (root.data.timeout * 1.0)));
             if (root.life <= 0.0 && root.i-alive) {
-                root.remove_region(root.absolute-x, root.absolute-y, root.width, root.height);
+                if (root.is-registered) {
+                    root.remove_region(root.active-reg-x, root.active-reg-y, root.active-reg-w, root.active-reg-h);
+                    root.is-registered = false;
+                }
                 root.i-alive = false;
                 root.release();
             }
@@ -79,54 +118,86 @@ export component NotificationCard inherits Rectangle {
     VerticalLayout {
         padding: 16px;
         spacing: 12px;
+        alignment: start;
 
         HorizontalLayout {
             spacing: 12px;
             alignment: space-between;
 
-            VerticalLayout {
-                spacing: 4px;
-                alignment: center;
+            Rectangle {
+                horizontal-stretch: 1;
 
                 HorizontalLayout {
+                    spacing: 12px;
                     alignment: start;
-                    Text {
-                        text: data.app-name;
-                        font-size: MaterialTypography.body_small.font-size;
-                        font-weight: MaterialTypography.body_small.font-weight;
-                        color: MaterialPalette.on_surface_variant;
+                    VerticalLayout {
+                        alignment: center;
+                        if root.data.icon.width > 0 && root.data.icon.height > 0: Image {
+                            source: root.data.icon;
+                            width: root.icon-size;
+                            height: self.width;
+                            image-fit: contain;
+                        }
+                    }
+
+                    VerticalLayout {
+                        spacing: 4px;
+                        alignment: start;
+                        horizontal-stretch: 1;
+
+                        Text {
+                            text: data.app-name;
+                            font-size: MaterialTypography.body_small.font-size;
+                            font-weight: MaterialTypography.body_small.font-weight;
+                            color: MaterialPalette.on_surface_variant;
+                        }
+
+                        Text {
+                            text: data.title;
+                            font-size: MaterialTypography.title_medium.font-size;
+                            font-weight: MaterialTypography.title_medium.font-weight;
+                            color: MaterialPalette.on_surface;
+                            wrap: word-wrap;
+                            overflow: elide;
+                        }
+
+                        if data.subtitle != "": Text {
+                            text: data.subtitle;
+                            font-size: MaterialTypography.body_medium.font-size;
+                            color: MaterialPalette.on_surface_variant;
+                            wrap: word-wrap;
+                            overflow: elide;
+                        }
+
+                        Text {
+                            text: data.message;
+                            font-size: MaterialTypography.body_medium.font-size;
+                            color: MaterialPalette.on_surface_variant;
+                            wrap: word-wrap;
+                            overflow: elide;
+                        }
                     }
                 }
 
-                Text {
-                    text: data.title;
-                    font-size: MaterialTypography.title_medium.font-size;
-                    font-weight: MaterialTypography.title_medium.font-weight;
-                    color: MaterialPalette.on_surface;
-                }
-
-                if data.subtitle != "": Text {
-                    text: data.subtitle;
-                    font-size: MaterialTypography.body_medium.font-size;
-                    color: MaterialPalette.on_surface_variant;
-                }
-
-                Text {
-                    text: data.message;
-                    font-size: MaterialTypography.body_medium.font-size;
-                    color: MaterialPalette.on_surface_variant;
-                    wrap: word-wrap;
+                TouchArea {
+                    width: 100%;
+                    height: 100%;
+                    clicked => {
+                        root.action_clicked("default");
+                    }
                 }
             }
 
             VerticalLayout {
                 alignment: start;
-
-                FilledButton {
-                    text: "✕";
+                FilledIconButton {
+                    icon:@image-url("./assets/close.svg");
                     clicked => {
                         if (root.i-alive) {
-                            root.remove_region(root.absolute-x, root.absolute-y, root.width, root.height);
+                            if (root.is-registered) {
+                                root.remove_region(root.active-reg-x, root.active-reg-y, root.active-reg-w, root.active-reg-h);
+                                root.is-registered = false;
+                            }
                             root.i-alive = false;
                             root.release();
                         }
@@ -138,10 +209,12 @@ export component NotificationCard inherits Rectangle {
         if data.actions.length > 0: HorizontalLayout {
             spacing: 8px;
             alignment: start;
-            for act in data.actions: FilledButton {
-                text: act.label;
-                clicked => {
-                    root.action_clicked(act.key);
+            for act in data.actions: VerticalLayout {
+                if act.key != "default": FilledButton {
+                    text: act.label;
+                    clicked => {
+                        root.action_clicked(act.key);
+                    }
                 }
             }
         }
@@ -155,86 +228,344 @@ export component notificationWindow inherits Window {
     title: "Notification Demo";
     background: transparent;
     default-font-size: 10px;
+
     Rectangle {
         width: root.card-width + (root.pad * 2);
         height: root.height;
         x: root.width - self.width;
-        background: transparent; 
+        background: transparent;
     }
 
     property <int> nid: 0;
     property <length> pad: 16px;
-    property <length> stride: config.notification.notification-height;
     property <length> card-width: config.notification.notification-width;
     property <length> cx: root.width - card-width - root.pad;
 
+    private property <length> h0: slots[0].id >= 0 ? min(config.notification.notification_max_height, cards.c0-pref) : 0px;
+    private property <length> h1: slots[1].id >= 0 ? min(config.notification.notification_max_height, cards.c1-pref) : 0px;
+    private property <length> h2: slots[2].id >= 0 ? min(config.notification.notification_max_height, cards.c2-pref) : 0px;
+    private property <length> h3: slots[3].id >= 0 ? min(config.notification.notification_max_height, cards.c3-pref) : 0px;
+
     property <[NotifData]> slots: [
-        { id: -1, id_rust: -1, app-name: "", title: "", subtitle: "", message: "", timeout: 0, icon: false, actions: [] },
-        { id: -1, id_rust: -1, app-name: "", title: "", subtitle: "", message: "", timeout: 0, icon: false, actions: [] },
-        { id: -1, id_rust: -1, app-name: "", title: "", subtitle: "", message: "", timeout: 0, icon: false, actions: [] },
-        { id: -1, id_rust: -1, app-name: "", title: "", subtitle: "", message: "", timeout: 0, icon: false, actions: [] },
-        { id: -1, id_rust: -1, app-name: "", title: "", subtitle: "", message: "", timeout: 0, icon: false, actions: [] },
+        {
+            id: -1,
+            id_rust: -1,
+            app-name: "",
+            title: "",
+            subtitle: "",
+            message: "",
+            timeout: 0,
+            icon: @image-url(""),
+            actions: []
+        },
+        {
+            id: -1,
+            id_rust: -1,
+            app-name: "",
+            title: "",
+            subtitle: "",
+            message: "",
+            timeout: 0,
+            icon: @image-url(""),
+            actions: []
+        },
+        {
+            id: -1,
+            id_rust: -1,
+            app-name: "",
+            title: "",
+            subtitle: "",
+            message: "",
+            timeout: 0,
+            icon: @image-url(""),
+            actions: []
+        },
+        {
+            id: -1,
+            id_rust: -1,
+            app-name: "",
+            title: "",
+            subtitle: "",
+            message: "",
+            timeout: 0,
+            icon: @image-url(""),
+            actions: []
+        },
+        {
+            id: -1,
+            id_rust: -1,
+            app-name: "",
+            title: "",
+            subtitle: "",
+            message: "",
+            timeout: 0,
+            icon: @image-url(""),
+            actions: []
+        },
     ];
 
     pure function calculate_y(idx: int) -> length {
         let y0 = root.pad;
-        let y1 = y0 + (idx > 0 && root.slots[0].id >= 0 ? root.stride + 8px : 0px);
-        let y2 = y1 + (idx > 1 && root.slots[1].id >= 0 ? root.stride + 8px : 0px);
-        let y3 = y2 + (idx > 2 && root.slots[2].id >= 0 ? root.stride + 8px : 0px);
-        let y4 = y3 + (idx > 3 && root.slots[3].id >= 0 ? root.stride + 8px : 0px);
+        let y1 = y0 + (idx > 0 && root.slots[0].id >= 0 ? root.h0 + 8px : 0px);
+        let y2 = y1 + (idx > 1 && root.slots[1].id >= 0 ? root.h1 + 8px : 0px);
+        let y3 = y2 + (idx > 2 && root.slots[2].id >= 0 ? root.h2 + 8px : 0px);
+        let y4 = y3 + (idx > 3 && root.slots[3].id >= 0 ? root.h3 + 8px : 0px);
         return y4;
     }
 
-    callback add-notif(int, string, string, string, string, int, [ActionData]);
+    callback add-notif(int, string, string, string, string, int, image, [ActionData]);
     callback a_input_region(int, int, int, int);
     callback r_input_region(int, int, int, int);
     callback noti-close(int);
     callback noti-action(int, string);
 
-    add-notif(id_rust, app_name, title, subtitle, msg, timeout, acts) => {
+    add-notif(id_rust, app_name, title, subtitle, msg, timeout, icon_img, acts) => {
         if (root.slots[0].id < 0) {
-            root.slots[0] = { id: nid, id_rust: id_rust, app-name: app_name, title: title, subtitle: subtitle, message: msg, timeout: timeout, icon: false, actions: acts };
+            root.slots[0] = {
+                id: nid,
+                id_rust: id_rust,
+                app-name: app_name,
+                title: title,
+                subtitle: subtitle,
+                message: msg,
+                timeout: timeout,
+                icon: icon_img,
+                actions: acts
+            };
         } else if (root.slots[1].id < 0) {
-            root.slots[1] = { id: nid, id_rust: id_rust, app-name: app_name, title: title, subtitle: subtitle, message: msg, timeout: timeout, icon: false, actions: acts };
+            root.slots[1] = {
+                id: nid,
+                id_rust: id_rust,
+                app-name: app_name,
+                title: title,
+                subtitle: subtitle,
+                message: msg,
+                timeout: timeout,
+                icon: icon_img,
+                actions: acts
+            };
         } else if (root.slots[2].id < 0) {
-            root.slots[2] = { id: nid, id_rust: id_rust, app-name: app_name, title: title, subtitle: subtitle, message: msg, timeout: timeout, icon: false, actions: acts };
+            root.slots[2] = {
+                id: nid,
+                id_rust: id_rust,
+                app-name: app_name,
+                title: title,
+                subtitle: subtitle,
+                message: msg,
+                timeout: timeout,
+                icon: icon_img,
+                actions: acts
+            };
         } else if (root.slots[3].id < 0) {
-            root.slots[3] = { id: nid, id_rust: id_rust, app-name: app_name, title: title, subtitle: subtitle, message: msg, timeout: timeout, icon: false, actions: acts };
+            root.slots[3] = {
+                id: nid,
+                id_rust: id_rust,
+                app-name: app_name,
+                title: title,
+                subtitle: subtitle,
+                message: msg,
+                timeout: timeout,
+                icon: icon_img,
+                actions: acts
+            };
         } else if (root.slots[4].id < 0) {
-            root.slots[4] = { id: nid, id_rust: id_rust, app-name: app_name, title: title, subtitle: subtitle, message: msg, timeout: timeout, icon: false, actions: acts };
+            root.slots[4] = {
+                id: nid,
+                id_rust: id_rust,
+                app-name: app_name,
+                title: title,
+                subtitle: subtitle,
+                message: msg,
+                timeout: timeout,
+                icon: icon_img,
+                actions: acts
+            };
         }
         nid += 1;
+        root.new_notification = !root.new_notification;
     }
 
-    VerticalLayout {
-        x: root.cx;
-        y: root.pad;
-        spacing: 8px;
+    cards := Rectangle {
+        width: 100%;
+        height: 100%;
 
-        for card-data[index] in root.slots: NotificationCard {
-            data: card-data;
+        out property <length> c0-pref: c0.preferred-height;
+        out property <length> c1-pref: c1.preferred-height;
+        out property <length> c2-pref: c2.preferred-height;
+        out property <length> c3-pref: c3.preferred-height;
+
+        c0 := NotificationCard {
+            data: root.slots[0];
+            x: root.cx;
+            y: root.calculate_y(0);
             width: root.card-width;
-            height: card-data.id >= 0 ? root.stride : 0px;
-            visible: card-data.id >= 0;
-            
-            absolute-x: root.cx;
-            absolute-y: root.calculate_y(index);
-
-            update_region(reg-x, reg-y, reg-w, reg-h) => {
-                root.a_input_region(reg-x / 1px, reg-y / 1px, reg-w / 1px, reg-h / 1px);
+            icon-size: config.notification.icon-size;
+            height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
+            absolute-x: self.x;
+            absolute-y: self.y;
+            update_region(x, y, w, h) => {
+                root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
             }
-
-            remove_region(reg-x, reg-y, reg-w, reg-h) => {
-                root.r_input_region(reg-x / 1px, reg-y / 1px, reg-w / 1px, reg-h / 1px);
+            remove_region(x, y, w, h) => {
+                root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
             }
-
-            action_clicked(key) => {
-                root.noti-action(root.slots[index].id_rust, key);
+            action_clicked(k) => {
+                root.noti-action(self.data.id_rust, k);
             }
-
             release => {
-                root.noti-close(root.slots[index].id_rust);
-                root.slots[index] = { id: -1, id_rust: -1, app-name: "", title: "", subtitle: "", message: "", timeout: 0, icon: false, actions: [] };
+                root.noti-close(self.data.id_rust);
+                root.slots[0] = {
+                    id: -1,
+                    id_rust: -1,
+                    app-name: "",
+                    title: "",
+                    subtitle: "",
+                    message: "",
+                    timeout: 0,
+                    icon: @image-url(""),
+                    actions: []
+                };
+                root.new_notification = !root.new_notification;
+            }
+        }
+
+        c1 := NotificationCard {
+            data: root.slots[1];
+            x: root.cx;
+            y: root.calculate_y(1);
+            width: root.card-width;
+            icon-size: config.notification.icon-size;
+            height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
+            absolute-x: self.x;
+            absolute-y: self.y;
+            update_region(x, y, w, h) => {
+                root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
+            }
+            remove_region(x, y, w, h) => {
+                root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
+            }
+            action_clicked(k) => {
+                root.noti-action(self.data.id_rust, k);
+            }
+            release => {
+                root.noti-close(self.data.id_rust);
+                root.slots[1] = {
+                    id: -1,
+                    id_rust: -1,
+                    app-name: "",
+                    title: "",
+                    subtitle: "",
+                    message: "",
+                    timeout: 0,
+                    icon: @image-url(""),
+                    actions: []
+                };
+                root.new_notification = !root.new_notification;
+            }
+        }
+
+        c2 := NotificationCard {
+            data: root.slots[2];
+            x: root.cx;
+            y: root.calculate_y(2);
+            width: root.card-width;
+            icon-size: config.notification.icon-size;
+            height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
+            absolute-x: self.x;
+            absolute-y: self.y;
+            update_region(x, y, w, h) => {
+                root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
+            }
+            remove_region(x, y, w, h) => {
+                root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
+            }
+            action_clicked(k) => {
+                root.noti-action(self.data.id_rust, k);
+            }
+            release => {
+                root.noti-close(self.data.id_rust);
+                root.slots[2] = {
+                    id: -1,
+                    id_rust: -1,
+                    app-name: "",
+                    title: "",
+                    subtitle: "",
+                    message: "",
+                    timeout: 0,
+                    icon: @image-url(""),
+                    actions: []
+                };
+                root.new_notification = !root.new_notification;
+            }
+        }
+
+        c3 := NotificationCard {
+            data: root.slots[3];
+            x: root.cx;
+            y: root.calculate_y(3);
+            width: root.card-width;
+            icon-size: config.notification.icon-size;
+            height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
+            absolute-x: self.x;
+            absolute-y: self.y;
+            update_region(x, y, w, h) => {
+                root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
+            }
+            remove_region(x, y, w, h) => {
+                root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
+            }
+            action_clicked(k) => {
+                root.noti-action(self.data.id_rust, k);
+            }
+            release => {
+                root.noti-close(self.data.id_rust);
+                root.slots[3] = {
+                    id: -1,
+                    id_rust: -1,
+                    app-name: "",
+                    title: "",
+                    subtitle: "",
+                    message: "",
+                    timeout: 0,
+                    icon: @image-url(""),
+                    actions: []
+                };
+                root.new_notification = !root.new_notification;
+            }
+        }
+
+        c4 := NotificationCard {
+            data: root.slots[4];
+            x: root.cx;
+            y: root.calculate_y(4);
+            width: root.card-width;
+            icon-size: config.notification.icon-size;
+            height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
+            absolute-x: self.x;
+            absolute-y: self.y;
+            update_region(x, y, w, h) => {
+                root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
+            }
+            remove_region(x, y, w, h) => {
+                root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
+            }
+            action_clicked(k) => {
+                root.noti-action(self.data.id_rust, k);
+            }
+            release => {
+                root.noti-close(self.data.id_rust);
+                root.slots[4] = {
+                    id: -1,
+                    id_rust: -1,
+                    app-name: "",
+                    title: "",
+                    subtitle: "",
+                    message: "",
+                    timeout: 0,
+                    icon: @image-url(""),
+                    actions: []
+                };
+                root.new_notification = !root.new_notification;
             }
         }
     }

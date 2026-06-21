@@ -9,7 +9,6 @@ pub fn start_touch_manager(
     ui_spell: &barWindowSpell,
 ) {
     let ui_weak = ui_spell.as_weak();
-    let ui_spell_ptr = ui_spell as *const barWindowSpell as usize;
     let config_internal = config.clone();
 
     let region_x = 0;
@@ -17,17 +16,17 @@ pub fn start_touch_manager(
     let region_width = window_width as i32;
     let region_height = window_height as i32;
     if let Some(ui) = ui_weak.upgrade() {
+        let handle = ui_spell.get_handler();
         ui.on_manage_touch(move |popup_name, visible| {
-            let ui_spell_ref = unsafe { &*(ui_spell_ptr as *const barWindowSpell) };
             if visible {
-                ui_spell_ref.add_input_region(region_x, region_y, region_width, region_height);
+                handle.add_input_region(region_x, region_y, region_width, region_height);
 
                 info!(
                     "creating region requested by '{}' at position ({}, {}) with size {}x{}",
                     popup_name, region_x, region_y, region_width, region_height
                 );
             } else {
-                ui_spell_ref.subtract_input_region(region_x, region_y, region_width, region_height);
+                handle.subtract_input_region(region_x, region_y, region_width, region_height);
 
                 info!(
                     "removing region requested by '{}' at position ({}, {}) with size {}x{}",
