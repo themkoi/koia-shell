@@ -31,7 +31,6 @@ pub struct InterractionConfig {
 pub struct WindowConfig {
     pub bar_height: u16,
     pub notification_screen: String,
-    pub notification_window_height: u16,
     pub notification_window_width: u16,
 }
 
@@ -60,7 +59,6 @@ impl Default for Config {
             window_config: WindowConfig {
                 bar_height: 38,
                 notification_screen: "eDP-1".to_string(),
-                notification_window_height: 850,
                 notification_window_width: 400,
             },
             hardware_config: HardwareConfig {

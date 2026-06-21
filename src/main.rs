@@ -82,13 +82,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .notification_window_width
                 .clone() as u32,
         )
-        .height(
-            config
-                .config
-                .window_config
-                .notification_window_height
-                .clone() as u32,
-        )
+        .height(Dimension::Full)
         .monitor(config.config.window_config.notification_screen.clone())
         .anchor_1(LayerAnchor::TOP)
         .anchor_2(LayerAnchor::RIGHT)
@@ -101,14 +95,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config_slint = build_config_slint(&config);
     // bar init
     let bar_ui = barWindowSpell::invoke_spell("bar", bar_conf);
-    let window_width = bar_ui.get_window_width();
-    let window_height = bar_ui.get_window_height();
+    let window_width_bar = bar_ui.get_window_width();
+    let window_height_bar = bar_ui.get_window_height();
 
     bar_ui.subtract_input_region(
         0,
         config.config.window_config.bar_height.into(),
-        window_width as i32,
-        (window_height - config.config.window_config.bar_height as f32) as i32,
+        window_width_bar as i32,
+        (window_height_bar - config.config.window_config.bar_height as f32) as i32,
     );
 
     if args.theme == "dark" {
@@ -125,7 +119,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     listen_battery_changes(bar_ui.as_weak()).await;
     provide_time(bar_ui.as_weak()).await;
 
-    start_touch_manager(&config, window_width, window_height, &bar_ui);
+    start_touch_manager(&config, window_width_bar, window_height_bar, &bar_ui);
     start_command_handler(bar_ui.as_weak());
 
     start_system_tray(&config, bar_ui.as_weak()).await;
@@ -151,6 +145,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     notification_ui.set_config(config_slint.clone());
 
+    let window_height_notifi = notification_ui.get_window_height();
+
     notification_ui.subtract_input_region(
         0,
         0,
@@ -159,11 +155,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .window_config
             .notification_window_width
             .clone() as i32,
-        config
-            .config
-            .window_config
-            .notification_window_height
-            .clone() as i32,
+        window_height_notifi as i32,
     );
     start_notification_service(config, &notification_ui).await;
 
