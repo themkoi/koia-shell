@@ -17,7 +17,7 @@ use crate::{
         theme::{default_dark_scheme, default_light_scheme, MaterialScheme},
         tray::{default_tray, TrayConfig},
     },
-    InterractionConfigSlint, TrayConfigSlint, WindowConfigSlint, NoticificationConfigSlint
+    InteractionConfigSlint, TrayConfigSlint, WindowConfigSlint, NoticificationConfigSlint
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -45,7 +45,7 @@ pub struct Config {
     pub default_display: String,
     pub window_config: WindowConfig,
     pub hardware_config: HardwareConfig,
-    pub interraction_config: InterractionConfig,
+    pub interaction_config: InterractionConfig,
     pub taskbar_config: TaskbarConfig,
     pub tray_config: TrayConfig,
     pub notification_config: NotificationConfig,
@@ -64,7 +64,7 @@ impl Default for Config {
             hardware_config: HardwareConfig {
                 brightness_device: "amdgpu_bl1".to_string(),
             },
-            interraction_config: InterractionConfig {
+            interaction_config: InterractionConfig {
                 animation_multiplier: 1.0,
                 volume_scroll_step: 3,
                 brightness_scroll_step: 5,
@@ -182,10 +182,10 @@ pub fn build_config_slint(config: &crate::config::AppConfig) -> ConfigSlint {
         window: WindowConfigSlint {
             bar_height: config.config.window_config.bar_height as f32,
         },
-        interraction: InterractionConfigSlint {
-            animation_multiplier: config.config.interraction_config.animation_multiplier,
-            volume_scroll_step: config.config.interraction_config.volume_scroll_step as i32,
-            brightness_scroll_step: config.config.interraction_config.brightness_scroll_step as i32,
+        interaction: InteractionConfigSlint {
+            animation_multiplier: config.config.interaction_config.animation_multiplier,
+            volume_scroll_step: config.config.interaction_config.volume_scroll_step as i32,
+            brightness_scroll_step: config.config.interaction_config.brightness_scroll_step as i32,
         },
         taskbar: TaskbarConfigSlint {
             icon_size: config.config.taskbar_config.icon_size as f32,

@@ -27,6 +27,9 @@ export component NotificationCard inherits Rectangle {
     in-out property <NotifData> data;
     in property <length> icon-size;
     in property <length> max-card-height: 200px;
+    
+    // Dynamic animation scale factor
+    in property <float> animation-multiplier: 1.0;
 
     in property <length> absolute-x;
     in property <length> absolute-y;
@@ -52,6 +55,13 @@ export component NotificationCard inherits Rectangle {
     clip: true;
     border-width: 1px;
     border-color: i-alive ? MaterialPalette.outline_variant : transparent;
+    
+    opacity: root.i-alive ? 1.0 : 0.0;
+
+    // --- ANIMATIONS WITH MULTIPLIER ---
+    animate y { duration: 250ms * root.animation-multiplier; easing: ease-in-out-back; }
+    animate height { duration: 200ms * root.animation-multiplier; easing: ease-in-out-back; }
+    animate opacity { duration: 300ms * root.animation-multiplier; easing: ease-in-out; }
 
     changed i-alive => {
         if (root.i-alive && !root.is-registered && !root.pending-register) {
@@ -282,6 +292,7 @@ export component notificationWindow inherits Window {
             width: root.card-width;
             icon-size: config.notification.icon-size;
             max-card-height: config.notification.notification_max_height;
+            animation-multiplier: root.config.interaction.animation-multiplier;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
             absolute-y: self.y;
@@ -301,6 +312,7 @@ export component notificationWindow inherits Window {
             width: root.card-width;
             icon-size: config.notification.icon-size;
             max-card-height: config.notification.notification_max_height;
+            animation-multiplier: root.config.interaction.animation-multiplier;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
             absolute-y: self.y;
@@ -320,6 +332,7 @@ export component notificationWindow inherits Window {
             width: root.card-width;
             icon-size: config.notification.icon-size;
             max-card-height: config.notification.notification_max_height;
+            animation-multiplier: root.config.interaction.animation-multiplier;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
             absolute-y: self.y;
@@ -339,6 +352,7 @@ export component notificationWindow inherits Window {
             width: root.card-width;
             icon-size: config.notification.icon-size;
             max-card-height: config.notification.notification_max_height;
+            animation-multiplier: root.config.interaction.animation-multiplier;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
             absolute-y: self.y;
@@ -358,6 +372,7 @@ export component notificationWindow inherits Window {
             width: root.card-width;
             icon-size: config.notification.icon-size;
             max-card-height: config.notification.notification_max_height;
+            animation-multiplier: root.config.interaction.animation-multiplier;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
             absolute-y: self.y;

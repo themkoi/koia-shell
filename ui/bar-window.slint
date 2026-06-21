@@ -156,20 +156,20 @@ export component barWindow inherits Window {
                                 set_muted(!volumeData.muted);
                             }
                             volume_scroll_up() => {
-                                set_volume(volumeData.volume,config.interraction.volume-scroll-step)
+                                set_volume(volumeData.volume,config.interaction.volume-scroll-step)
                             }
                             volume_scroll_down() => {
-                                set_volume(volumeData.volume,-config.interraction.volume-scroll-step)
+                                set_volume(volumeData.volume,-config.interaction.volume-scroll-step)
                             }
                         }
 
                         BrightnessButton {
                             brightness: brightness;
                             brightness_scroll_up() => {
-                                set_brightness(brightness,config.interraction.brightness-scroll-step)
+                                set_brightness(brightness,config.interaction.brightness-scroll-step)
                             }
                             brightness_scroll_down() => {
-                                set_brightness(brightness, -config.interraction.brightness-scroll-step)
+                                set_brightness(brightness, -config.interaction.brightness-scroll-step)
                             }
                         }
                     }
@@ -253,7 +253,7 @@ export component barWindow inherits Window {
         alignment: center;
         Taskbar {
             config: config;
-            animation_multiplier: config.interraction.animation-multiplier;
+            animation_multiplier: config.interaction.animation-multiplier;
             workspaces: workspaces;
             dispatch_command(cmd) => {
                 root.run_command(cmd);
@@ -276,7 +276,7 @@ export component barWindow inherits Window {
         y: config.window.bar-height + 4px;
         config: config.tray;
         menu-data: root.trayMenu;
-        animation_multiplier: config.interraction.animation-multiplier;
+        animation_multiplier: config.interaction.animation-multiplier;
         changed menu-data => {
             root.manage_touch("TrayMenu",root.trayMenu.visible);
         }
