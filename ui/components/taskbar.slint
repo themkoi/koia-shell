@@ -31,9 +31,6 @@ export component Taskbar inherits Rectangle {
     in property <ConfigSlint> config;
     in property <float> animation_multiplier;
     
-    in property <length> indicator_max_width: 1500px; 
-    in property <length> taskbar_max_width: 1000px;
-
     callback dispatch_command(string);
 
     out property <bool> is_expanded: touch.has-hover;
@@ -46,7 +43,7 @@ export component Taskbar inherits Rectangle {
     }
 
     touch := TouchArea {
-        width: is_expanded ? clamp(taskLay.preferred-width,0px,taskbar_max_width) + 40px : clamp(indicatorRect.preferred-width,0px,indicator_max_width);
+        width: is_expanded ? clamp(taskLay.preferred-width,0px,config.taskbar.taskbar-max-width) + 40px : clamp(indicatorRect.preferred-width,0px,config.taskbar.indicator_max_width);
         height: 100%;
 
         init-layout := VerticalLayout {

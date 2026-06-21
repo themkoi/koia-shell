@@ -30,6 +30,7 @@ export struct NotifData {
 export component NotificationCard inherits Rectangle {
     in-out property <NotifData> data;
     in property <length> icon-size;
+    in property <length> max-card-height: 200px;
 
     in property <length> absolute-x;
     in property <length> absolute-y;
@@ -118,18 +119,16 @@ export component NotificationCard inherits Rectangle {
     VerticalLayout {
         padding: 16px;
         spacing: 12px;
-        alignment: start;
 
         HorizontalLayout {
             spacing: 12px;
-            alignment: space-between;
 
             Rectangle {
                 horizontal-stretch: 1;
 
                 HorizontalLayout {
                     spacing: 12px;
-                    alignment: start;
+
                     VerticalLayout {
                         alignment: center;
                         if root.data.icon.width > 0 && root.data.icon.height > 0: Image {
@@ -142,8 +141,9 @@ export component NotificationCard inherits Rectangle {
 
                     VerticalLayout {
                         spacing: 4px;
-                        alignment: start;
                         horizontal-stretch: 1;
+                        vertical-stretch: 1;
+                        max-height: root.max-card-height - 32px;
 
                         Text {
                             text: data.app-name;
@@ -158,7 +158,6 @@ export component NotificationCard inherits Rectangle {
                             font-weight: MaterialTypography.title_medium.font-weight;
                             color: MaterialPalette.on_surface;
                             wrap: word-wrap;
-                            overflow: elide;
                         }
 
                         if data.subtitle != "": Text {
@@ -166,7 +165,6 @@ export component NotificationCard inherits Rectangle {
                             font-size: MaterialTypography.body_medium.font-size;
                             color: MaterialPalette.on_surface_variant;
                             wrap: word-wrap;
-                            overflow: elide;
                         }
 
                         Text {
@@ -174,7 +172,6 @@ export component NotificationCard inherits Rectangle {
                             font-size: MaterialTypography.body_medium.font-size;
                             color: MaterialPalette.on_surface_variant;
                             wrap: word-wrap;
-                            overflow: elide;
                         }
                     }
                 }
@@ -191,7 +188,7 @@ export component NotificationCard inherits Rectangle {
             VerticalLayout {
                 alignment: start;
                 FilledIconButton {
-                    icon:@image-url("./assets/close.svg");
+                    icon: @image-url("./assets/close.svg");
                     clicked => {
                         if (root.i-alive) {
                             if (root.is-registered) {
@@ -400,6 +397,7 @@ export component notificationWindow inherits Window {
             y: root.calculate_y(0);
             width: root.card-width;
             icon-size: config.notification.icon-size;
+            max-card-height: config.notification.notification_max_height;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
             absolute-y: self.y;
@@ -435,6 +433,7 @@ export component notificationWindow inherits Window {
             y: root.calculate_y(1);
             width: root.card-width;
             icon-size: config.notification.icon-size;
+            max-card-height: config.notification.notification_max_height;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
             absolute-y: self.y;
@@ -470,6 +469,7 @@ export component notificationWindow inherits Window {
             y: root.calculate_y(2);
             width: root.card-width;
             icon-size: config.notification.icon-size;
+            max-card-height: config.notification.notification_max_height;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
             absolute-y: self.y;
@@ -505,6 +505,7 @@ export component notificationWindow inherits Window {
             y: root.calculate_y(3);
             width: root.card-width;
             icon-size: config.notification.icon-size;
+            max-card-height: config.notification.notification_max_height;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
             absolute-y: self.y;
@@ -540,6 +541,7 @@ export component notificationWindow inherits Window {
             y: root.calculate_y(4);
             width: root.card-width;
             icon-size: config.notification.icon-size;
+            max-card-height: config.notification.notification_max_height;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
             absolute-y: self.y;

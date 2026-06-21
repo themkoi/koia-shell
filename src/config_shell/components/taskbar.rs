@@ -10,6 +10,8 @@ pub enum SortingMode {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TaskbarConfig {
     pub icon_size: u16,
+    pub taskbar_max_width: u16,
+    pub indicator_max_width: u16,
     pub separate_workspaces: bool,
     pub sorting_mode: SortingMode,
     pub check_cache_validity: bool,
@@ -26,5 +28,7 @@ pub fn default_taskbar() -> TaskbarConfig {
             .into_iter()
             .map(String::from)
             .collect(),
+        taskbar_max_width: 1500,
+        indicator_max_width: 1000,
     }
 }

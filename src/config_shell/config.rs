@@ -191,6 +191,8 @@ pub fn build_config_slint(config: &crate::config::AppConfig) -> ConfigSlint {
         },
         taskbar: TaskbarConfigSlint {
             icon_size: config.config.taskbar_config.icon_size as f32,
+            indicator_max_width: config.config.taskbar_config.indicator_max_width as f32,
+            taskbar_max_width: config.config.taskbar_config.taskbar_max_width as f32,
         },
         tray: TrayConfigSlint {
             icon_size: config.config.tray_config.icon_size as f32,

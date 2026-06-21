@@ -46,12 +46,28 @@ impl NotificationManager for notificationWindow {
             Image::default()
         };
 
+        let mut title = notification.summary.clone();
+        let mut body = notification.body.clone();
+
+        if let Some(app_config) = CONFIG_CELL.get() {
+            let max_title = app_config.config.notification_config.max_title_lenght as usize;
+            let max_text = app_config.config.notification_config.max_text_lenght as usize;
+
+            if title.chars().count() > max_title {
+                title = title.chars().take(max_title).collect::<String>() + "...";
+            }
+
+            if body.chars().count() > max_text {
+                body = body.chars().take(max_text).collect::<String>() + "...";
+            }
+        }
+
         self.invoke_add_notif(
             notification.id as i32,
             notification.appname.to_shared_string(),
-            notification.summary.to_shared_string(),
+            title.to_shared_string(), // Passed elided title
             notification.subtitle.unwrap_or_default().to_shared_string(),
-            notification.body.to_shared_string(),
+            body.to_shared_string(),  // Passed elided body
             give_timeout(notification.timeout),
             resolved_icon,
             ModelRc::from(actions_model),
