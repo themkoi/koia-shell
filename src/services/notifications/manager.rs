@@ -180,6 +180,7 @@ fn give_timeout(timeout: Timeout) -> i32 {
 
 fn resolve_icon(notif: &Notification, app_config: &crate::config::AppConfig) -> Image {
     let mut target_string = String::new();
+    
     for hint in &notif.hints {
         if let Hint::ImagePath(path) = hint {
             if !path.is_empty() {
@@ -202,6 +203,10 @@ fn resolve_icon(notif: &Notification, app_config: &crate::config::AppConfig) -> 
                 }
             }
         }
+    }
+
+    if target_string.is_empty() && !notif.appname.is_empty() {
+        target_string = notif.appname.clone();
     }
 
     if target_string.is_empty() {

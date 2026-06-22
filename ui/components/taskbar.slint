@@ -70,7 +70,7 @@ export component Taskbar inherits Rectangle {
                         width: is_expanded ? (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16 : 0px;
                         height: is_expanded ? (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16 : 0px;
                         y: 0px;
-                        x: -self.width;
+                        x: -self.width + 0.3px;
                         animate height {
                             duration: 100ms * animation_multiplier;
                             easing: ease-in-out;
@@ -89,7 +89,7 @@ export component Taskbar inherits Rectangle {
                         width: is_expanded ? (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16 : 0px;
                         height: is_expanded ? (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16 : 0px;
                         y: 0px;
-                        x: taskRect.width;
+                        x: taskRect.width - 0.3px;
                         animate height {
                             duration: 100ms * animation_multiplier;
                             easing: ease-in-out;

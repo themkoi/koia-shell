@@ -148,6 +148,7 @@ export component NotificationCard inherits Rectangle {
                 horizontal-stretch: 1;
 
                 HorizontalLayout {
+                    alignment: start;
                     spacing: 12px;
 
                     VerticalLayout {
@@ -188,7 +189,7 @@ export component NotificationCard inherits Rectangle {
                             wrap: word-wrap;
                         }
 
-                        Text {
+                        if data.message != "": Text {
                             text: data.message;
                             font-size: MaterialTypography.body_medium.font-size;
                             color: MaterialPalette.on_surface_variant;
