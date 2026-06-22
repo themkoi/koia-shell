@@ -28,7 +28,7 @@ use config_shell::config;
 mod services;
 use crate::{
     config_shell::{components::theme::build_config_palette, config::build_config_slint},
-    helpers::touch_area::manager::start_touch_manager,
+    helpers::{touch_area::manager::start_touch_manager,displays::display::is_display_connected},
     services::{
         battery::listener::listen_battery_changes, brightness::start_brightness_management,
         notifications::manager::start_notification_service,
@@ -49,7 +49,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let monitor: String;
 
     if args.monitor.is_empty() {
-        monitor = config.config.default_display.clone();
+        if is_display_connected(config.config.default_display.clone().as_str()) {
+            monitor = config.config.default_display.clone();
+        } else {
+            monitor = config.config.fallback_display.clone();
+        }
     } else {
         monitor = args.monitor;
     }
@@ -113,7 +117,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     run_taskbar(&config, bar_ui.as_weak()).await;
 
-    start_volume_management(bar_ui.as_weak()).await;
+    start_volume_management(bar_ui.as_weak(),config.config.interaction_config.allow_overflow_volume).await;
     start_brightness_management(&config, bar_ui.as_weak()).await;
     start_power_profile_management(bar_ui.as_weak()).await;
     listen_battery_changes(bar_ui.as_weak()).await;

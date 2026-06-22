@@ -7,6 +7,7 @@ use std::sync::Arc;
 pub async fn start_volume_adjuster(
     ui_weak: slint::Weak<barWindow>,
     audio_service: Arc<AudioService>,
+    allow_overflow: bool,
 ) {
     info!("starting volume adjuster");
 
@@ -15,7 +16,12 @@ pub async fn start_volume_adjuster(
         let audio_service_on_mute = Arc::clone(&audio_service);
 
         ui.on_set_volume(move |volume, delta| {
-            let volume_calc = volume + delta;
+            let volume_calc;
+            if allow_overflow == true {
+                volume_calc = volume + delta;
+            } else {
+                volume_calc = (volume + delta).clamp(0, 100);
+            }
             let normalized = volume_calc as f64 / 100.0;
 
             let audio_service = Arc::clone(&audio_service);

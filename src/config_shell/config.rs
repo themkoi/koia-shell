@@ -24,6 +24,7 @@ use crate::{
 pub struct InterractionConfig {
     pub animation_multiplier: f32,
     pub volume_scroll_step: u8,
+    pub allow_overflow_volume: bool,
     pub brightness_scroll_step: u8,
 }
 
@@ -43,6 +44,7 @@ pub struct HardwareConfig {
 pub struct Config {
     pub icon_theme: String,
     pub default_display: String,
+    pub fallback_display: String,
     pub window_config: WindowConfig,
     pub hardware_config: HardwareConfig,
     pub interaction_config: InterractionConfig,
@@ -56,6 +58,7 @@ impl Default for Config {
         Self {
             icon_theme: "Papirus-Dark".to_string(),
             default_display: "DP-3".to_string(),
+            fallback_display: "eDP-1".to_string(),
             window_config: WindowConfig {
                 bar_height: 38,
                 notification_screen: "eDP-1".to_string(),
@@ -67,6 +70,7 @@ impl Default for Config {
             interaction_config: InterractionConfig {
                 animation_multiplier: 1.0,
                 volume_scroll_step: 3,
+                allow_overflow_volume: true,
                 brightness_scroll_step: 5,
             },
             taskbar_config: default_taskbar(),

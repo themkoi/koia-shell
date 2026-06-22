@@ -121,12 +121,15 @@ export component Taskbar inherits Rectangle {
                                     spacing: 4px;
                                     padding-left: 8px;
                                     padding-right: 8px;
+                                    visible: root.workspaces <= 0;
 
                                     for ws[i] in root.workspaces: Rectangle {
                                         border_radius: MaterialStyleMetrics.border_radius_28;
                                         background: MaterialPalette.surface_bright;
                                         height: 100%;
                                         width: layout.preferred-width;
+
+                                        visible: ws.windows.length <= 0;
 
                                         layout := HorizontalLayout {
                                             height: 100%;

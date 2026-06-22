@@ -5,6 +5,7 @@ import {
     MaterialTypography,
 } from "@material/material.slint";
 import { ConfigSlint } from "shared-items.slint";
+import { MaterialStyleMetrics } from "material-1.0/ui/styling/material_style_metrics.slint";
 
 export struct ActionData {
     key: string,
@@ -58,10 +59,9 @@ export component NotificationCard inherits Rectangle {
     
     opacity: root.i-alive ? 1.0 : 0.0;
 
-    // --- ANIMATIONS WITH MULTIPLIER ---
     animate y { duration: 250ms * root.animation-multiplier; easing: ease-in-out-back; }
     animate height { duration: 200ms * root.animation-multiplier; easing: ease-in-out-back; }
-    animate opacity { duration: 300ms * root.animation-multiplier; easing: ease-in-out; }
+    animate opacity { duration: 400ms * root.animation-multiplier; easing: ease-in-out; }
 
     changed i-alive => {
         if (root.i-alive && !root.is-registered && !root.pending-register) {
@@ -123,8 +123,8 @@ export component NotificationCard inherits Rectangle {
     }
 
     VerticalLayout {
-        padding: 16px;
-        spacing: 12px;
+        padding: MaterialStyleMetrics.padding_14;
+        spacing: MaterialStyleMetrics.spacing_6;
 
         HorizontalLayout {
             spacing: 12px;
@@ -295,7 +295,7 @@ export component notificationWindow inherits Window {
             animation-multiplier: root.config.interaction.animation-multiplier;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
-            absolute-y: self.y;
+            absolute-y: root.calculate_y(1);
             update_region(x, y, w, h) => { root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
             remove_region(x, y, w, h) => { root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
             action_clicked(k) => { root.noti-action(self.data.id_rust, k); }
@@ -315,7 +315,7 @@ export component notificationWindow inherits Window {
             animation-multiplier: root.config.interaction.animation-multiplier;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
-            absolute-y: self.y;
+            absolute-y: root.calculate_y(1);
             update_region(x, y, w, h) => { root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
             remove_region(x, y, w, h) => { root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
             action_clicked(k) => { root.noti-action(self.data.id_rust, k); }
@@ -335,7 +335,7 @@ export component notificationWindow inherits Window {
             animation-multiplier: root.config.interaction.animation-multiplier;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
-            absolute-y: self.y;
+            absolute-y: root.calculate_y(1);
             update_region(x, y, w, h) => { root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
             remove_region(x, y, w, h) => { root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
             action_clicked(k) => { root.noti-action(self.data.id_rust, k); }
@@ -355,7 +355,7 @@ export component notificationWindow inherits Window {
             animation-multiplier: root.config.interaction.animation-multiplier;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
-            absolute-y: self.y;
+            absolute-y: root.calculate_y(1);
             update_region(x, y, w, h) => { root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
             remove_region(x, y, w, h) => { root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
             action_clicked(k) => { root.noti-action(self.data.id_rust, k); }
@@ -375,7 +375,7 @@ export component notificationWindow inherits Window {
             animation-multiplier: root.config.interaction.animation-multiplier;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
-            absolute-y: self.y;
+            absolute-y: root.calculate_y(1);
             update_region(x, y, w, h) => { root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
             remove_region(x, y, w, h) => { root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
             action_clicked(k) => { root.noti-action(self.data.id_rust, k); }
