@@ -206,6 +206,7 @@ pub fn build_config_slint(config: &crate::config::AppConfig) -> ConfigSlint {
             icon_size: config.config.notification_config.icon_size as f32,
             notification_max_height: config.config.notification_config.notification_max_height as f32,
             notification_width: config.config.notification_config.notification_width as f32,
+            other_action_buttons: config.config.notification_config.other_action_buttons,
         },
     }
 }

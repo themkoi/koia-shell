@@ -5,7 +5,9 @@ import {
     MaterialTypography,
 } from "@material/material.slint";
 import { ConfigSlint } from "shared-items.slint";
-import { MaterialStyleMetrics } from "material-1.0/ui/styling/material_style_metrics.slint";
+import {
+    MaterialStyleMetrics,
+} from "material-1.0/ui/styling/material_style_metrics.slint";
 
 export struct ActionData {
     key: string,
@@ -22,14 +24,17 @@ export struct NotifData {
     timeout: int,
     icon: image,
     actions: [ActionData],
+    resident: bool,
+    urgency: int,
 }
 
 export component NotificationCard inherits Rectangle {
     in-out property <NotifData> data;
     in property <length> icon-size;
     in property <length> max-card-height: 200px;
-    
-    // Dynamic animation scale factor
+
+    in property <bool> other_action_buttons;
+
     in property <float> animation-multiplier: 1.0;
 
     in property <length> absolute-x;
@@ -55,13 +60,23 @@ export component NotificationCard inherits Rectangle {
     border-radius: 12px;
     clip: true;
     border-width: 1px;
-    border-color: i-alive ? MaterialPalette.outline_variant : transparent;
-    
+
+    border-color: i-alive ? (data.urgency == 2 ? MaterialPalette.error : MaterialPalette.outline_variant) : transparent;
+
     opacity: root.i-alive ? 1.0 : 0.0;
 
-    animate y { duration: 250ms * root.animation-multiplier; easing: ease-in-out-back; }
-    animate height { duration: 200ms * root.animation-multiplier; easing: ease-in-out-back; }
-    animate opacity { duration: 400ms * root.animation-multiplier; easing: ease-in-out; }
+    animate y {
+        duration: 250ms * root.animation-multiplier;
+        easing: ease-in-out-back;
+    }
+    animate height {
+        duration: 200ms * root.animation-multiplier;
+        easing: ease-in-out-back;
+    }
+    animate opacity {
+        duration: 300ms * root.animation-multiplier;
+        easing: ease-in-out;
+    }
 
     changed i-alive => {
         if (root.i-alive && !root.is-registered && !root.pending-register) {
@@ -123,7 +138,7 @@ export component NotificationCard inherits Rectangle {
     }
 
     VerticalLayout {
-        padding: MaterialStyleMetrics.padding_14;
+        padding: MaterialStyleMetrics.padding_12;
         spacing: MaterialStyleMetrics.spacing_6;
 
         HorizontalLayout {
@@ -185,7 +200,17 @@ export component NotificationCard inherits Rectangle {
                 TouchArea {
                     width: 100%;
                     height: 100%;
-                    clicked => { root.action_clicked("default"); }
+                    clicked => {
+                        root.action_clicked("default");
+                        if (!root.data.resident) {
+                            if (root.is-registered) {
+                                root.remove_region(root.active-reg-x, root.active-reg-y, root.active-reg-w, root.active-reg-h);
+                                root.is-registered = false;
+                            }
+                            root.i-alive = false;
+                            root.release();
+                        }
+                    }
                 }
             }
 
@@ -207,13 +232,23 @@ export component NotificationCard inherits Rectangle {
             }
         }
 
-        if data.actions.length > 0: HorizontalLayout {
+        if data.actions.length > 0 && other_action_buttons == true: HorizontalLayout {
             spacing: 8px;
             alignment: start;
             for act in data.actions: VerticalLayout {
                 if act.key != "default": FilledButton {
                     text: act.label;
-                    clicked => { root.action_clicked(act.key); }
+                    clicked => {
+                        root.action_clicked(act.key);
+                        if (!root.data.resident) {
+                            if (root.is-registered) {
+                                root.remove_region(root.active-reg-x, root.active-reg-y, root.active-reg-w, root.active-reg-h);
+                                root.is-registered = false;
+                            }
+                            root.i-alive = false;
+                            root.release();
+                        }
+                    }
                 }
             }
         }
@@ -245,11 +280,71 @@ export component notificationWindow inherits Window {
     private property <length> h3: slots[3].id >= 0 ? min(config.notification.notification_max_height, cards.c3-pref) : 0px;
 
     property <[NotifData]> slots: [
-        { id: -1, id_rust: -1, app-name: "", title: "", subtitle: "", message: "", timeout: 0, icon: @image-url(""), actions: [] },
-        { id: -1, id_rust: -1, app-name: "", title: "", subtitle: "", message: "", timeout: 0, icon: @image-url(""), actions: [] },
-        { id: -1, id_rust: -1, app-name: "", title: "", subtitle: "", message: "", timeout: 0, icon: @image-url(""), actions: [] },
-        { id: -1, id_rust: -1, app-name: "", title: "", subtitle: "", message: "", timeout: 0, icon: @image-url(""), actions: [] },
-        { id: -1, id_rust: -1, app-name: "", title: "", subtitle: "", message: "", timeout: 0, icon: @image-url(""), actions: [] },
+        {
+            id: -1,
+            id_rust: -1,
+            app-name: "",
+            title: "",
+            subtitle: "",
+            message: "",
+            timeout: 0,
+            icon: @image-url(""),
+            actions: [],
+            resident: false,
+            urgency: 1
+        },
+        {
+            id: -1,
+            id_rust: -1,
+            app-name: "",
+            title: "",
+            subtitle: "",
+            message: "",
+            timeout: 0,
+            icon: @image-url(""),
+            actions: [],
+            resident: false,
+            urgency: 1
+        },
+        {
+            id: -1,
+            id_rust: -1,
+            app-name: "",
+            title: "",
+            subtitle: "",
+            message: "",
+            timeout: 0,
+            icon: @image-url(""),
+            actions: [],
+            resident: false,
+            urgency: 1
+        },
+        {
+            id: -1,
+            id_rust: -1,
+            app-name: "",
+            title: "",
+            subtitle: "",
+            message: "",
+            timeout: 0,
+            icon: @image-url(""),
+            actions: [],
+            resident: false,
+            urgency: 1
+        },
+        {
+            id: -1,
+            id_rust: -1,
+            app-name: "",
+            title: "",
+            subtitle: "",
+            message: "",
+            timeout: 0,
+            icon: @image-url(""),
+            actions: [],
+            resident: false,
+            urgency: 1
+        },
     ];
 
     pure function calculate_y(idx: int) -> length {
@@ -261,18 +356,84 @@ export component notificationWindow inherits Window {
         return y4;
     }
 
-    callback add-notif(int, string, string, string, string, int, image, [ActionData]);
+    callback add-notif(int, string, string, string, string, int, image, [ActionData], bool, int);
     callback a_input_region(int, int, int, int);
     callback r_input_region(int, int, int, int);
     callback noti-close(int);
     callback noti-action(int, string);
 
-    add-notif(id_rust, app_name, title, subtitle, msg, timeout, icon_img, acts) => {
-        if (root.slots[0].id < 0) { root.slots[0] = { id: nid, id_rust: id_rust, app-name: app_name, title: title, subtitle: subtitle, message: msg, timeout: timeout, icon: icon_img, actions: acts }; }
-        else if (root.slots[1].id < 0) { root.slots[1] = { id: nid, id_rust: id_rust, app-name: app_name, title: title, subtitle: subtitle, message: msg, timeout: timeout, icon: icon_img, actions: acts }; }
-        else if (root.slots[2].id < 0) { root.slots[2] = { id: nid, id_rust: id_rust, app-name: app_name, title: title, subtitle: subtitle, message: msg, timeout: timeout, icon: icon_img, actions: acts }; }
-        else if (root.slots[3].id < 0) { root.slots[3] = { id: nid, id_rust: id_rust, app-name: app_name, title: title, subtitle: subtitle, message: msg, timeout: timeout, icon: icon_img, actions: acts }; }
-        else if (root.slots[4].id < 0) { root.slots[4] = { id: nid, id_rust: id_rust, app-name: app_name, title: title, subtitle: subtitle, message: msg, timeout: timeout, icon: icon_img, actions: acts }; }
+    add-notif(id_rust, app_name, title, subtitle, msg, timeout, icon_img, acts, resident, urgency) => {
+        if (root.slots[0].id < 0) {
+            root.slots[0] = {
+                id: nid,
+                id_rust: id_rust,
+                app-name: app_name,
+                title: title,
+                subtitle: subtitle,
+                message: msg,
+                timeout: timeout,
+                icon: icon_img,
+                actions: acts,
+                resident: resident,
+                urgency: urgency
+            };
+        } else if (root.slots[1].id < 0) {
+            root.slots[1] = {
+                id: nid,
+                id_rust: id_rust,
+                app-name: app_name,
+                title: title,
+                subtitle: subtitle,
+                message: msg,
+                timeout: timeout,
+                icon: icon_img,
+                actions: acts,
+                resident: resident,
+                urgency: urgency
+            };
+        } else if (root.slots[2].id < 0) {
+            root.slots[2] = {
+                id: nid,
+                id_rust: id_rust,
+                app-name: app_name,
+                title: title,
+                subtitle: subtitle,
+                message: msg,
+                timeout: timeout,
+                icon: icon_img,
+                actions: acts,
+                resident: resident,
+                urgency: urgency
+            };
+        } else if (root.slots[3].id < 0) {
+            root.slots[3] = {
+                id: nid,
+                id_rust: id_rust,
+                app-name: app_name,
+                title: title,
+                subtitle: subtitle,
+                message: msg,
+                timeout: timeout,
+                icon: icon_img,
+                actions: acts,
+                resident: resident,
+                urgency: urgency
+            };
+        } else if (root.slots[4].id < 0) {
+            root.slots[4] = {
+                id: nid,
+                id_rust: id_rust,
+                app-name: app_name,
+                title: title,
+                subtitle: subtitle,
+                message: msg,
+                timeout: timeout,
+                icon: icon_img,
+                actions: acts,
+                resident: resident,
+                urgency: urgency
+            };
+        }
         nid += 1;
     }
 
@@ -295,13 +456,32 @@ export component notificationWindow inherits Window {
             animation-multiplier: root.config.interaction.animation-multiplier;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
-            absolute-y: root.calculate_y(1);
-            update_region(x, y, w, h) => { root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
-            remove_region(x, y, w, h) => { root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
-            action_clicked(k) => { root.noti-action(self.data.id_rust, k); }
+            absolute-y: root.calculate_y(0);
+            other_action_buttons: config.notification.other-action-buttons;
+            update_region(x, y, w, h) => {
+                root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
+            }
+            remove_region(x, y, w, h) => {
+                root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
+            }
+            action_clicked(k) => {
+                root.noti-action(self.data.id_rust, k);
+            }
             release => {
                 root.noti-close(self.data.id_rust);
-                root.slots[0] = { id: -1, id_rust: -1, app-name: "", title: "", subtitle: "", message: "", timeout: 0, icon: @image-url(""), actions: [] };
+                root.slots[0] = {
+                    id: -1,
+                    id_rust: -1,
+                    app-name: "",
+                    title: "",
+                    subtitle: "",
+                    message: "",
+                    timeout: 0,
+                    icon: @image-url(""),
+                    actions: [],
+                    resident: false,
+                    urgency: 1
+                };
             }
         }
 
@@ -316,12 +496,31 @@ export component notificationWindow inherits Window {
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
             absolute-y: root.calculate_y(1);
-            update_region(x, y, w, h) => { root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
-            remove_region(x, y, w, h) => { root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
-            action_clicked(k) => { root.noti-action(self.data.id_rust, k); }
+            other_action_buttons: config.notification.other-action-buttons;
+            update_region(x, y, w, h) => {
+                root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
+            }
+            remove_region(x, y, w, h) => {
+                root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
+            }
+            action_clicked(k) => {
+                root.noti-action(self.data.id_rust, k);
+            }
             release => {
                 root.noti-close(self.data.id_rust);
-                root.slots[1] = { id: -1, id_rust: -1, app-name: "", title: "", subtitle: "", message: "", timeout: 0, icon: @image-url(""), actions: [] };
+                root.slots[1] = {
+                    id: -1,
+                    id_rust: -1,
+                    app-name: "",
+                    title: "",
+                    subtitle: "",
+                    message: "",
+                    timeout: 0,
+                    icon: @image-url(""),
+                    actions: [],
+                    resident: false,
+                    urgency: 1
+                };
             }
         }
 
@@ -335,13 +534,32 @@ export component notificationWindow inherits Window {
             animation-multiplier: root.config.interaction.animation-multiplier;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
-            absolute-y: root.calculate_y(1);
-            update_region(x, y, w, h) => { root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
-            remove_region(x, y, w, h) => { root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
-            action_clicked(k) => { root.noti-action(self.data.id_rust, k); }
+            absolute-y: root.calculate_y(2);
+            other_action_buttons: config.notification.other-action-buttons;
+            update_region(x, y, w, h) => {
+                root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
+            }
+            remove_region(x, y, w, h) => {
+                root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
+            }
+            action_clicked(k) => {
+                root.noti-action(self.data.id_rust, k);
+            }
             release => {
                 root.noti-close(self.data.id_rust);
-                root.slots[2] = { id: -1, id_rust: -1, app-name: "", title: "", subtitle: "", message: "", timeout: 0, icon: @image-url(""), actions: [] };
+                root.slots[2] = {
+                    id: -1,
+                    id_rust: -1,
+                    app-name: "",
+                    title: "",
+                    subtitle: "",
+                    message: "",
+                    timeout: 0,
+                    icon: @image-url(""),
+                    actions: [],
+                    resident: false,
+                    urgency: 1
+                };
             }
         }
 
@@ -355,13 +573,32 @@ export component notificationWindow inherits Window {
             animation-multiplier: root.config.interaction.animation-multiplier;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
-            absolute-y: root.calculate_y(1);
-            update_region(x, y, w, h) => { root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
-            remove_region(x, y, w, h) => { root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
-            action_clicked(k) => { root.noti-action(self.data.id_rust, k); }
+            absolute-y: root.calculate_y(3);
+            other_action_buttons: config.notification.other-action-buttons;
+            update_region(x, y, w, h) => {
+                root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
+            }
+            remove_region(x, y, w, h) => {
+                root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
+            }
+            action_clicked(k) => {
+                root.noti-action(self.data.id_rust, k);
+            }
             release => {
                 root.noti-close(self.data.id_rust);
-                root.slots[3] = { id: -1, id_rust: -1, app-name: "", title: "", subtitle: "", message: "", timeout: 0, icon: @image-url(""), actions: [] };
+                root.slots[3] = {
+                    id: -1,
+                    id_rust: -1,
+                    app-name: "",
+                    title: "",
+                    subtitle: "",
+                    message: "",
+                    timeout: 0,
+                    icon: @image-url(""),
+                    actions: [],
+                    resident: false,
+                    urgency: 1
+                };
             }
         }
 
@@ -375,13 +612,32 @@ export component notificationWindow inherits Window {
             animation-multiplier: root.config.interaction.animation-multiplier;
             height: self.data.id >= 0 ? min(config.notification.notification_max_height, self.preferred-height) : 0px;
             absolute-x: self.x;
-            absolute-y: root.calculate_y(1);
-            update_region(x, y, w, h) => { root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
-            remove_region(x, y, w, h) => { root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px); }
-            action_clicked(k) => { root.noti-action(self.data.id_rust, k); }
+            absolute-y: root.calculate_y(4);
+            other_action_buttons: config.notification.other-action-buttons;
+            update_region(x, y, w, h) => {
+                root.a_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
+            }
+            remove_region(x, y, w, h) => {
+                root.r_input_region(x / 1px, y / 1px, w / 1px, h / 1px);
+            }
+            action_clicked(k) => {
+                root.noti-action(self.data.id_rust, k);
+            }
             release => {
                 root.noti-close(self.data.id_rust);
-                root.slots[4] = { id: -1, id_rust: -1, app-name: "", title: "", subtitle: "", message: "", timeout: 0, icon: @image-url(""), actions: [] };
+                root.slots[4] = {
+                    id: -1,
+                    id_rust: -1,
+                    app-name: "",
+                    title: "",
+                    subtitle: "",
+                    message: "",
+                    timeout: 0,
+                    icon: @image-url(""),
+                    actions: [],
+                    resident: false,
+                    urgency: 1
+                };
             }
         }
     }

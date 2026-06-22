@@ -22,6 +22,23 @@ impl NotificationManager for notificationWindow {
             notification.summary
         );
 
+        let mut is_resident = false;
+        let mut urgency_level = 1;
+
+        for hint in &notification.hints {
+            match hint {
+                Hint::Resident(r) => is_resident = *r,
+                Hint::Urgency(u) => {
+                    urgency_level = match u {
+                        spell_framework::vault::Urgency::Low => 0,
+                        spell_framework::vault::Urgency::Normal => 1,
+                        spell_framework::vault::Urgency::Critical => 2,
+                    };
+                }
+                _ => {}
+            }
+        }
+
         let slint_actions_vec = Vec::new();
         let actions_model = Rc::new(VecModel::from(slint_actions_vec));
 
@@ -65,12 +82,14 @@ impl NotificationManager for notificationWindow {
         self.invoke_add_notif(
             notification.id as i32,
             notification.appname.to_shared_string(),
-            title.to_shared_string(), // Passed elided title
+            title.to_shared_string(), 
             notification.subtitle.unwrap_or_default().to_shared_string(),
-            body.to_shared_string(),  // Passed elided body
+            body.to_shared_string(),
             give_timeout(notification.timeout),
             resolved_icon,
             ModelRc::from(actions_model),
+            is_resident,
+            urgency_level,
         );
 
         Ok(())
@@ -148,7 +167,13 @@ fn give_timeout(timeout: Timeout) -> i32 {
                 3000
             }
         }
-        Timeout::Never => 0,
+        Timeout::Never => {
+            if let Some(cfg) = CONFIG_CELL.get() {
+                cfg.config.notification_config.notification_never_timeout.into()
+            } else {
+                0
+            }
+        }
         Timeout::Milliseconds(val) => val,
     }
 }
