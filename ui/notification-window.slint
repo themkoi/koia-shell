@@ -209,7 +209,6 @@ export component NotificationCard inherits Rectangle {
                                 root.is-registered = false;
                             }
                             root.i-alive = false;
-                            root.release();
                         }
                     }
                 }
@@ -247,7 +246,6 @@ export component NotificationCard inherits Rectangle {
                                 root.is-registered = false;
                             }
                             root.i-alive = false;
-                            root.release();
                         }
                     }
                 }
@@ -467,6 +465,7 @@ export component notificationWindow inherits Window {
             }
             action_clicked(k) => {
                 root.noti-action(self.data.id_rust, k);
+                self.release();
             }
             release => {
                 root.noti-close(self.data.id_rust);
@@ -506,6 +505,7 @@ export component notificationWindow inherits Window {
             }
             action_clicked(k) => {
                 root.noti-action(self.data.id_rust, k);
+                self.release();
             }
             release => {
                 root.noti-close(self.data.id_rust);
@@ -545,6 +545,7 @@ export component notificationWindow inherits Window {
             }
             action_clicked(k) => {
                 root.noti-action(self.data.id_rust, k);
+                self.release();
             }
             release => {
                 root.noti-close(self.data.id_rust);
@@ -584,6 +585,7 @@ export component notificationWindow inherits Window {
             }
             action_clicked(k) => {
                 root.noti-action(self.data.id_rust, k);
+                self.release();
             }
             release => {
                 root.noti-close(self.data.id_rust);
@@ -623,6 +625,7 @@ export component notificationWindow inherits Window {
             }
             action_clicked(k) => {
                 root.noti-action(self.data.id_rust, k);
+                self.release();
             }
             release => {
                 root.noti-close(self.data.id_rust);

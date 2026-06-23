@@ -7,7 +7,7 @@ use spell_framework::{
     },
     wayland_adapter::WinHandle,
 };
-use std::path::Path;
+use std::{path::Path, thread::sleep};
 use std::rc::Rc;
 use std::sync::OnceLock;
 
@@ -128,6 +128,7 @@ pub async fn start_notification_service(
 
     window.on_noti_close(move |id| {
         tokio::spawn(async move {
+            sleep(std::time::Duration::from_millis(100));
             tokio::task::spawn_blocking(move || {
                 let _ = NOTIFICATION_EVENT
                     .get()
@@ -150,7 +151,7 @@ pub async fn start_notification_service(
                 let _ = NOTIFICATION_EVENT
                     .get()
                     .unwrap()
-                    .action_invoked(id, &action_key);
+                    .action_invoked(id.try_into().unwrap(), &action_key);
             })
             .await
             .ok();

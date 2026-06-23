@@ -253,6 +253,7 @@ export component barWindow inherits Window {
         alignment: center;
         Taskbar {
             config: config;
+            width: 100%;
             animation_multiplier: config.interaction.animation-multiplier;
             workspaces: workspaces;
             dispatch_command(cmd) => {

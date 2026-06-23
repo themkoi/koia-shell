@@ -197,18 +197,19 @@ export component Taskbar inherits Rectangle {
                 alignment: center;
 
                 Rectangle {
-                    visible: root.workspaces.length >= 0;
-
                     width: 100%;
                     background: rgba(
                         MaterialPalette.surface_tint.red,
                         MaterialPalette.surface_tint.green,
                         MaterialPalette.surface_tint.blue,
                         0.25);
-                    height: 7px;
-                    opacity: !is_expanded ? 1.0 : 0.0;
 
-                    animate opacity {
+                    visible: root.workspaces.length > 0 && (root.workspaces.length > 1 || (root.workspaces.length == 1 && root.workspaces[0].windows.length > 1));
+
+                    height: self.visible ? 7px : 0px;
+                    opacity: !is_expanded && self.visible ? 1.0 : 0.0;
+
+                    animate opacity, height {
                         duration: 100ms * animation_multiplier;
                         easing: ease-in-out;
                     }
@@ -227,6 +228,7 @@ export component Taskbar inherits Rectangle {
                         hide_scrollbars: true;
 
                         indicatorRect := HorizontalLayout {
+                            width: 100%;
                             spacing: 10px;
                             alignment: center;
 
@@ -242,6 +244,7 @@ export component Taskbar inherits Rectangle {
                                 border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
 
                                 HorizontalLayout {
+                                    alignment: center;
                                     padding-left: 3px;
                                     padding-right: 3px;
                                     padding-bottom: 0px;
@@ -253,6 +256,7 @@ export component Taskbar inherits Rectangle {
                                         width: win.is_focused ? 25px : 17px;
                                         height: 5px;
                                         background: win.is_focused ? MaterialPalette.primary : MaterialPalette.surface_variant;
+
                                         animate width {
                                             duration: 1000ms * animation_multiplier;
                                             easing: ease-in-out;
