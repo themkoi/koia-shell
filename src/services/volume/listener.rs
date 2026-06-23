@@ -28,10 +28,14 @@ pub async fn listen_volume_changes(
     tokio::spawn(async move {
         let mut output_stream = audio_service.default_output.watch();
 
-        while let Some(maybe_device) = output_stream.next().await {
-            let Some(device) = maybe_device else {
+        loop {
+            let Some(device) = audio_service.default_output.get() else {
                 update_ui(&ui_weak, 0, false);
-                continue;
+
+                match output_stream.next().await {
+                    Some(_) => continue,
+                    None => return,
+                }
             };
 
             update_ui(
@@ -45,6 +49,15 @@ pub async fn listen_volume_changes(
 
             loop {
                 tokio::select! {
+                    biased;
+
+                    changed = output_stream.next() => {
+                        match changed {
+                            Some(_) => break,
+                            None => return,
+                        }
+                    }
+
                     volume = volume_stream.next() => {
                         let Some(volume) = volume else {
                             break;
@@ -67,13 +80,6 @@ pub async fn listen_volume_changes(
                             device.volume.get().average_percentage().round() as i32,
                             muted,
                         );
-                    }
-
-                    changed = output_stream.next() => {
-                        match changed {
-                            Some(_) => break,
-                            None => return,
-                        }
                     }
                 }
             }
