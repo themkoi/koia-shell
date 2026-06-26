@@ -277,6 +277,7 @@ export component notificationWindow inherits Window {
     private property <length> h1: slots[1].id >= 0 ? min(config.notification.notification_max_height, cards.c1-pref) : 0px;
     private property <length> h2: slots[2].id >= 0 ? min(config.notification.notification_max_height, cards.c2-pref) : 0px;
     private property <length> h3: slots[3].id >= 0 ? min(config.notification.notification_max_height, cards.c3-pref) : 0px;
+    private property <length> h4: slots[4].id >= 0 ? min(config.notification.notification_max_height, cards.c4-pref) : 0px;
 
     property <[NotifData]> slots: [
         {
@@ -346,13 +347,24 @@ export component notificationWindow inherits Window {
         },
     ];
 
+    pure function get_rank(idx: int) -> int {
+        if (root.slots[idx].id < 0) { return -1; }
+        return (root.slots[0].id > root.slots[idx].id ? 1 : 0) +
+               (root.slots[1].id > root.slots[idx].id ? 1 : 0) +
+               (root.slots[2].id > root.slots[idx].id ? 1 : 0) +
+               (root.slots[3].id > root.slots[idx].id ? 1 : 0) +
+               (root.slots[4].id > root.slots[idx].id ? 1 : 0);
+    }
+
     pure function calculate_y(idx: int) -> length {
-        let y0 = root.pad;
-        let y1 = y0 + (idx > 0 && root.slots[0].id >= 0 ? root.h0 + 8px : 0px);
-        let y2 = y1 + (idx > 1 && root.slots[1].id >= 0 ? root.h1 + 8px : 0px);
-        let y3 = y2 + (idx > 2 && root.slots[2].id >= 0 ? root.h2 + 8px : 0px);
-        let y4 = y3 + (idx > 3 && root.slots[3].id >= 0 ? root.h3 + 8px : 0px);
-        return y4;
+        let rank = root.get_rank(idx);
+        if (rank < 0) { return 0px; }
+        return root.pad +
+               (root.get_rank(0) >= 0 && root.get_rank(0) < rank ? root.h0 + 8px : 0px) +
+               (root.get_rank(1) >= 0 && root.get_rank(1) < rank ? root.h1 + 8px : 0px) +
+               (root.get_rank(2) >= 0 && root.get_rank(2) < rank ? root.h2 + 8px : 0px) +
+               (root.get_rank(3) >= 0 && root.get_rank(3) < rank ? root.h3 + 8px : 0px) +
+               (root.get_rank(4) >= 0 && root.get_rank(4) < rank ? root.h4 + 8px : 0px);
     }
 
     callback add-notif(int, string, string, string, string, int, image, [ActionData], bool, int);
@@ -444,6 +456,7 @@ export component notificationWindow inherits Window {
         out property <length> c1-pref: c1.preferred-height;
         out property <length> c2-pref: c2.preferred-height;
         out property <length> c3-pref: c3.preferred-height;
+        out property <length> c4-pref: c4.preferred-height;
 
         c0 := NotificationCard {
             data: root.slots[0];

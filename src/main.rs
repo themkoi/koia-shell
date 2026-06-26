@@ -28,7 +28,7 @@ use config_shell::config;
 mod services;
 use crate::{
     config_shell::{components::theme::build_config_palette, config::build_config_slint},
-    helpers::{touch_area::manager::start_touch_manager,displays::display::is_display_connected},
+    helpers::{displays::display::is_display_connected, touch_area::manager::start_touch_manager},
     services::{
         battery::listener::listen_battery_changes, brightness::start_brightness_management,
         notifications::manager::start_notification_service,
@@ -42,7 +42,9 @@ mod helpers;
 use crate::helpers::commands::runner::start_command_handler;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::init();
+    env_logger::init_from_env(
+        env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "info"),
+    );
     let config = config::load_app_config().unwrap();
     let args = Args::parse();
 
@@ -117,7 +119,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     run_taskbar(&config, bar_ui.as_weak()).await;
 
-    start_volume_management(bar_ui.as_weak(),config.config.interaction_config.allow_overflow_volume).await;
+    start_volume_management(
+        bar_ui.as_weak(),
+        config.config.interaction_config.allow_overflow_volume,
+    )
+    .await;
     start_brightness_management(&config, bar_ui.as_weak()).await;
     start_power_profile_management(bar_ui.as_weak()).await;
     listen_battery_changes(bar_ui.as_weak()).await;

@@ -35,6 +35,7 @@ struct ThreadSafeTrayData {
 pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<barWindow>) {
     info!("starting tray manager");
 
+
     let client_raw = match Client::new().await {
         Ok(c) => c,
         Err(e) => {
@@ -175,32 +176,64 @@ pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<
         let max_throttle_interval = Duration::from_millis(50);
         let mut last_ui_write = Instant::now();
 
-        while let Ok(_event) = tray_rx.recv().await {
-            let start_debounce = Instant::now();
-            
-            loop {
-                tokio::select! {
-                    _ = sleep(debounce_duration) => {
-                        break; 
-                    }
-                    next_event = tray_rx.recv() => {
-                        if next_event.is_err() { break; }
-                        if start_debounce.elapsed() >= max_throttle_interval {
-                            break;
+        loop {
+            match tray_rx.recv().await {
+                Ok(_event) => {
+                    let start_debounce = Instant::now();
+                    
+                    loop {
+                        tokio::select! {
+                            _ = sleep(debounce_duration) => {
+                                break; 
+                            }
+                            next_event = tray_rx.recv() => {
+                                match next_event {
+                                    Ok(_) => {
+                                        if start_debounce.elapsed() >= max_throttle_interval {
+                                            break;
+                                        }
+                                    }
+                                    Err(_) => break,
+                                }
+                            }
                         }
                     }
+
+                    loop {
+                        match tray_rx.try_recv() {
+                            Ok(_) => {}
+                            Err(tokio::sync::broadcast::error::TryRecvError::Lagged(_)) => {}
+                            Err(tokio::sync::broadcast::error::TryRecvError::Empty) => break,
+                            Err(tokio::sync::broadcast::error::TryRecvError::Closed) => break,
+                        }
+                    }
+
+                    let elapsed_since_write = last_ui_write.elapsed();
+                    if elapsed_since_write < debounce_duration {
+                        sleep(debounce_duration - elapsed_since_write).await;
+                    }
+
+                    populate_ui_items(&client_bg, &ui_weak_clone, &config_bg);
+                    last_ui_write = Instant::now();
+                }
+                Err(tokio::sync::broadcast::error::RecvError::Lagged(skipped)) => {
+                    log::warn!("Tray worker lagged by {} messages. Forcing UI refresh.", skipped);
+                    
+                    loop {
+                        match tray_rx.try_recv() {
+                            Ok(_) => {}
+                            Err(tokio::sync::broadcast::error::TryRecvError::Lagged(_)) => {}
+                            Err(tokio::sync::broadcast::error::TryRecvError::Empty) => break,
+                            Err(tokio::sync::broadcast::error::TryRecvError::Closed) => break,
+                        }
+                    }
+                    populate_ui_items(&client_bg, &ui_weak_clone, &config_bg);
+                }
+                Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                    log::error!("Tray event channel closed unexpectedly.");
+                    break;
                 }
             }
-
-            while tray_rx.try_recv().is_ok() {}
-
-            let elapsed_since_write = last_ui_write.elapsed();
-            if elapsed_since_write < debounce_duration {
-                sleep(debounce_duration - elapsed_since_write).await;
-            }
-
-            populate_ui_items(&client_bg, &ui_weak_clone, &config_bg);
-            last_ui_write = Instant::now();
         }
     });
 }

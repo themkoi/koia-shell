@@ -17,7 +17,7 @@ log = "0.4.32"
 niri-ipc = "26.4.0"
 notify = "8.2.0"
 serde = "1.0.228"
-slint = { version = "=1.16.1", default-features = false, features = [
+slint = { version = "=1.17.0", default-features = false, features = [
     "accessibility",
     "compat-1-2",
     "renderer-winit-software",
@@ -37,11 +37,11 @@ chrono = "0.4.45"
 
 
 [build-dependencies]
-slint-build = "=1.16.1"
+slint-build = "=1.17.0"
 
 
 [profile.release]
-lto = "fat"
+lto = "thin"
 opt-level = 3
 codegen-units = 1
 panic = "abort"
