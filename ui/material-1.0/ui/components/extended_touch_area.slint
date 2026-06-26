@@ -3,7 +3,7 @@
 
 import { MaterialAnimations } from "../styling/material_animations.slint";
 import { MaterialPalette } from "../styling/material_palette.slint";
-import { ToolTip } from "tooltip.slint";
+import { ToolTipMaterial } from "tooltip.slint";
 
 export component ExtendedTouchArea inherits TouchArea {
     in property <string> tooltip;
@@ -50,7 +50,7 @@ export component ExtendedTouchArea inherits TouchArea {
 
     @children
 
-    if root.tooltip != "" && root.has-hover && !root.pressed : ToolTip {
+    if root.tooltip != "" && root.has-hover && !root.pressed : ToolTipMaterial {
         y: root.tooltip_offset;
         text: root.tooltip;
     }

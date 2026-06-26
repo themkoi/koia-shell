@@ -4,7 +4,7 @@ import {
     MaterialPalette,
     MaterialTypography,
     MaterialStyleMetrics,
-    ToolTip,
+    ToolTipMaterial,
 } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
 import { MaterialText, MaterialPalette } from "../material-1.0/material.slint";
@@ -161,6 +161,7 @@ export component Taskbar inherits Rectangle {
                                                     color: MaterialPalette.on_primary;
                                                     height: 100%;
                                                     button_horizontal_padding: MaterialStyleMetrics.padding_12;
+                                                    tooltip-text: win.title;
 
                                                     pointer-event(event) => {
                                                         if (event.kind == PointerEventKind.up) {

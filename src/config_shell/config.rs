@@ -20,7 +20,7 @@ use crate::{
     InteractionConfigSlint, TrayConfigSlint, WindowConfigSlint, NoticificationConfigSlint
 };
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct InterractionConfig {
     pub animation_multiplier: f32,
     pub volume_scroll_step: u8,
@@ -28,19 +28,19 @@ pub struct InterractionConfig {
     pub brightness_scroll_step: u8,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct WindowConfig {
     pub bar_height: u16,
     pub notification_screen: String,
     pub notification_window_width: u16,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct HardwareConfig {
     pub brightness_device: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Config {
     pub icon_theme: String,
     pub default_display: String,
@@ -80,7 +80,7 @@ impl Default for Config {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ThemeConfig {
     pub dark_scheme: MaterialScheme,
     pub light_scheme: MaterialScheme,
@@ -168,7 +168,7 @@ pub fn load_or_create_theme_config() -> Result<ThemeConfig, Box<dyn std::error::
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct AppConfig {
     pub config: Config,
     pub theme: ThemeConfig,

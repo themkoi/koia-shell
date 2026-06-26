@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use slint::{Color};
 use crate::{MaterialSchemes};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct MaterialScheme {
     pub primary: [u8; 3],
     pub surface_tint: [u8; 3],

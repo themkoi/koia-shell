@@ -7,9 +7,9 @@ use spell_framework::{
     },
     wayland_adapter::WinHandle,
 };
-use std::{path::Path, thread::sleep};
 use std::rc::Rc;
 use std::sync::OnceLock;
+use std::{path::Path, thread::sleep};
 
 use crate::{notificationWindow, notificationWindowSpell, ActionData};
 
@@ -77,12 +77,24 @@ impl NotificationManager for notificationWindow {
             if body.chars().count() > max_text {
                 body = body.chars().take(max_text).collect::<String>() + "...";
             }
+
+            let should_format_html = app_config
+                .config
+                .notification_config
+                .html_formatting
+                .iter()
+                .any(|a| a.to_lowercase() == notification.appname.to_lowercase());
+
+            if should_format_html {
+                title = html_to_markdown(&title);
+                body = html_to_markdown(&body);
+            }
         }
 
         self.invoke_add_notif(
             notification.id as i32,
             notification.appname.to_shared_string(),
-            title.to_shared_string(), 
+            title.to_shared_string(),
             notification.subtitle.unwrap_or_default().to_shared_string(),
             body.to_shared_string(),
             give_timeout(notification.timeout),
@@ -147,7 +159,6 @@ pub async fn start_notification_service(
             let action_key = action_key.to_string();
 
             tokio::task::spawn_blocking(move || {
-
                 let _ = NOTIFICATION_EVENT
                     .get()
                     .unwrap()
@@ -170,7 +181,10 @@ fn give_timeout(timeout: Timeout) -> i32 {
         }
         Timeout::Never => {
             if let Some(cfg) = CONFIG_CELL.get() {
-                cfg.config.notification_config.notification_never_timeout.into()
+                cfg.config
+                    .notification_config
+                    .notification_never_timeout
+                    .into()
             } else {
                 0
             }
@@ -181,12 +195,25 @@ fn give_timeout(timeout: Timeout) -> i32 {
 
 fn resolve_icon(notif: &Notification, app_config: &crate::config::AppConfig) -> Image {
     let mut target_string = String::new();
-    
-    for hint in &notif.hints {
-        if let Hint::ImagePath(path) = hint {
-            if !path.is_empty() {
-                target_string = path.clone();
-                break;
+
+    if !notif.appname.is_empty() {
+        if let Some(overrides) = app_config
+            .config
+            .notification_config
+            .icon_overrides
+            .get(&notif.appname.to_lowercase())
+        {
+            target_string = overrides.clone();
+        }
+    }
+
+    if target_string.is_empty() {
+        for hint in &notif.hints {
+            if let Hint::ImagePath(path) = hint {
+                if !path.is_empty() {
+                    target_string = path.clone();
+                    break;
+                }
             }
         }
     }
@@ -235,4 +262,20 @@ fn resolve_icon(notif: &Notification, app_config: &crate::config::AppConfig) -> 
     }
 
     Image::default()
+}
+
+fn html_to_markdown(input: &str) -> String {
+    input
+        .replace("<b>", "**")
+        .replace("</b>", "**")
+        .replace("<strong>", "**")
+        .replace("</strong>", "**")
+        .replace("<i>", "*")
+        .replace("</i>", "*")
+        .replace("<br>", "\n")
+        .replace("<br/>", "\n")
+        .replace("<br />", "\n")
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
 }

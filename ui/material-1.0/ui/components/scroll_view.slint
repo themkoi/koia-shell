@@ -181,16 +181,16 @@ export component ScrollView {
         x: 0;
         y: 0;
         width: 15px;
-        height: root.height;
+        height: flickable.height + horizontal_bar.height;
         opacity: flickable.viewport_x < 0px ? 1.0 : 0.0;
         animate opacity { duration: 200ms; }
-        clip: true;
+        clip: true; 
 
         Rectangle {
             x: -5px;
-            y: 0px;
+            y: 25px;
             width: 5px;
-            height: parent.height;
+            height: parent.height - 50px; 
             background: rgba(0, 0, 0, 0.60);
             drop-shadow-blur: 12px;
             drop-shadow-color: rgba(0, 0, 0, 0.90);
@@ -201,16 +201,16 @@ export component ScrollView {
         x: flickable.width - self.width;
         y: 0;
         width: 15px;
-        height: root.height;
+        height: flickable.height + horizontal_bar.height;
         opacity: (flickable.viewport_width + flickable.viewport_x) > flickable.width ? 1.0 : 0.0;
         animate opacity { duration: 200ms; }
         clip: true;
 
         Rectangle {
             x: parent.width;
-            y: 0px;
+            y: 25px;
             width: 5px;
-            height: parent.height;
+            height: parent.height - 50px;
             background: rgba(0, 0, 0, 0.60);
             drop-shadow-blur: 12px;
             drop-shadow-color: rgba(0, 0, 0, 0.90);
@@ -220,16 +220,16 @@ export component ScrollView {
     top_shadow := Rectangle {
         x: 0;
         y: 0;
-        width: root.width;
+        width: flickable.width + vertical_bar.width;
         height: 15px;
         opacity: root.horizontal_scroll ? 0.0 : (flickable.viewport_y < 0px ? 1.0 : 0.0);
         animate opacity { duration: 200ms; }
         clip: true;
 
         Rectangle {
-            x: 0px;
-            y: -5px;
-            width: parent.width;
+            x: 25px;
+            y: -5px; 
+            width: parent.width - 50px; 
             height: 5px;
             background: rgba(0, 0, 0, 0.60);
             drop-shadow-blur: 12px;
@@ -240,23 +240,22 @@ export component ScrollView {
     bottom_shadow := Rectangle {
         x: 0;
         y: flickable.height - self.height;
-        width: root.width;
+        width: flickable.width + vertical_bar.width;
         height: 15px;
         opacity: root.horizontal_scroll ? 0.0 : ((flickable.viewport_height + flickable.viewport_y) > flickable.height ? 1.0 : 0.0);
         animate opacity { duration: 200ms; }
         clip: true;
 
         Rectangle {
-            x: 0px;
+            x: 25px;
             y: parent.height;
-            width: parent.width;
+            width: parent.width - 50px;
             height: 5px;
             background: rgba(0, 0, 0, 0.60);
             drop-shadow-blur: 12px;
             drop-shadow-color: rgba(0, 0, 0, 0.90);
         }
     }
-
     vertical_bar := ScrollBar {
         enabled: root.enabled && !root.horizontal_scroll;
         visible: !hide_scrollbars;

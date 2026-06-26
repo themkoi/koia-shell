@@ -7,11 +7,14 @@ import { Icon } from "./icon.slint";
 import { MaterialTypography } from "../styling/material_typography.slint";
 import { MaterialStyleMetrics } from "../styling/material_style_metrics.slint";
 import { Avatar } from "./list.slint";
+import { ToolTipMaterial } from "./tooltip.slint";
+
 
 export component BaseButton inherits StateLayerArea {
     in property <image> icon;
     in property <color> icon_color: self.color;
     in property <string> text;
+    in property <string> tooltip_text: "";
     in property <length> button_horizontal_padding: MaterialStyleMetrics.padding_24;
     in property <length> button_vertical_padding: 0px;
     in property <length> button_padding_left: self.button_horizontal_padding;
@@ -68,7 +71,12 @@ export component BaseButton inherits StateLayerArea {
             overflow: elide;
             vertical_alignment: center;
         }
-
         @children
+    }
+
+    if root.tooltip_text != "":Tooltip {
+        ToolTipMaterial {
+            text: root.tooltip_text;
+        }
     }
 }

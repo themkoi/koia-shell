@@ -5,22 +5,15 @@ import { MaterialText } from "./material_text.slint";
 import { MaterialPalette } from "../styling/material_palette.slint";
 import { MaterialTypography } from "../styling/material_typography.slint";
 
-export component ToolTip {
+export component ToolTipMaterial {
     in property <string> text;
 
-    z: 10000;
 
     background_layer := Rectangle {
         border_radius: 4px;
-        background: rgba(
-    MaterialPalette.inverse_surface.red,
-    MaterialPalette.inverse_surface.green,
-    MaterialPalette.inverse_surface.blue,
-    0.4);
+        background: MaterialPalette.surface;
 
         layout := HorizontalLayout {
-            z: 10000;
-
             max_width: 200px;
             padding_top: 4px;
             padding_bottom: 4px;
@@ -30,8 +23,8 @@ export component ToolTip {
             MaterialText {
                 text: root.text;
                 vertical_alignment: center;
-                color: MaterialPalette.inverse_on_surface;
-                style: MaterialTypography.body_small;
+                color: MaterialPalette.inverse_surface;
+                style: MaterialTypography.body_medium;
                 wrap: word-wrap;
             }
         }

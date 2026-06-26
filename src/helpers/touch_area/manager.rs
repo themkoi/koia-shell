@@ -14,7 +14,7 @@ pub fn start_touch_manager(
     let region_x = 0;
     let region_y = config_internal.config.window_config.bar_height.into();
     let region_width = window_width as i32;
-    let region_height = window_height as i32;
+    let region_height = window_height as i32 - config.config.window_config.bar_height as i32;
     if let Some(ui) = ui_weak.upgrade() {
         let handle = ui_spell.get_handler();
         ui.on_manage_touch(move |popup_name, visible| {

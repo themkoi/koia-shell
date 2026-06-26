@@ -16,12 +16,12 @@ struct IntermediateTrayItem {
     active: bool,
     icon_source: IconSource,
 }
-
 enum IconSource {
     Path(String),
     Buffer(SharedPixelBuffer<Rgba8Pixel>),
     None,
 }
+
 
 struct ThreadSafeTrayData {
     id: String,
@@ -34,7 +34,6 @@ struct ThreadSafeTrayData {
 
 pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<barWindow>) {
     info!("starting tray manager");
-
 
     let client_raw = match Client::new().await {
         Ok(c) => c,
@@ -170,7 +169,7 @@ pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<
 
     let client_bg = Arc::clone(&client);
     let config_bg = config.clone();
-    
+
     tokio::spawn(async move {
         let debounce_duration = Duration::from_millis(20);
         let max_throttle_interval = Duration::from_millis(50);
@@ -180,11 +179,11 @@ pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<
             match tray_rx.recv().await {
                 Ok(_event) => {
                     let start_debounce = Instant::now();
-                    
+
                     loop {
                         tokio::select! {
                             _ = sleep(debounce_duration) => {
-                                break; 
+                                break;
                             }
                             next_event = tray_rx.recv() => {
                                 match next_event {
@@ -217,8 +216,11 @@ pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<
                     last_ui_write = Instant::now();
                 }
                 Err(tokio::sync::broadcast::error::RecvError::Lagged(skipped)) => {
-                    log::warn!("Tray worker lagged by {} messages. Forcing UI refresh.", skipped);
-                    
+                    log::warn!(
+                        "Tray worker lagged by {} messages. Forcing UI refresh.",
+                        skipped
+                    );
+
                     loop {
                         match tray_rx.try_recv() {
                             Ok(_) => {}
@@ -238,7 +240,11 @@ pub async fn start_system_tray(config: &crate::config::AppConfig, ui_weak: Weak<
     });
 }
 
-fn create_slint_buffer_from_argb(raw_argb: &[u8], width: i32, height: i32) -> Option<SharedPixelBuffer<Rgba8Pixel>> {
+fn create_slint_buffer_from_argb(
+    raw_argb: &[u8],
+    width: i32,
+    height: i32,
+) -> Option<SharedPixelBuffer<Rgba8Pixel>> {
     if raw_argb.is_empty() || width <= 0 || height <= 0 {
         return None;
     }
@@ -295,7 +301,10 @@ fn decode_dbus_menu_buffer(encoded_bytes: &[u8]) -> Option<SharedPixelBuffer<Rgb
     None
 }
 
-fn create_best_buffer_from_pixmaps(pixmaps: &[IconPixmap], target_size: i32) -> Option<SharedPixelBuffer<Rgba8Pixel>> {
+fn create_best_buffer_from_pixmaps(
+    pixmaps: &[IconPixmap],
+    target_size: i32,
+) -> Option<SharedPixelBuffer<Rgba8Pixel>> {
     if pixmaps.is_empty() {
         return None;
     }
@@ -349,7 +358,8 @@ fn flatten_menu_tree(
 
         if let Some(ref name) = item.icon_name {
             if let Some(path_str) = lookup_fallback_theme_path(name, target_size, config) {
-                slint_icon = Image::load_from_path(std::path::Path::new(&path_str)).unwrap_or_default();
+                slint_icon =
+                    Image::load_from_path(std::path::Path::new(&path_str)).unwrap_or_default();
             }
         }
 
@@ -438,7 +448,8 @@ fn populate_ui_items(
         let mut icon_source = IconSource::None;
 
         if let Some(ref name) = raw_item.icon_name {
-            if let Some(path_string) = lookup_fallback_theme_path(name, target_size, &config_clone) {
+            if let Some(path_string) = lookup_fallback_theme_path(name, target_size, &config_clone)
+            {
                 icon_source = IconSource::Path(path_string);
             }
         }
@@ -450,7 +461,6 @@ fn populate_ui_items(
                 }
             }
         }
-
         intermediate_items.push(IntermediateTrayItem {
             id: raw_item.id,
             title: raw_item.title,
@@ -458,6 +468,7 @@ fn populate_ui_items(
             active: raw_item.active,
             icon_source,
         });
+
     }
 
     let _ = ui_weak_clone.upgrade_in_event_loop(move |ui| {
