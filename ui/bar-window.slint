@@ -30,9 +30,9 @@ import {
 
 import { MaterialStyleMetrics } from "material-1.0/material.slint";
 
-export struct TimeDataSlint { hour: int, minute: int}
-export struct DateDataSlint { day: int, month: int, year: int}
-export struct StringDateDataSlint { day: string, month: string, year: string}
+export struct TimeDataSlint { hour: int, minute: int }
+export struct DateDataSlint { day: int, month: int, year: int }
+export struct StringDateDataSlint { day: string, month: string, year: string }
 
 
 export component barWindow inherits Window {
@@ -66,6 +66,10 @@ export component barWindow inherits Window {
     callback menu_action_executed(string, string);
 
     callback manage_touch(string, bool);
+
+    public function init_ui() {
+        trayMenu.x-pos = rectRight.x;
+    }
 
     Rectangle {
         width: 100%;

@@ -116,6 +116,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     MaterialPalette::get(&bar_ui.ui).set_schemes(schemes.clone());
     bar_ui.set_config(config_slint.clone());
+    bar_ui.invoke_init_ui();
 
     run_taskbar(&config, bar_ui.as_weak()).await;
 
