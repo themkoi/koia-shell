@@ -2,6 +2,7 @@ import {
     Elevation,
     MaterialPalette,
     MaterialStyleMetrics,
+    MaterialTypography,
 } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
 
@@ -34,18 +35,18 @@ export component BrightnessButton inherits Rectangle {
                 border_radius: parent.border_radius;
                 width: 100%;
 
-                // Mapping the three brightness icons across the 0-100 range
-                icon: root.brightness <= 33 
-                    ? @image-url("../assets/brightness/brightness_0.svg") 
-                    : root.brightness <= 66 
-                        ? @image-url("../assets/brightness/brightness_1.svg") 
-                        : @image-url("../assets/brightness/brightness_2.svg");
+                icon: root.brightness <= 33
+                    ? @image-url("../assets/brightness/brightness_0.svg")
+                    : root.brightness <= 66
+                    ? @image-url("../assets/brightness/brightness_1.svg")
+                    : @image-url("../assets/brightness/brightness_2.svg");
 
                 text: root.brightness + "%";
+                style: MaterialTypography.label_medium;
+                spacing: MaterialStyleMetrics.spacing_4;
 
-                spacing: 4px;
                 icon-size: 20px;
-                button_horizontal_padding: MaterialStyleMetrics.padding_8;
+                button_horizontal_padding: MaterialStyleMetrics.padding_4;
                 icon_color: transparent;
                 color: MaterialPalette.on_surface;
 

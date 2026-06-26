@@ -2,6 +2,7 @@ import {
     Elevation,
     MaterialPalette,
     MaterialStyleMetrics,
+    MaterialTypography,
 } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
 
@@ -39,10 +40,11 @@ export component VolumeButton inherits Rectangle {
                 icon: root.volume.muted ? @image-url("../assets/volume/volume_mute.svg") : root.volume.volume <= 0 ? @image-url("../assets/volume/volume_0.svg") : root.volume.volume <= 40 ? @image-url("../assets/volume/volume_1.svg") : @image-url("../assets/volume/volume_2.svg");
 
                 text: root.volume.muted ? "Muted" : root.volume.volume + "%";
+                style: MaterialTypography.label_medium;
+                spacing: MaterialStyleMetrics.spacing_4;
 
-                spacing: 4px;
                 icon-size: 20px;
-                button_horizontal_padding: MaterialStyleMetrics.padding_8;
+                button_horizontal_padding: MaterialStyleMetrics.padding_4;
                 icon_color: transparent;
                 color: MaterialPalette.on_surface;
 

@@ -8,6 +8,7 @@ import { MaterialTypography } from "../styling/material_typography.slint";
 import { MaterialStyleMetrics } from "../styling/material_style_metrics.slint";
 import { Avatar } from "./list.slint";
 import { ToolTipMaterial } from "./tooltip.slint";
+import { TextStyle } from "../styling/material_typography.slint";
 
 
 export component BaseButton inherits StateLayerArea {
@@ -15,6 +16,7 @@ export component BaseButton inherits StateLayerArea {
     in property <color> icon_color: self.color;
     in property <string> text;
     in property <string> tooltip_text: "";
+    in property <TextStyle> style: MaterialTypography.label_large;
     in property <length> button_horizontal_padding: MaterialStyleMetrics.padding_24;
     in property <length> button_vertical_padding: 0px;
     in property <length> button_padding_left: self.button_horizontal_padding;
@@ -65,7 +67,7 @@ export component BaseButton inherits StateLayerArea {
         if root.text != "": MaterialText {
             horizontal-alignment: center;
             text: root.text;
-            style: MaterialTypography.label_large;
+            style: root.style;
             color: root.color;
             opacity: root.enabled ? 100% : 38%;
             overflow: elide;
