@@ -3008,6 +3008,7 @@ dependencies = [
  "niri-ipc",
  "notify",
  "serde",
+ "serde_json",
  "slint",
  "slint-build",
  "spell-framework",

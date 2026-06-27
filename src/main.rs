@@ -35,6 +35,7 @@ use crate::{
         power_profiles::start_power_profile_management, taskbar::taskbar::run_taskbar,
         time::provider::provide_time, tray::manager::start_system_tray,
         volume::start_volume_management,
+        hardware_specific::harware_specific_management,
     },
 };
 
@@ -126,6 +127,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )
     .await;
     start_brightness_management(&config, bar_ui.as_weak()).await;
+    harware_specific_management(&config, bar_ui.as_weak()).await;
     start_power_profile_management(bar_ui.as_weak()).await;
     listen_battery_changes(bar_ui.as_weak()).await;
     provide_time(bar_ui.as_weak()).await;

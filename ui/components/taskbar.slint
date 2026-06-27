@@ -34,7 +34,8 @@ export component Taskbar inherits Rectangle {
     callback dispatch_command(string);
 
     out property <bool> is_expanded: touch.has-hover;
-
+    
+    width: 100%;
     height: is_expanded ? config.window.bar-height : 7px;
 
     animate height {

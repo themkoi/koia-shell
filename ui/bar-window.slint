@@ -34,7 +34,6 @@ export struct TimeDataSlint { hour: int, minute: int }
 export struct DateDataSlint { day: int, month: int, year: int }
 export struct StringDateDataSlint { day: string, month: string, year: string }
 
-
 export component barWindow inherits Window {
     in property <[Workspace]> workspaces;
     in property <[TrayItemSlint]> tray;
@@ -43,6 +42,7 @@ export component barWindow inherits Window {
     in property <BatteryDataSlint> batteryData;
     in property <VolumeDataSlint> volumeData;
     in property <string> powerProfile;
+    in property <string> fanProfile;
 
     in property <TimeDataSlint> timeData;
     in property <DateDataSlint> dateData;
@@ -61,6 +61,7 @@ export component barWindow inherits Window {
     callback set_muted(bool);
     callback set_brightness(int, int);
     callback set_power_profile(string);
+    callback set_fan_profile(string);
 
     callback tray_item_clicked(string, string, length);
     callback menu_action_executed(string, string);
@@ -71,111 +72,101 @@ export component barWindow inherits Window {
         trayMenu.x-pos = rectRight.x;
     }
 
-    Rectangle {
-        width: 100%;
-        height: 100%;
+    HorizontalLayout {
+        y: 0px;
+        x: 0px;
+        width: rectLeft.preferred-width;
+        height: config.window.bar-height;
+        rectLeft := Rectangle {
 
-        main_bar := Rectangle {
-            x: 0px;
-            y: 0px;
-            width: 100%;
-            height: config.window.bar-height;
+            background: MaterialPalette.surface_container;
+            border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
+
+            Path {
+                width: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
+                height: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
+                y: 0px;
+                x: rectLeft.width;
+                fill: MaterialPalette.surface_container;
+                commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
+            }
 
             HorizontalLayout {
-                width: 100%;
-                height: 100%;
-                spacing: 4px;
-                rectLeft := Rectangle {
-                    height: 100%;
+                padding-left: 10px;
+                padding-right: 10px;
+                padding-top: 2px;
+                padding-bottom: 2px;
+                spacing: MaterialStyleMetrics.spacing_2;
+                BatteryButton {
+                    battery: batteryData;
+                }
 
-                    background: MaterialPalette.surface_container;
-                    border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
-
-                    Path {
-                        width: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
-                        height: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
-                        y: 0px;
-                        x: rectLeft.width;
-                        fill: MaterialPalette.surface_container;
-                        commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
+                ProfilesRow {
+                    set_power_profile(profile) => {
+                        set_power_profile(profile);
                     }
+                    powerProfile: powerProfile;
+                }
+            }
+        }
+    }
 
-                    HorizontalLayout {
-                        padding-left: 10px;
-                        padding-right: 10px;
-                        padding-top: 2px;
-                        padding-bottom: 2px;
-                        spacing: MaterialStyleMetrics.spacing_2;
-                        BatteryButton {
-                            battery: batteryData;
-                        }
+    HorizontalLayout {
+        y: 0px;
+        x: root.window_width - self.width;
+        width: rectRight.preferred-width;
+        height: config.window.bar-height;
+        rectRight := Rectangle {
+            height: 100%;
 
-                        ProfilesRow {
-                            set_power_profile(profile) => {
-                                set_power_profile(profile);
-                            }
-                            powerProfile: powerProfile;
-                        }
+            background: MaterialPalette.surface_container;
+            border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
+
+            Path {
+                width: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
+                height: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
+                y: 0px;
+                x: -self.width;
+                fill: MaterialPalette.surface_container;
+                fill-rule: evenodd;
+                commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
+            }
+
+            HorizontalLayout {
+                padding-left: 10px;
+                padding-right: 10px;
+                padding-top: 2px;
+                padding-bottom: 2px;
+                spacing: MaterialStyleMetrics.spacing_2;
+
+                TrayRow {
+                    config: config.tray;
+                    items: root.tray;
+                    item_clicked(id, btn, button_x) => {
+                        root.tray_item_clicked(id, btn, button_x + rectRight.x);
                     }
                 }
 
-                Rectangle {
-                    horizontal-stretch: 1;
+                VolumeButton {
+                    volume: volumeData;
+                    volume_right_clicked() => {
+                        set_muted(!volumeData.muted);
+                    }
+                    volume_scroll_up() => {
+                        set_volume(volumeData.volume,config.interaction.volume-scroll-step)
+                    }
+                    volume_scroll_down() => {
+                        set_volume(volumeData.volume,-config.interaction.volume-scroll-step)
+                    }
                 }
 
-                rectRight := Rectangle {
-                    height: 100%;
-
-                    background: MaterialPalette.surface_container;
-                    border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
-
-                    Path {
-                        width: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
-                        height: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
-                        y: 0px;
-                        x: -self.width;
-                        fill: MaterialPalette.surface_container;
-                        fill-rule: evenodd;
-                        commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
+                BrightnessButton {
+                    brightness: brightness;
+                    brightness_scroll_up() => {
+                        set_brightness(brightness,config.interaction.brightness-scroll-step)
                     }
-
-                    HorizontalLayout {
-                        padding-left: 10px;
-                        padding-right: 10px;
-                        padding-top: 2px;
-                        padding-bottom: 2px;
-                        spacing: MaterialStyleMetrics.spacing_2;
-
-                        TrayRow {
-                            config: config.tray;
-                            items: root.tray;
-                            item_clicked(id, btn, button_x) => {
-                                root.tray_item_clicked(id, btn, button_x + rectRight.x);
-                            }
-                        }
-
-                        VolumeButton {
-                            volume: volumeData;
-                            volume_right_clicked() => {
-                                set_muted(!volumeData.muted);
-                            }
-                            volume_scroll_up() => {
-                                set_volume(volumeData.volume,config.interaction.volume-scroll-step)
-                            }
-                            volume_scroll_down() => {
-                                set_volume(volumeData.volume,-config.interaction.volume-scroll-step)
-                            }
-                        }
-
-                        BrightnessButton {
-                            brightness: brightness;
-                            brightness_scroll_up() => {
-                                set_brightness(brightness,config.interaction.brightness-scroll-step)
-                            }
-                            brightness_scroll_down() => {
-                                set_brightness(brightness, -config.interaction.brightness-scroll-step)
-                            }
-                        }
+                    brightness_scroll_down() => {
+                        set_brightness(brightness, -config.interaction.brightness-scroll-step)
                     }
                 }
             }
@@ -257,7 +248,6 @@ export component barWindow inherits Window {
         alignment: center;
         Taskbar {
             config: config;
-            width: 100%;
             animation_multiplier: config.interaction.animation-multiplier;
             workspaces: workspaces;
             dispatch_command(cmd) => {

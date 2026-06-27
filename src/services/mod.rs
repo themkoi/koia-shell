@@ -6,3 +6,4 @@ pub(crate) mod battery;
 pub(crate) mod power_profiles;
 pub(crate) mod time;
 pub(crate) mod notifications;
+pub(crate) mod hardware_specific;

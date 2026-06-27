@@ -38,6 +38,7 @@ pub struct WindowConfig {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct HardwareConfig {
     pub brightness_device: String,
+    pub hardware_specific_features: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -64,8 +65,15 @@ impl Default for Config {
                 notification_screen: "eDP-1".to_string(),
                 notification_window_width: 400,
             },
+            #[cfg(feature = "default_hardware")]
             hardware_config: HardwareConfig {
                 brightness_device: "amdgpu_bl1".to_string(),
+                hardware_specific_features: false,
+            },
+            #[cfg(not(feature = "default_hardware"))]
+            hardware_config: HardwareConfig {
+                brightness_device: "amdgpu_bl1".to_string(),
+                hardware_specific_features: true,
             },
             interaction_config: InterractionConfig {
                 animation_multiplier: 1.0,
@@ -183,6 +191,7 @@ pub fn load_app_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
 
 pub fn build_config_slint(config: &crate::config::AppConfig) -> ConfigSlint {
     ConfigSlint {
+        hardware_specific_features: config.config.hardware_config.hardware_specific_features,
         window: WindowConfigSlint {
             bar_height: config.config.window_config.bar_height as f32,
         },

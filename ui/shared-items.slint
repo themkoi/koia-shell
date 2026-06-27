@@ -18,7 +18,6 @@ export struct NoticificationConfigSlint {
     other_action_buttons: bool,
 }
 
-
 export struct WindowConfigSlint {
     bar_height: length,
 }
@@ -29,8 +28,8 @@ export struct InteractionConfigSlint {
     brightness_scroll_step: int,
 }
 
-
 export struct ConfigSlint {
+    hardware_specific_features:bool,
     window: WindowConfigSlint,
     interaction: InteractionConfigSlint,
     taskbar: TaskbarConfigSlint,
