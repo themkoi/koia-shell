@@ -12,7 +12,7 @@ import {
 import { BaseButton } from "@material/ui/components/base_button.slint";
 import { TrayConfigSlint } from "../shared-items.slint";
 
-export struct TrayItemSlint { id: string, title: string, icon: image, status: string, active: bool}
+export struct TrayItemSlint { id: string, title: string, icon: image, status: string, active: bool }
 export struct ContextMenuActionSlint {
     id: string,
     label: string,
@@ -107,7 +107,7 @@ export component TrayRow inherits Rectangle {
 }
 
 export component TrayContextMenu inherits Rectangle {
-    in property <ContextMenuDataSlint> menu-data;
+    in property <ContextMenuDataSlint> menuData;
     in property <TrayConfigSlint> config;
     in property <float> animation_multiplier;
 
@@ -122,127 +122,129 @@ export component TrayContextMenu inherits Rectangle {
         easing: ease-in-out-back;
     }
     width: config.width;
-    height: root.menu-data.visible ? Math.min(layout.preferred-height + 30px, config.max-height) : 0px;
+    height: root.menuData.visible ? Math.min(layout.preferred-height + 30px, config.max-height) : 0px;
+    TouchArea {
 
-    elevation := Elevation {
-        level: 2;
-        border_radius: MaterialStyleMetrics.border_radius_16;
-        background: MaterialPalette.surface_container_low;
-        width: 100%;
-        height: 100%;
-        HorizontalLayout {
-            padding: 5px;
-            padding-top: 15px;
-            alignment: center;
-            ScrollView {
-                has-focus: true;
-                width: 100%;
-                height: 100%;
-                layout := VerticalLayout {
-                    padding: MaterialStyleMetrics.padding_8;
+        elevation := Elevation {
+            level: 2;
+            border_radius: MaterialStyleMetrics.border_radius_16;
+            background: MaterialPalette.surface_container_low;
+            width: 100%;
+            height: 100%;
+            HorizontalLayout {
+                padding: 5px;
+                padding-top: 15px;
+                alignment: center;
+                ScrollView {
+                    has-focus: true;
+                    width: 100%;
+                    height: 100%;
+                    layout := VerticalLayout {
+                        padding: MaterialStyleMetrics.padding_8;
 
-                    if root.menu-data.title != "": Text {
-                        text: root.menu-data.title;
-                        font-size: MaterialTypography.body_small.font_size;
-                        color: MaterialPalette.on_surface_variant;
-                        horizontal-alignment: center;
-                        height: 25px;
-                    }
+                        if root.menuData.title != "": Text {
+                            text: root.menuData.title;
+                            font-size: MaterialTypography.body_small.font_size;
+                            color: MaterialPalette.on_surface_variant;
+                            horizontal-alignment: center;
+                            height: 25px;
+                        }
 
-                    if root.menu-data.title != "": Rectangle {
-                        height: 1px;
-                        background: MaterialPalette.outline_variant;
-                    }
+                        if root.menuData.title != "": Rectangle {
+                            height: 1px;
+                            background: MaterialPalette.outline_variant;
+                        }
 
-                    VerticalLayout {
-                        spacing: 4px;
-                        padding-top: 4px;
+                        VerticalLayout {
+                            spacing: 4px;
+                            padding-top: 4px;
 
-                        for action in root.menu-data.actions: VerticalLayout {
-                            if action.is_separator: Rectangle {
-                                height: 9px;
-                                VerticalDivider {
-                                    width: 100%;
-                                    height: 1px;
-                                }
-                            }
-
-                            if !action.is_separator: Rectangle {
-                                height: 28px;
-                                border_radius: MaterialStyleMetrics.border_radius_28;
-
-                                item_elevation := Elevation {
-                                    border_radius: parent.border_radius;
-                                    background: transparent;
-                                    width: 100%;
-                                    height: 100%;
+                            for action in root.menuData.actions: VerticalLayout {
+                                if action.is_separator: Rectangle {
+                                    height: 9px;
+                                    VerticalDivider {
+                                        width: 100%;
+                                        height: 1px;
+                                    }
                                 }
 
-                                Rectangle {
-                                    width: 100%;
-                                    height: 100%;
+                                if !action.is_separator: Rectangle {
+                                    height: 28px;
+                                    border_radius: MaterialStyleMetrics.border_radius_28;
 
-                                    if action.depth > 0: Rectangle {
-                                        x: 4px + (action.depth * 8px);
-                                        width: 1.5px;
-                                        height: 75%;
-                                        background: MaterialPalette.outline.with_alpha(40%);
+                                    item_elevation := Elevation {
+                                        border_radius: parent.border_radius;
+                                        background: transparent;
+                                        width: 100%;
+                                        height: 100%;
                                     }
 
-                                    HorizontalLayout {
-                                        padding-left: 8px + (action.depth * 14px);
-                                        spacing: 8px;
-                                        alignment: start;
+                                    Rectangle {
+                                        width: 100%;
+                                        height: 100%;
 
-                                        if action.toggle_state != 0: Rectangle {
-                                            width: 24px;
-                                            height: 100%;
-
-                                            if action.toggle_state == 2 || action.toggle_state == 3: CheckBox {
-                                                check_state: action.toggle_state == 2 ? CheckState.checked : CheckState.unchecked;
-                                                enabled: true;
-                                            }
-                                            if action.toggle_state == 4: RadioButton {
-                                                checked: true;
-                                                enabled: true;
-                                            }
+                                        if action.depth > 0: Rectangle {
+                                            x: 4px + (action.depth * 8px);
+                                            width: 1.5px;
+                                            height: 75%;
+                                            background: MaterialPalette.outline.with_alpha(40%);
                                         }
 
-                                        if action.has_icon: VerticalLayout {
-                                            alignment: center;
-                                            Image {
-                                                source: action.icon;
-                                                width: config.menu-icon-size;
-                                                height: config.menu-icon-size;
+                                        HorizontalLayout {
+                                            padding-left: 8px + (action.depth * 14px);
+                                            spacing: 8px;
+                                            alignment: start;
+
+                                            if action.toggle_state != 0: Rectangle {
+                                                width: 24px;
+                                                height: 100%;
+
+                                                if action.toggle_state == 2 || action.toggle_state == 3: CheckBox {
+                                                    check_state: action.toggle_state == 2 ? CheckState.checked : CheckState.unchecked;
+                                                    enabled: true;
+                                                }
+                                                if action.toggle_state == 4: RadioButton {
+                                                    checked: true;
+                                                    enabled: true;
+                                                }
+                                            }
+
+                                            if action.has_icon: VerticalLayout {
+                                                alignment: center;
+                                                Image {
+                                                    source: action.icon;
+                                                    width: config.menu-icon-size;
+                                                    height: config.menu-icon-size;
+                                                }
+                                            }
+
+                                            Text {
+                                                text: action.label;
+                                                color: action.is_destructive ? MaterialPalette.error : MaterialPalette.on_surface;
+                                                font-size: MaterialTypography.label_medium.font-size;
+                                                font-weight: action.depth > 0 ? MaterialTypography.label_small.font_weight : MaterialTypography.label_medium.font_weight;
+                                                vertical-alignment: center;
+                                                overflow: elide;
                                             }
                                         }
+                                    }
 
-                                        Text {
-                                            text: action.label;
-                                            color: action.is_destructive ? MaterialPalette.error : MaterialPalette.on_surface;
-                                            font-size: MaterialTypography.label_medium.font-size;
-                                            font-weight: action.depth > 0 ? MaterialTypography.label_small.font_weight : MaterialTypography.label_medium.font_weight;
-                                            vertical-alignment: center;
-                                            overflow: elide;
+                                    base_item := BaseButton {
+                                        width: 100%;
+                                        height: 100%;
+                                        border_radius: parent.border_radius;
+                                        color: transparent;
+                                        clicked => {
+                                            root.menu_action_executed(root.menuData.item_id, action.id);
                                         }
                                     }
-                                }
 
-                                base_item := BaseButton {
-                                    width: 100%;
-                                    height: 100%;
-                                    border_radius: parent.border_radius;
-                                    color: transparent;
-                                    clicked => {
-                                        root.menu_action_executed(root.menu-data.item_id, action.id);
-                                    }
+                                    states [
+                                        hover when base_item.has_hover: {
+                                            item_elevation.background: MaterialPalette.surface_container_highest;
+                                        }
+                                    ]
                                 }
-
-                                states [
-                                    hover when base_item.has_hover: {
-                                        item_elevation.background: MaterialPalette.surface_container_highest;
-                                    }
-                                ]
                             }
                         }
                     }

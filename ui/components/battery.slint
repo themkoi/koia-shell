@@ -5,9 +5,12 @@ import {
 } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
 import { MaterialStyleMetrics } from "../material-1.0/material.slint";
+import { ConfigSlint } from "../shared-items.slint";
 
 export struct BatteryDataSlint {
     percentage: int,
+    name: string,
+    icon_type: string,
     state: string,
 }
 
@@ -60,6 +63,43 @@ export component BatteryButton inherits Rectangle {
                     elevation.background: MaterialPalette.surface_container_highest;
                 }
             ]
+        }
+    }
+}
+
+export component BatteryPopup inherits Rectangle {
+    in property <string> fanProfile;
+    in property <string> powerProfile;
+    in property <ConfigSlint> config;
+    in property <float> animation_multiplier;
+
+    in property <bool> popup_visible;
+
+    callback set_power_profile(string);
+    callback set_fan_profile(string);
+
+    animate height {
+        duration: 350ms * animation_multiplier;
+        easing: ease-in-out-back;
+    }
+    width: 200px;
+    height: root.popup_visible ? Math.min(layout.preferred-height + 30px, 300px) : 0px;
+    TouchArea {
+        elevation := Elevation {
+            level: 2;
+            border_radius: MaterialStyleMetrics.border_radius_16;
+            background: MaterialPalette.surface_container_low;
+            width: 100%;
+            height: 100%;
+
+            layout := VerticalLayout {
+                padding: MaterialStyleMetrics.padding_8;
+
+                VerticalLayout {
+                    spacing: 4px;
+                    padding-top: 4px;
+                }
+            }
         }
     }
 }

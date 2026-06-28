@@ -20,7 +20,7 @@ serde = "1.0.228"
 slint = { version = "=1.17.0", default-features = false, features = [
     "accessibility",
     "compat-1-2",
-    "renderer-winit-software",
+    "renderer-skia",
     "std",
     "backend-winit",
     "gettext",
@@ -30,11 +30,12 @@ tokio = "1.52.3"
 toml = "1.1.2"
 
 wayle-audio = "0.1.4"
-wayle-battery = "0.1.2"
 system-tray = "0.8.7"
 wayle-power-profiles = "0.1.4"
 chrono = "0.4.45"
 serde_json = "1.0.150"
+upower_dbus = { git = "https://github.com/pop-os/dbus-settings-bindings", ver = "eed01dd3609e90e3c8cd043656734c500956c793" , package = "upower_dbus" }
+zbus = "5.16.0"
 
 [features]
 default = ["framework"]

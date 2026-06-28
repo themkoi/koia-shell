@@ -19,6 +19,7 @@ import { ProfilesRow } from "components/profiles.slint";
 import {
     BatteryButton,
     BatteryDataSlint,
+    BatteryPopup,
 } from "components/battery.slint";
 import {
     VolumeButton,
@@ -37,9 +38,9 @@ export struct StringDateDataSlint { day: string, month: string, year: string }
 export component barWindow inherits Window {
     in property <[Workspace]> workspaces;
     in property <[TrayItemSlint]> tray;
+    in property <[BatteryDataSlint]> batteryData;
     in-out property <ContextMenuDataSlint> trayMenu;
     in property <int> brightness;
-    in property <BatteryDataSlint> batteryData;
     in property <VolumeDataSlint> volumeData;
     in property <string> powerProfile;
     in property <string> fanProfile;
@@ -47,6 +48,8 @@ export component barWindow inherits Window {
     in property <TimeDataSlint> timeData;
     in property <DateDataSlint> dateData;
     in property <StringDateDataSlint> stringDateData;
+
+    property <bool> batteryPopupVis;
 
     in property <ConfigSlint> config;
     in-out property <length> window_width <=> self.width;
@@ -69,10 +72,10 @@ export component barWindow inherits Window {
     callback manage_touch(string, bool);
 
     public function init_ui() {
-        trayMenu.x-pos = rectRight.x;
+        trayMenu.x-pos = layRight.x;
     }
 
-    HorizontalLayout {
+    layLeft := HorizontalLayout {
         y: 0px;
         x: 0px;
         width: rectLeft.preferred-width;
@@ -97,13 +100,18 @@ export component barWindow inherits Window {
                 padding-top: 2px;
                 padding-bottom: 2px;
                 spacing: MaterialStyleMetrics.spacing_2;
-                BatteryButton {
-                    battery: batteryData;
+                battButton := BatteryButton {
+                    battery_clicked() => {
+                        root.batteryPopupVis = !root.batteryPopupVis;
+                    }
+
+                    battery: batteryData[0];
                 }
 
                 ProfilesRow {
                     set_power_profile(profile) => {
                         set_power_profile(profile);
+                        set_fan_profile(profile)
                     }
                     powerProfile: powerProfile;
                 }
@@ -111,7 +119,7 @@ export component barWindow inherits Window {
         }
     }
 
-    HorizontalLayout {
+    layRight := HorizontalLayout {
         y: 0px;
         x: root.window_width - self.width;
         width: rectRight.preferred-width;
@@ -143,7 +151,7 @@ export component barWindow inherits Window {
                     config: config.tray;
                     items: root.tray;
                     item_clicked(id, btn, button_x) => {
-                        root.tray_item_clicked(id, btn, button_x + rectRight.x);
+                        root.tray_item_clicked(id, btn, button_x + rectRight.x + layRight.x);
                     }
                 }
 
@@ -263,6 +271,7 @@ export component barWindow inherits Window {
 
         clicked => {
             root.trayMenu.visible = false;
+            root.batteryPopupVis = false;
         }
     }
 
@@ -270,14 +279,34 @@ export component barWindow inherits Window {
         x: root.trayMenu.x-pos - self.width / 2;
         y: config.window.bar-height + 4px;
         config: config.tray;
-        menu-data: root.trayMenu;
+        menuData: root.trayMenu;
         animation_multiplier: config.interaction.animation-multiplier;
-        changed menu-data => {
+        changed menuData => {
             root.manage_touch("TrayMenu",root.trayMenu.visible);
         }
 
         menu_action_executed(item_id, action_id) => {
             root.menu_action_executed(item_id, action_id);
+        }
+    }
+
+    BatteryPopup {
+        x: battButton.x + rectLeft.x + layLeft.x;
+        y: config.window.bar-height + 4px;
+        config: config;
+        fanProfile: root.fanProfile;
+        powerProfile: root.powerProfile;
+        animation_multiplier: config.interaction.animation-multiplier;
+        popup_visible: root.batteryPopupVis;
+        changed popup_visible => {
+            root.manage_touch("BatteryPopup",root.batteryPopupVis);
+        }
+
+        set_power_profile(profile) => {
+            root.set_power_profile(profile);
+        }
+        set_fan_profile(profile) => {
+            root.set_fan_profile(profile);
         }
     }
 
