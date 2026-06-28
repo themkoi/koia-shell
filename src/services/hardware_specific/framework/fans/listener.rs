@@ -13,12 +13,29 @@ struct FanEvent {
     paused: Option<bool>,
 }
 
+fn format_profile(profile: impl AsRef<str>) -> String {
+    profile
+        .as_ref()
+        .replace('-', " ")
+        .split_whitespace()
+        .map(|word| {
+            let mut chars = word.chars();
+            match chars.next() {
+                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                None => String::new(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 pub async fn listen_fan_profile_changes_framework(
     config: &crate::config::AppConfig,
     ui_weak: slint::Weak<barWindow>,
 ) {
     if config.config.hardware_config.hardware_specific_features {
         info!("starting fan profile listener");
+
         tokio::spawn(async move {
             let mut child = match Command::new("fw-fanctrl-rs")
                 .arg("listen")
@@ -54,7 +71,7 @@ pub async fn listen_fan_profile_changes_framework(
                             last_strategy = Some(event.strategy.clone());
 
                             let ui = ui_weak.clone();
-                            let strategy = event.strategy.clone();
+                            let strategy = format_profile(&event.strategy.to_string());
 
                             slint::invoke_from_event_loop(move || {
                                 if let Some(ui) = ui.upgrade() {

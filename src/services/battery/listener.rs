@@ -15,9 +15,13 @@ fn determine_icon(kind: BatteryType) -> String {
     }
 }
 
-fn determine_name(kind: BatteryType, path_str: &str) -> String {
-    let leaf = path_str.split('/').last().unwrap_or("Device");
-    format!("{:?}: {}", kind, leaf)
+fn determine_name(kind: BatteryType, model_name: String) -> String {
+    let trimmed = model_name.trim();
+    if trimmed.is_empty() || trimmed.to_lowercase() == "unknown" {
+        format!("{:?}", kind)
+    } else {
+        trimmed.to_string()
+    }
 }
 
 struct ManagedDevice {
@@ -46,6 +50,10 @@ pub async fn listen_battery_changes(ui_weak: slint::Weak<barWindow>) {
         for path in initial_paths {
             let path_str = path.as_str().to_string();
 
+            if extra_devices.iter().any(|d| d.path_str == path_str) {
+                continue;
+            }
+
             if let Ok(device_proxy) = DeviceProxy::builder(&connection)
                 .destination("org.freedesktop.UPower")
                 .unwrap()
@@ -56,9 +64,12 @@ pub async fn listen_battery_changes(ui_weak: slint::Weak<barWindow>) {
             {
                 let kind = device_proxy.type_().await.unwrap_or(BatteryType::Unknown);
 
-                if kind != BatteryType::LinePower && kind != BatteryType::Unknown {
+                if kind != BatteryType::LinePower && kind != BatteryType::Unknown && kind != BatteryType::Battery {
+                    let raw_model = device_proxy.model().await.unwrap_or_default();
+                    let formatted_name = determine_name(kind, raw_model);
+
                     extra_devices.push(ManagedDevice {
-                        name: determine_name(kind, &path_str),
+                        name: formatted_name,
                         icon_type: determine_icon(kind),
                         path_str,
                         proxy: device_proxy,
@@ -164,6 +175,10 @@ pub async fn listen_battery_changes(ui_weak: slint::Weak<barWindow>) {
                         let path = args.device;
                         let path_str = path.as_str().to_string();
 
+                        if extra_devices.iter().any(|d| d.path_str == path_str) {
+                            continue;
+                        }
+
                         if let Ok(device_proxy) = DeviceProxy::builder(&connection)
                             .destination("org.freedesktop.UPower")
                             .unwrap()
@@ -174,11 +189,14 @@ pub async fn listen_battery_changes(ui_weak: slint::Weak<barWindow>) {
                         {
                             let kind = device_proxy.type_().await.unwrap_or(BatteryType::Unknown);
 
-                            if kind != BatteryType::LinePower && kind != BatteryType::Unknown {
-                                info!("New connected upower peripheral detected: {:?}", kind);
+                            if kind != BatteryType::LinePower && kind != BatteryType::Unknown && kind != BatteryType::Battery {
+                                let raw_model = device_proxy.model().await.unwrap_or_default();
+                                let formatted_name = determine_name(kind, raw_model);
+
+                                info!("New connected upower peripheral detected: {}", formatted_name);
 
                                 extra_devices.push(ManagedDevice {
-                                    name: determine_name(kind, &path_str),
+                                    name: formatted_name,
                                     icon_type: determine_icon(kind),
                                     path_str,
                                     proxy: device_proxy,

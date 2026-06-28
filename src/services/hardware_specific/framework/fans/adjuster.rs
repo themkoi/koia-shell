@@ -11,7 +11,8 @@ pub async fn start_fan_profile_adjuster_framework(
 
         if let Some(ui) = ui_weak.upgrade() {
             ui.on_set_fan_profile(move |strategy| {
-                let strategy = strategy.to_string();
+                let strategy = strategy.to_string().to_lowercase();
+        info!("setting fan strategy: {}", strategy);
 
                 tokio::spawn(async move {
                     match Command::new("fw-fanctrl-rs")

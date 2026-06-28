@@ -31,14 +31,16 @@ export component BaseButton inherits StateLayerArea {
     in property <length> avatar_size;
     in property <color> avatar_background: #00000000;
     in property <float> animation_multiplier: 0.0;
+    in property <bool> vertical_layout: false;
+
     out property <bool> has_icon: root.icon.width > 0 && root.icon.height > 0;
     out property <bool> has_avatar: root.avatar_icon.width > 0 && root.avatar_icon.height > 0;
 
-    min_width: max(root.min_layout_width, layout.min_width);
-    min_height: max(root.min_layout_height, layout.min_height);
+    min_width: max(root.min_layout_width, main_layout.min_width);
+    min_height: max(root.min_layout_height, main_layout.min_height);
     tooltip_offset: root.height / 2 + root.icon_size / 2 + MaterialStyleMetrics.padding_14;
 
-    layout := HorizontalLayout {
+    main_layout := HorizontalLayout {
         padding_left: root.button_padding_left;
         padding_right: root.button_padding_right;
         padding_top: root.button_padding_top;
@@ -46,37 +48,72 @@ export component BaseButton inherits StateLayerArea {
         spacing: root.spacing;
         alignment: center;
 
-        if root.has_icon || root.has_avatar: VerticalLayout {
+        if !root.vertical_layout: HorizontalLayout {
+            spacing: root.spacing;
             alignment: center;
 
-            if root.has_avatar && root.avatar_size > 0: Avatar {
-                width: root.avatar_size;
-                height: self.width;
-                image: root.avatar_icon;
-                background: root.avatar_background;
+            if root.has_icon || root.has_avatar: VerticalLayout {
+                alignment: center;
+                if root.has_avatar && root.avatar_size > 0: Avatar {
+                    width: root.avatar_size;
+                    height: self.width;
+                    image: root.avatar_icon;
+                    background: root.avatar_background;
+                }
+                if root.has_icon: Icon {
+                    source: root.icon;
+                    colorize: root.icon_color;
+                    opacity: root.enabled ? 100% : 38%;
+                    width: root.icon_size;
+                }
             }
 
-            if root.has_icon: Icon {
-                source: root.icon;
-                colorize: root.icon_color;
+            if root.text != "": MaterialText {
+                horizontal-alignment: center;
+                text: root.text;
+                style: root.style;
+                color: root.color;
                 opacity: root.enabled ? 100% : 38%;
-                width: root.icon_size;
+                overflow: elide;
+                vertical_alignment: center;
             }
         }
 
-        if root.text != "": MaterialText {
-            horizontal-alignment: center;
-            text: root.text;
-            style: root.style;
-            color: root.color;
-            opacity: root.enabled ? 100% : 38%;
-            overflow: elide;
-            vertical_alignment: center;
+        if root.vertical_layout: VerticalLayout {
+            spacing: root.spacing;
+            alignment: center;
+
+            if root.has_icon || root.has_avatar: HorizontalLayout {
+                alignment: center;
+                if root.has_avatar && root.avatar_size > 0: Avatar {
+                    width: root.avatar_size;
+                    height: self.width;
+                    image: root.avatar_icon;
+                    background: root.avatar_background;
+                }
+                if root.has_icon: Icon {
+                    source: root.icon;
+                    colorize: root.icon_color;
+                    opacity: root.enabled ? 100% : 38%;
+                    width: root.icon_size;
+                }
+            }
+
+            if root.text != "": MaterialText {
+                horizontal-alignment: center;
+                text: root.text;
+                style: root.style;
+                color: root.color;
+                opacity: root.enabled ? 100% : 38%;
+                overflow: elide;
+                vertical_alignment: center;
+            }
         }
+
         @children
     }
 
-    if root.tooltip_text != "":Tooltip {
+    if root.tooltip_text != "": Tooltip {
         ToolTipMaterial {
             text: root.tooltip_text;
         }

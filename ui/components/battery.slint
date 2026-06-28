@@ -2,10 +2,17 @@ import {
     Elevation,
     MaterialPalette,
     MaterialStyleMetrics,
+    MaterialText,
 } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
-import { MaterialStyleMetrics } from "../material-1.0/material.slint";
+import {
+    MaterialStyleMetrics,
+    MaterialTypography,
+} from "../material-1.0/material.slint";
 import { ConfigSlint } from "../shared-items.slint";
+import {
+    MaterialPalette,
+} from "../material-1.0/ui/styling/material_palette.slint";
 
 export struct BatteryDataSlint {
     percentage: int,
@@ -39,7 +46,7 @@ export component BatteryButton inherits Rectangle {
                 border_radius: parent.border_radius;
                 width: 100%;
 
-                icon: root.battery.state == "Unknown" ? @image-url("../assets/battery/battery_unknown.svg") : root.battery.state == "Empty" ? @image-url("../assets/battery/battery_alert_empty.svg") : root.battery.state == "FullyCharged" ? @image-url("../assets/battery/battery_full.svg") : root.battery.state == "Charging" ? @image-url("../assets/battery/battery_charging.svg") : root.battery.percentage <= 10 ? @image-url("../assets/battery/battery_1.svg") : root.battery.percentage <= 25 ? @image-url("../assets/battery/battery_2.svg") : root.battery.percentage <= 40 ? @image-url("../assets/battery/battery_3.svg") : root.battery.percentage <= 55 ? @image-url("../assets/battery/battery_4.svg") : root.battery.percentage <= 70 ? @image-url("../assets/battery/battery_5.svg") : root.battery.percentage <= 90 ? @image-url("../assets/battery/battery_6.svg") : @image-url("../assets/battery/battery_full.svg");
+                icon: root.battery.state == "Unknown" ? @image-url("../assets/battery/20x20/battery_unknown.svg") : root.battery.state == "Empty" ? @image-url("../assets/battery/20x20/battery_alert_empty.svg") : root.battery.state == "FullyCharged" ? @image-url("../assets/battery/20x20/battery_full.svg") : root.battery.state == "Charging" ? @image-url("../assets/battery/20x20/battery_charging.svg") : root.battery.percentage <= 10 ? @image-url("../assets/battery/20x20/battery_1.svg") : root.battery.percentage <= 25 ? @image-url("../assets/battery/20x20/battery_2.svg") : root.battery.percentage <= 40 ? @image-url("../assets/battery/20x20/battery_3.svg") : root.battery.percentage <= 55 ? @image-url("../assets/battery/20x20/battery_4.svg") : root.battery.percentage <= 70 ? @image-url("../assets/battery/20x20/battery_5.svg") : root.battery.percentage <= 90 ? @image-url("../assets/battery/20x20/battery_6.svg") : @image-url("../assets/battery/20x20/battery_full.svg");
 
                 text: root.battery.percentage + "%";
                 spacing: 4px;
@@ -68,10 +75,14 @@ export component BatteryButton inherits Rectangle {
 }
 
 export component BatteryPopup inherits Rectangle {
+    in property <[BatteryDataSlint]> batteryData;
     in property <string> fanProfile;
     in property <string> powerProfile;
     in property <ConfigSlint> config;
     in property <float> animation_multiplier;
+
+    in property <[{ name: string, icon: image }]> power_profiles;
+    in property <[{ name: string, icon: image }]> fan_profiles;
 
     in property <bool> popup_visible;
 
@@ -82,8 +93,10 @@ export component BatteryPopup inherits Rectangle {
         duration: 350ms * animation_multiplier;
         easing: ease-in-out-back;
     }
-    width: 200px;
-    height: root.popup_visible ? Math.min(layout.preferred-height + 30px, 300px) : 0px;
+    width: 350px;
+    height: root.popup_visible ? layout.preferred-height : 0px;
+    clip: true;
+
     TouchArea {
         elevation := Elevation {
             level: 2;
@@ -93,11 +106,254 @@ export component BatteryPopup inherits Rectangle {
             height: 100%;
 
             layout := VerticalLayout {
-                padding: MaterialStyleMetrics.padding_8;
+                width: 100%;
+                spacing: 8px;
+                alignment: start;
+                padding: MaterialStyleMetrics.padding_6;
+                padding-top: MaterialStyleMetrics.padding_12;
+                Text {
+                    text: "Power Settings";
+                    font-size: MaterialTypography.label_large.font_size;
+                    font-weight: MaterialTypography.label_large.font-weight;
+                    horizontal-alignment: center;
+                }
+
+                VerticalLayout {
+                    width: 100%;
+                    padding-right: MaterialStyleMetrics.padding_10;
+                    padding-left: MaterialStyleMetrics.padding_10;
+                    Rectangle {
+                        height: 2px;
+                        border-radius: MaterialStyleMetrics.border_radius_12;
+                        background: MaterialPalette.outline_variant;
+                    }
+                }
 
                 VerticalLayout {
                     spacing: 4px;
-                    padding-top: 4px;
+                    padding: 3px;
+                    alignment: center;
+                    VerticalLayout {
+                        Text {
+                            text: "Fan Profiles";
+                            font-size: MaterialTypography.label_medium.font_size;
+                            font-weight: MaterialTypography.label_medium.font-weight;
+                            color: MaterialPalette.on_surface_variant;
+                            horizontal-alignment: center;
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 5px;
+                        alignment: center;
+                        for profile in root.fan_profiles: fan_profiles_rect := Rectangle {
+                        width: ((root.width / fan_profiles.length) - parent.spacing) - layout.padding + 3px;
+                            border_radius: MaterialStyleMetrics.border_radius_16;
+
+                            fan_elevation_profile := Elevation {
+                                border_radius: parent.border_radius;
+                                background: MaterialPalette.primary;
+                                height: fan_profiles_rect.height;
+                                width: 100%;
+                            }
+
+                            fan_base := BaseButton {
+                                border_radius: parent.border_radius;
+                                vertical_layout: true;
+                                icon: profile.icon;
+                                text: profile.name;
+                                icon-size: 20px;
+                                style: MaterialTypography.label_small;
+                                button_horizontal_padding: 0px;
+                                button_vertical_padding: MaterialStyleMetrics.padding_14;
+                                spacing:MaterialStyleMetrics.spacing_2;
+                                icon_color: root.fanProfile == profile.name ? MaterialPalette.on_primary : transparent;
+                                color: root.fanProfile == profile.name ? MaterialPalette.on_primary : MaterialPalette.on_surface;
+
+                                clicked => {
+                                    root.set_fan_profile(profile.name);
+                                }
+                            }
+
+                            states [
+                                disabled when !(root.fanProfile == profile.name): {
+                                    fan_elevation_profile.background: MaterialPalette.surface_container_highest;
+                                }
+                                hover when fan_base.has-hover && !fan_base.pressed && !fan_base.enter_pressed: {
+                                    fan_elevation_profile.level: 2;
+                                }
+                            ]
+                        }
+                    }
+                }
+
+                Text {
+                    text: "Power Profiles";
+                    font-size: MaterialTypography.label_medium.font_size;
+                    font-weight: MaterialTypography.label_medium.font-weight;
+                    color: MaterialPalette.on_surface_variant;
+                    horizontal-alignment: center;
+                }
+
+                VerticalLayout {
+                    spacing: MaterialStyleMetrics.spacing_8;
+                    for profile in root.power_profiles: power_profiles_rect := Rectangle {
+                        width: 100%;
+                        border_radius: MaterialStyleMetrics.border_radius_28;
+
+                        power_elevation_profile := Elevation {
+                            border_radius: parent.border_radius;
+                            background: MaterialPalette.primary;
+                            height: power_profiles_rect.height;
+                            width: 100%;
+                        }
+
+                        power_base := BaseButton {
+                            border_radius: parent.border_radius;
+                            icon: profile.icon;
+                            text: profile.name;
+                            icon-size: 20px;
+                            button_horizontal_padding: 0px;
+                            icon_color: root.powerProfile == profile.name ? MaterialPalette.on_primary : transparent;
+                            color: root.powerProfile == profile.name ? MaterialPalette.on_primary : MaterialPalette.on_surface;
+
+                            clicked => {
+                                root.set_power_profile(profile.name);
+                            }
+                        }
+
+                        states [
+                            disabled when !(root.powerProfile == profile.name): {
+                                power_elevation_profile.background: MaterialPalette.surface_container_highest;
+                            }
+                            hover when power_base.has-hover && !power_base.pressed && !power_base.enter_pressed: {
+                                power_elevation_profile.level: 2;
+                            }
+                        ]
+                    }
+                }
+
+                VerticalLayout {
+                    width: 100%;
+                    padding-right: MaterialStyleMetrics.padding_10;
+                    padding-left: MaterialStyleMetrics.padding_10;
+                    Rectangle {
+                        height: 2px;
+                        border-radius: MaterialStyleMetrics.border_radius_12;
+                        background: MaterialPalette.outline_variant;
+                    }
+                }
+
+                Elevation {
+                    border_radius: MaterialStyleMetrics.border_radius_12;
+                    background: MaterialPalette.surface_container_high;
+                    width: 100%;
+
+                    VerticalLayout {
+                        width: 100%;
+                        spacing: MaterialStyleMetrics.spacing_6;
+                        padding: MaterialStyleMetrics.padding_6;
+                        // VerticalLayout {
+                        //     padding-left: MaterialStyleMetrics.padding_6;
+                        //     Text {
+                        //         text: "Devices";
+                        //         font-size: MaterialTypography.label_medium.font_size;
+                        //         font-weight: MaterialTypography.label_medium.font-weight;
+                        //         color: MaterialPalette.on_surface_variant;
+                        //         horizontal-alignment: left;
+                        //     }
+                        // }
+
+                        for battery in root.batteryData: Rectangle {
+                            width: 100%;
+                            border_radius: MaterialStyleMetrics.border_radius_12;
+                            background: MaterialPalette.surface_container_highest;
+
+                            VerticalLayout {
+                                width: 100%;
+                                padding: MaterialStyleMetrics.padding_10;
+                                padding-top: MaterialStyleMetrics.padding_6;
+                                spacing: MaterialStyleMetrics.spacing_8;
+
+                                bat_element := HorizontalLayout {
+                                    width: 100%;
+                                    spacing: MaterialStyleMetrics.spacing_12;
+
+                                    VerticalLayout {
+                                        alignment: center;
+
+                                        Image {
+                                            width: 25px;
+                                            height: 25px;
+                                            horizontal-alignment: center;
+
+                                            source: battery.icon_type == "mouse icon" ? @image-url("../assets/battery/25x25/mouse.svg") :
+                                                battery.icon_type == "keyboard icon" ? @image-url("../assets/battery/25x25/keyboard.svg") :
+                                                battery.icon_type == "headphone icon" ? @image-url("../assets/battery/25x25/headphones.svg") :
+                                                battery.state == "Unknown" ? @image-url("../assets/battery/25x25/battery_unknown.svg") :
+                                                battery.state == "Empty" ? @image-url("../assets/battery/25x25/battery_alert_empty.svg") :
+                                                battery.state == "FullyCharged" ? @image-url("../assets/battery/25x25/battery_full.svg") :
+                                                battery.state == "Charging" ? @image-url("../assets/battery/25x25/battery_charging.svg") :
+                                                battery.percentage <= 10 ? @image-url("../assets/battery/25x25/battery_1.svg") :
+                                                battery.percentage <= 25 ? @image-url("../assets/battery/25x25/battery_2.svg") :
+                                                battery.percentage <= 40 ? @image-url("../assets/battery/25x25/battery_3.svg") :
+                                                battery.percentage <= 55 ? @image-url("../assets/battery/25x25/battery_4.svg") :
+                                                battery.percentage <= 70 ? @image-url("../assets/battery/25x25/battery_5.svg") :
+                                                battery.percentage <= 90 ? @image-url("../assets/battery/25x25/battery_6.svg") :
+                                                @image-url("../assets/battery/25x25/battery_full.svg");
+                                        }
+                                    }
+
+                                    VerticalLayout {
+                                        alignment: center;
+                                        spacing: 0px;
+
+                                        MaterialText {
+                                            text: battery.name;
+                                            style: MaterialTypography.title_small;
+                                        }
+
+                                        Text {
+                                            text: battery.state;
+                                            font-size: 10px;
+                                            opacity: 0.7;
+                                            font-weight: 300;
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        horizontal-stretch: 1.0;
+                                    }
+
+                                    MaterialText {
+                                        text: battery.percentage + "%";
+                                        style: MaterialTypography.title_medium;
+                                        horizontal-alignment: right;
+                                        vertical-alignment: center;
+                                    }
+                                }
+
+                                Rectangle {
+                                    Rectangle {
+                                        background: MaterialPalette.surface;
+                                        x: 0px;
+                                        width: 100%;
+                                        height: 4px;
+                                        border-radius: MaterialStyleMetrics.border_radius_12;
+                                        opacity: 0.5;
+                                    }
+
+                                    Rectangle {
+                                        background: MaterialPalette.primary;
+                                        x: 0px;
+                                        width: bat_element.width * (battery.percentage / 100);
+                                        height: 4px;
+                                        border-radius: MaterialStyleMetrics.border_radius_12;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

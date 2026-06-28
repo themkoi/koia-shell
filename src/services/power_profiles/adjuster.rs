@@ -13,7 +13,7 @@ pub async fn start_profile_adjuster(
         if let Some(ui) = ui_weak.upgrade() {
             ui.on_set_power_profile(move |profile| {
                 let profile_service = Arc::clone(&profile_service);
-                let profile_str = profile.to_string();
+                let profile_str = profile.to_string().to_lowercase().replace(' ', "-");
                 info!(
                     "Received power profile change request from UI: '{}'",
                     profile_str
@@ -38,5 +38,6 @@ pub async fn start_profile_adjuster(
                 });
             });
         }
-    }).unwrap();
+    })
+    .unwrap();
 }

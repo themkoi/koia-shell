@@ -55,6 +55,19 @@ export component barWindow inherits Window {
     in-out property <length> window_width <=> self.width;
     in-out property <length> window_height <=> self.height;
 
+    in property <[{ name: string, icon: image }]> power_profiles: [
+        { name: "Power Saver", icon: @image-url("./assets/profiles/power/power_saver.svg") },
+        { name: "Balanced", icon: @image-url("./assets/profiles/power/balanced.svg") },
+        { name: "Performance", icon: @image-url("./assets/profiles/power/performance.svg") }
+    ];
+
+    in property <[{ name: string, icon: image }]> fan_profiles: [
+        { name: "Quiet", icon: @image-url("./assets/profiles/fan/quiet.svg") },
+        { name: "Balanced", icon: @image-url("./assets/profiles/fan/balanced.svg") },
+        { name: "Performance", icon: @image-url("./assets/profiles/fan/performance.svg") },
+        { name: "Extreme", icon: @image-url("./assets/profiles/fan/extreme.svg") }
+    ];
+
     default-font-size: 10px;
     background: transparent;
 
@@ -111,8 +124,17 @@ export component barWindow inherits Window {
                 ProfilesRow {
                     set_power_profile(profile) => {
                         set_power_profile(profile);
-                        set_fan_profile(profile)
+                        if (profile == "power-saver") {
+                            root.set_fan_profile("quiet");
+                        }
+                        if (profile == "balanced") {
+                            root.set_fan_profile("balanced");
+                        }
+                        if (profile == "performance") {
+                            root.set_fan_profile("performance");
+                        }
                     }
+                    profiles: root.power_profiles;
                     powerProfile: powerProfile;
                 }
             }
@@ -295,7 +317,10 @@ export component barWindow inherits Window {
         y: config.window.bar-height + 4px;
         config: config;
         fanProfile: root.fanProfile;
+        power_profiles: root.power_profiles;
+        fan_profiles: root.fan_profiles;
         powerProfile: root.powerProfile;
+        batteryData: batteryData;
         animation_multiplier: config.interaction.animation-multiplier;
         popup_visible: root.batteryPopupVis;
         changed popup_visible => {

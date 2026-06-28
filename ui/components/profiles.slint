@@ -17,15 +17,11 @@ export component ProfilesRow inherits Rectangle {
 
     callback set_power_profile(string);
 
-    in property <[{ name: string, icon: image}]> profiles: [
-        { name: "power-saver", icon: @image-url("../assets/profiles/power_saver.svg") },
-        { name: "balanced", icon: @image-url("../assets/profiles/balanced.svg") },
-        { name: "performance", icon: @image-url("../assets/profiles/performance.svg") }
-    ];
+    in property <[{ name: string, icon: image }]> profiles;
 
     Rectangle {
         border_radius: MaterialStyleMetrics.border_radius_28;
-        background: MaterialPalette.surface_bright;
+        background: MaterialPalette.surface_container_highest;
         height: 100%;
 
         HorizontalLayout {
@@ -39,7 +35,7 @@ export component ProfilesRow inherits Rectangle {
 
                 elevation := Elevation {
                     border_radius: parent.border_radius;
-                    background: MaterialPalette.primary; 
+                    background: MaterialPalette.primary;
                     width: 100%;
                     height: 100%;
                 }

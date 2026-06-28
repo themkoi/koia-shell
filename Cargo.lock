@@ -2215,6 +2215,7 @@ version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "54e6cb54b264cac4aa4968d6b5d4f4240a89ae8d9153659391ac57b6e4757a9f"
 dependencies = [
+ "bytemuck",
  "calloop 0.14.4",
  "cfg_aliases",
  "drm",
@@ -2223,6 +2224,7 @@ dependencies = [
  "i-slint-common",
  "i-slint-core",
  "i-slint-renderer-skia",
+ "i-slint-renderer-software",
  "input",
  "memmap2",
  "nix",
@@ -2257,6 +2259,7 @@ dependencies = [
  "i-slint-common",
  "i-slint-core",
  "i-slint-renderer-skia",
+ "i-slint-renderer-software",
  "vtable",
 ]
 
@@ -2269,6 +2272,7 @@ dependencies = [
  "accesskit",
  "accesskit_winit",
  "block2 0.6.2",
+ "bytemuck",
  "cfg-if",
  "cfg_aliases",
  "copypasta",
@@ -2280,6 +2284,8 @@ dependencies = [
  "i-slint-core",
  "i-slint-core-macros",
  "i-slint-renderer-skia",
+ "i-slint-renderer-software",
+ "imgref",
  "lyon_path",
  "muda",
  "objc2 0.6.4",
@@ -2289,6 +2295,7 @@ dependencies = [
  "objc2-ui-kit 0.3.2",
  "pin-weak",
  "raw-window-handle",
+ "rgb",
  "scoped-tls-hkt",
  "scopeguard",
  "softbuffer",
@@ -5395,7 +5402,7 @@ dependencies = [
 [[package]]
 name = "spell-framework"
 version = "1.0.5"
-source = "git+https://github.com/themkoi/Spell#1d7f17a064ed72e861acedeb33659eea07dd57aa"
+source = "git+https://github.com/themkoi/Spell?rev=9accfc14d7595a483becf1b623687446c6faac92#9accfc14d7595a483becf1b623687446c6faac92"
 dependencies = [
  "event-listener",
  "futures-util",
@@ -6121,7 +6128,7 @@ checksum = "6d49784317cd0d1ee7ec5c716dd598ec5b4483ea832a2dced265471cc0f690ae"
 [[package]]
 name = "upower_dbus"
 version = "0.3.2"
-source = "git+https://github.com/pop-os/dbus-settings-bindings#eed01dd3609e90e3c8cd043656734c500956c793"
+source = "git+https://github.com/pop-os/dbus-settings-bindings?rev=eed01dd3609e90e3c8cd043656734c500956c793#eed01dd3609e90e3c8cd043656734c500956c793"
 dependencies = [
  "serde",
  "serde_repr",

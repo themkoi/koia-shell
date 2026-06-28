@@ -34,7 +34,7 @@ export component Taskbar inherits Rectangle {
     callback dispatch_command(string);
 
     out property <bool> is_expanded: touch.has-hover;
-    
+
     width: 100%;
     height: is_expanded ? config.window.bar-height : 7px;
 
@@ -109,8 +109,8 @@ export component Taskbar inherits Rectangle {
                         border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
 
                         HorizontalLayout {
-                            padding-left: 20px;
-                            padding-right: 20px;
+                            padding-left: MaterialStyleMetrics.padding_20;
+                            padding-right: MaterialStyleMetrics.padding_20;
                             padding-bottom: 2px;
                             scroll := ScrollView {
                                 overlay_scrollbars: true;
@@ -119,13 +119,13 @@ export component Taskbar inherits Rectangle {
                                 taskLay := HorizontalLayout {
                                     alignment: center;
                                     height: 100%;
-                                    spacing: 4px;
-                                    padding-left: 8px;
-                                    padding-right: 8px;
+                                    spacing: MaterialStyleMetrics.spacing_8;
+                                    padding-left: MaterialStyleMetrics.padding_8;
+                                    padding-right: MaterialStyleMetrics.padding_8;
 
                                     for ws[i] in root.workspaces: Rectangle {
                                         border_radius: MaterialStyleMetrics.border_radius_28;
-                                        background: MaterialPalette.surface_bright;
+                                        background: MaterialPalette.surface_container_highest;
                                         height: 100%;
                                         width: layout.preferred-width;
 
