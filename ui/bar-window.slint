@@ -124,13 +124,13 @@ export component barWindow inherits Window {
                 ProfilesRow {
                     set_power_profile(profile) => {
                         set_power_profile(profile);
-                        if (profile == "power-saver") {
+                        if (profile == "Power Saver") {
                             root.set_fan_profile("quiet");
                         }
-                        if (profile == "balanced") {
+                        if (profile == "Balanced") {
                             root.set_fan_profile("balanced");
                         }
-                        if (profile == "performance") {
+                        if (profile == "Performance") {
                             root.set_fan_profile("performance");
                         }
                     }

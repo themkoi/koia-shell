@@ -1,13 +1,20 @@
 use std::path::Path;
 use std::rc::Rc;
+use std::cell::RefCell;
+use std::collections::{HashMap, HashSet};
 
 use log::{debug, info};
 use niri_ipc::{socket::Socket, Event, Request, Window};
-use slint::{Image, ModelRc, VecModel};
+use slint::{Image, Model, ModelRc, VecModel};
 
 use crate::barWindow;
 use crate::services::taskbar::cache::{get_cache_folder, load_cache};
 use crate::services::taskbar::serialize::SerializeState;
+
+thread_local! {
+    static WORKSPACES_MODEL: RefCell<Rc<VecModel<crate::Workspace>>> = RefCell::new(Rc::new(VecModel::default()));
+    static WINDOW_MODELS: RefCell<HashMap<i32, Rc<VecModel<crate::Window>>>> = RefCell::new(HashMap::new());
+}
 
 pub async fn run_taskbar(
     config: &crate::config::AppConfig,
@@ -92,41 +99,67 @@ pub async fn run_taskbar(
 
             slint::invoke_from_event_loop(move || {
                 if let Some(ui) = ui_weak_clone.upgrade() {
+                    WORKSPACES_MODEL.with(|ws_cell| {
+                        WINDOW_MODELS.with(|win_cell| {
+                            let ws_model = ws_cell.borrow().clone();
+                            let mut win_map = win_cell.borrow_mut();
 
-                    let workspaces_vec: Vec<crate::Workspace> = paths_to_pass
-                        .into_iter()
-                        .map(|(ws_id, windows)| {
-                            let windows_vec: Vec<crate::Window> = windows
-                                .into_iter()
-                                .map(|(w_id, app_id, title, icon_path, is_focused)| {
+                            if ws_model.row_count() == 0 && !paths_to_pass.is_empty() {
+                                ui.set_workspaces(ModelRc::from(ws_model.clone()));
+                            }
+
+                            for (ws_id, windows) in &paths_to_pass {
+                                let win_model = win_map.entry(*ws_id).or_insert_with(|| Rc::new(VecModel::default()));
+                                
+                                while win_model.row_count() > windows.len() {
+                                    win_model.remove(win_model.row_count() - 1);
+                                }
+                                
+                                for (idx, (w_id, app_id, title, icon_path, is_focused)) in windows.iter().enumerate() {
                                     let icon_image = if !icon_path.is_empty() {
-                                        Image::load_from_path(Path::new(&icon_path))
-                                            .unwrap_or_default()
+                                        Image::load_from_path(Path::new(icon_path)).unwrap_or_default()
                                     } else {
                                         Image::default()
                                     };
 
-                                    crate::Window {
-                                        id: w_id,
-                                        app_id,
-                                        title,
+                                    let win_data = crate::Window {
+                                        id: *w_id as i32,
+                                        app_id: app_id.clone(),
+                                        title: title.clone(),
                                         icon: icon_image,
-                                        is_focused,
+                                        is_focused: *is_focused,
+                                    };
+
+                                    if idx < win_model.row_count() {
+                                        win_model.set_row_data(idx, win_data);
+                                    } else {
+                                        win_model.push(win_data);
                                     }
-                                })
-                                .collect();
-
-                            let windows_model = Rc::new(VecModel::from(windows_vec));
-
-                            crate::Workspace {
-                                id: ws_id,
-                                windows: ModelRc::from(windows_model),
+                                }
                             }
-                        })
-                        .collect();
 
-                    let workspaces_model = Rc::new(VecModel::from(workspaces_vec));
-                    ui.set_workspaces(ModelRc::from(workspaces_model));
+                            while ws_model.row_count() > paths_to_pass.len() {
+                                ws_model.remove(ws_model.row_count() - 1);
+                            }
+
+                            for (idx, (ws_id, _)) in paths_to_pass.iter().enumerate() {
+                                let win_model = win_map.get(ws_id).unwrap().clone();
+                                let ws_data = crate::Workspace {
+                                    id: *ws_id,
+                                    windows: ModelRc::from(win_model),
+                                };
+
+                                if idx < ws_model.row_count() {
+                                    ws_model.set_row_data(idx, ws_data);
+                                } else {
+                                    ws_model.push(ws_data);
+                                }
+                            }
+
+                            let active_ws_ids: HashSet<i32> = paths_to_pass.iter().map(|(id, _)| *id).collect();
+                            win_map.retain(|id, _| active_ws_ids.contains(id));
+                        });
+                    });
                 }
             })
             .unwrap();
