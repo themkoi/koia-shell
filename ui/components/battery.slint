@@ -129,7 +129,7 @@ export component BatteryPopup inherits Rectangle {
                     }
                 }
 
-                VerticalLayout {
+                if config.hardware-specific-features :VerticalLayout {
                     spacing: 4px;
                     padding: 3px;
                     alignment: center;
@@ -143,7 +143,7 @@ export component BatteryPopup inherits Rectangle {
                         }
                     }
 
-                    HorizontalLayout {
+                    if config.hardware-specific-features :HorizontalLayout {
                         spacing: 5px;
                         alignment: center;
                         for profile in root.fan_profiles: fan_profiles_rect := Rectangle {

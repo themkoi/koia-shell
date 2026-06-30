@@ -25,7 +25,7 @@ slint = { version = "=1.17.0", default-features = false, features = [
     "backend-winit",
     "gettext",
 ] }
-spell-framework = { git = "https://github.com/themkoi/Spell", rev = "9accfc14d7595a483becf1b623687446c6faac92" }
+spell-framework = { git = "https://github.com/themkoi/Spell", rev = "f45310d3feff5c9b3961d691ef11ea81685debec" }
 tokio = "1.52.3"
 toml = "1.1.2"
 
