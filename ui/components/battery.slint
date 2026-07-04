@@ -3,6 +3,7 @@ import {
     MaterialPalette,
     MaterialStyleMetrics,
     MaterialText,
+    ScrollView,
 } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
 import {
@@ -79,7 +80,6 @@ export component BatteryPopup inherits Rectangle {
     in property <string> fanProfile;
     in property <string> powerProfile;
     in property <ConfigSlint> config;
-    in property <float> animation_multiplier;
 
     in property <[{ name: string, icon: image }]> power_profiles;
     in property <[{ name: string, icon: image }]> fan_profiles;
@@ -90,11 +90,11 @@ export component BatteryPopup inherits Rectangle {
     callback set_fan_profile(string);
 
     animate height {
-        duration: 350ms * animation_multiplier;
+        duration: 350ms * config.interaction.animation-multiplier;
         easing: ease-in-out-back;
     }
     width: 350px;
-    height: root.popup_visible ? layout.preferred-height : 0px;
+    height: root.popup_visible ? clamp(layout.preferred-height, 0, config.window.bar-popup-max-height) : 0px;
     clip: true;
 
     TouchArea {
@@ -111,6 +111,7 @@ export component BatteryPopup inherits Rectangle {
                 alignment: start;
                 padding: MaterialStyleMetrics.padding_6;
                 padding-top: MaterialStyleMetrics.padding_12;
+                
                 Text {
                     text: "Power Settings";
                     font-size: MaterialTypography.label_large.font_size;
@@ -129,7 +130,7 @@ export component BatteryPopup inherits Rectangle {
                     }
                 }
 
-                if config.hardware-specific-features :VerticalLayout {
+                if config.hardware-specific-features : VerticalLayout {
                     spacing: 4px;
                     padding: 3px;
                     alignment: center;
@@ -143,11 +144,11 @@ export component BatteryPopup inherits Rectangle {
                         }
                     }
 
-                    if config.hardware-specific-features :HorizontalLayout {
+                    if config.hardware-specific-features : HorizontalLayout {
                         spacing: 5px;
                         alignment: center;
-                        for profile in root.fan_profiles: fan_profiles_rect := Rectangle {
-                        width: ((root.width / fan_profiles.length) - parent.spacing) - layout.padding + 3px;
+                        for profile in root.fan_profiles : fan_profiles_rect := Rectangle {
+                            width: ((root.width / fan_profiles.length) - parent.spacing) - layout.padding + 3px;
                             border_radius: MaterialStyleMetrics.border_radius_16;
 
                             fan_elevation_profile := Elevation {
@@ -166,7 +167,7 @@ export component BatteryPopup inherits Rectangle {
                                 style: MaterialTypography.label_small;
                                 button_horizontal_padding: 0px;
                                 button_vertical_padding: MaterialStyleMetrics.padding_14;
-                                spacing:MaterialStyleMetrics.spacing_2;
+                                spacing: MaterialStyleMetrics.spacing_2;
                                 icon_color: root.fanProfile == profile.name ? MaterialPalette.on_primary : transparent;
                                 color: root.fanProfile == profile.name ? MaterialPalette.on_primary : MaterialPalette.on_surface;
 
@@ -176,10 +177,10 @@ export component BatteryPopup inherits Rectangle {
                             }
 
                             states [
-                                disabled when !(root.fanProfile == profile.name): {
+                                disabled when !(root.fanProfile == profile.name) : {
                                     fan_elevation_profile.background: MaterialPalette.surface_container_highest;
                                 }
-                                hover when fan_base.has-hover && !fan_base.pressed && !fan_base.enter_pressed: {
+                                hover when fan_base.has-hover && !fan_base.pressed && !fan_base.enter_pressed : {
                                     fan_elevation_profile.level: 2;
                                 }
                             ]
@@ -197,7 +198,7 @@ export component BatteryPopup inherits Rectangle {
 
                 VerticalLayout {
                     spacing: MaterialStyleMetrics.spacing_8;
-                    for profile in root.power_profiles: power_profiles_rect := Rectangle {
+                    for profile in root.power_profiles : power_profiles_rect := Rectangle {
                         width: 100%;
                         border_radius: MaterialStyleMetrics.border_radius_28;
 
@@ -223,10 +224,10 @@ export component BatteryPopup inherits Rectangle {
                         }
 
                         states [
-                            disabled when !(root.powerProfile == profile.name): {
+                            disabled when !(root.powerProfile == profile.name) : {
                                 power_elevation_profile.background: MaterialPalette.surface_container_highest;
                             }
-                            hover when power_base.has-hover && !power_base.pressed && !power_base.enter_pressed: {
+                            hover when power_base.has-hover && !power_base.pressed && !power_base.enter_pressed : {
                                 power_elevation_profile.level: 2;
                             }
                         ]
@@ -244,111 +245,110 @@ export component BatteryPopup inherits Rectangle {
                     }
                 }
 
-                Elevation {
+                if root.batteryData.length > 0 : Elevation {
                     border_radius: MaterialStyleMetrics.border_radius_16;
                     background: MaterialPalette.surface_container_high;
                     width: 100%;
+                    
+                    vertical-stretch: 1; 
+                    preferred-height: scroll_content.preferred-height;
 
-                    VerticalLayout {
+                    ScrollView {
                         width: 100%;
-                        spacing: MaterialStyleMetrics.spacing_6;
-                        padding: MaterialStyleMetrics.padding_6;
-                        // VerticalLayout {
-                        //     padding-left: MaterialStyleMetrics.padding_6;
-                        //     Text {
-                        //         text: "Devices";
-                        //         font-size: MaterialTypography.label_medium.font_size;
-                        //         font-weight: MaterialTypography.label_medium.font-weight;
-                        //         color: MaterialPalette.on_surface_variant;
-                        //         horizontal-alignment: left;
-                        //     }
-                        // }
+                        height: 100%;
+                        overlay_scrollbars: true;
 
-                        for battery in root.batteryData: Rectangle {
+                        scroll_content := VerticalLayout {
                             width: 100%;
-                            border_radius: MaterialStyleMetrics.border_radius_12;
-                            background: MaterialPalette.surface_container_highest;
+                            spacing: MaterialStyleMetrics.spacing_6;
+                            padding: MaterialStyleMetrics.padding_6;
 
-                            VerticalLayout {
+                            for battery in root.batteryData : Rectangle {
                                 width: 100%;
-                                padding: MaterialStyleMetrics.padding_10;
-                                padding-top: MaterialStyleMetrics.padding_6;
-                                spacing: MaterialStyleMetrics.spacing_8;
+                                border_radius: MaterialStyleMetrics.border_radius_12;
+                                background: MaterialPalette.surface_container_highest;
 
-                                bat_element := HorizontalLayout {
+                                VerticalLayout {
                                     width: 100%;
-                                    spacing: MaterialStyleMetrics.spacing_12;
+                                    padding: MaterialStyleMetrics.padding_10;
+                                    padding-top: MaterialStyleMetrics.padding_6;
+                                    spacing: MaterialStyleMetrics.spacing_8;
 
-                                    VerticalLayout {
-                                        alignment: center;
+                                    bat_element := HorizontalLayout {
+                                        width: 100%;
+                                        spacing: MaterialStyleMetrics.spacing_12;
 
-                                        Image {
-                                            width: 25px;
-                                            height: 25px;
-                                            horizontal-alignment: center;
+                                        VerticalLayout {
+                                            alignment: center;
 
-                                            source: battery.icon_type == "mouse icon" ? @image-url("../assets/battery/25x25/mouse.svg") :
-                                                battery.icon_type == "keyboard icon" ? @image-url("../assets/battery/25x25/keyboard.svg") :
-                                                battery.icon_type == "headphone icon" ? @image-url("../assets/battery/25x25/headphones.svg") :
-                                                battery.state == "Unknown" ? @image-url("../assets/battery/25x25/battery_unknown.svg") :
-                                                battery.state == "Empty" ? @image-url("../assets/battery/25x25/battery_alert_empty.svg") :
-                                                battery.state == "FullyCharged" ? @image-url("../assets/battery/25x25/battery_full.svg") :
-                                                battery.state == "Charging" ? @image-url("../assets/battery/25x25/battery_charging.svg") :
-                                                battery.percentage <= 10 ? @image-url("../assets/battery/25x25/battery_1.svg") :
-                                                battery.percentage <= 25 ? @image-url("../assets/battery/25x25/battery_2.svg") :
-                                                battery.percentage <= 40 ? @image-url("../assets/battery/25x25/battery_3.svg") :
-                                                battery.percentage <= 55 ? @image-url("../assets/battery/25x25/battery_4.svg") :
-                                                battery.percentage <= 70 ? @image-url("../assets/battery/25x25/battery_5.svg") :
-                                                battery.percentage <= 90 ? @image-url("../assets/battery/25x25/battery_6.svg") :
-                                                @image-url("../assets/battery/25x25/battery_full.svg");
+                                            Image {
+                                                width: 25px;
+                                                height: 25px;
+                                                horizontal-alignment: center;
+
+                                                source: battery.icon_type == "mouse icon" ? @image-url("../assets/battery/25x25/mouse.svg") :
+                                                    battery.icon_type == "keyboard icon" ? @image-url("../assets/battery/25x25/keyboard.svg") :
+                                                    battery.icon_type == "headphone icon" ? @image-url("../assets/battery/25x25/headphones.svg") :
+                                                    battery.state == "Unknown" ? @image-url("../assets/battery/25x25/battery_unknown.svg") :
+                                                    battery.state == "Empty" ? @image-url("../assets/battery/25x25/battery_alert_empty.svg") :
+                                                    battery.state == "FullyCharged" ? @image-url("../assets/battery/25x25/battery_full.svg") :
+                                                    battery.state == "Charging" ? @image-url("../assets/battery/25x25/battery_charging.svg") :
+                                                    battery.percentage <= 10 ? @image-url("../assets/battery/25x25/battery_1.svg") :
+                                                    battery.percentage <= 25 ? @image-url("../assets/battery/25x25/battery_2.svg") :
+                                                    battery.percentage <= 40 ? @image-url("../assets/battery/25x25/battery_3.svg") :
+                                                    battery.percentage <= 55 ? @image-url("../assets/battery/25x25/battery_4.svg") :
+                                                    battery.percentage <= 70 ? @image-url("../assets/battery/25x25/battery_5.svg") :
+                                                    battery.percentage <= 90 ? @image-url("../assets/battery/25x25/battery_6.svg") :
+                                                    @image-url("../assets/battery/25x25/battery_full.svg");
+                                            }
                                         }
-                                    }
 
-                                    VerticalLayout {
-                                        alignment: center;
-                                        spacing: 0px;
+                                        VerticalLayout {
+                                            alignment: center;
+                                            spacing: 0px;
+
+                                            MaterialText {
+                                                text: battery.name;
+                                                style: MaterialTypography.title_small;
+                                            }
+
+                                            Text {
+                                                text: battery.state;
+                                                font-size: 10px;
+                                                opacity: 0.7;
+                                                font-weight: 300;
+                                            }
+                                        }
+
+                                        Rectangle {
+                                            horizontal-stretch: 1.0;
+                                        }
 
                                         MaterialText {
-                                            text: battery.name;
-                                            style: MaterialTypography.title_small;
-                                        }
-
-                                        Text {
-                                            text: battery.state;
-                                            font-size: 10px;
-                                            opacity: 0.7;
-                                            font-weight: 300;
+                                            text: battery.percentage + "%";
+                                            style: MaterialTypography.title_medium;
+                                            horizontal-alignment: right;
+                                            vertical-alignment: center;
                                         }
                                     }
 
                                     Rectangle {
-                                        horizontal-stretch: 1.0;
-                                    }
+                                        Rectangle {
+                                            background: MaterialPalette.surface;
+                                            x: 0px;
+                                            width: 100%;
+                                            height: 4px;
+                                            border-radius: MaterialStyleMetrics.border_radius_12;
+                                            opacity: 0.5;
+                                        }
 
-                                    MaterialText {
-                                        text: battery.percentage + "%";
-                                        style: MaterialTypography.title_medium;
-                                        horizontal-alignment: right;
-                                        vertical-alignment: center;
-                                    }
-                                }
-
-                                Rectangle {
-                                    Rectangle {
-                                        background: MaterialPalette.surface;
-                                        x: 0px;
-                                        width: 100%;
-                                        height: 4px;
-                                        border-radius: MaterialStyleMetrics.border_radius_12;
-                                        opacity: 0.5;
-                                    }
-
-                                    Rectangle {
-                                        background: MaterialPalette.primary;
-                                        x: 0px;
-                                        width: bat_element.width * (battery.percentage / 100);
-                                        height: 4px;
-                                        border-radius: MaterialStyleMetrics.border_radius_12;
+                                        Rectangle {
+                                            background: MaterialPalette.primary;
+                                            x: 0px;
+                                            width: bat_element.width * (battery.percentage / 100);
+                                            height: 4px;
+                                            border-radius: MaterialStyleMetrics.border_radius_12;
+                                        }
                                     }
                                 }
                             }

@@ -13,14 +13,16 @@ export component Switch {
     in property <string> tooltip <=> touch_area.tooltip;
     in property <image> on_icon;
     in property <image> off_icon;
+    in property <length> height_switch: MaterialStyleMetrics.size_32;
+    in property <length> width_switch: MaterialStyleMetrics.size_52;
 
     property <bool> has_icon: (root.checked && root.on_icon.width > 0 && root.on_icon.height > 0) || (root.off_icon.width > 0 && root.off_icon.height > 0);
     property <color> foreground: root.checked ? MaterialPalette.on_primary_container : MaterialPalette.surface_container_highest;
 
     callback checked_state_changed(checked: bool);
 
-    min_width: MaterialStyleMetrics.size_52;
-    min_height: MaterialStyleMetrics.size_32;
+    width: width_switch;
+    height: height_switch;
 
     accessible-enabled: root.enabled;
     accessible-checkable: true;

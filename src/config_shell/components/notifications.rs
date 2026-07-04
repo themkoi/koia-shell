@@ -23,9 +23,9 @@ pub fn default_notificaiton() -> NotificationConfig {
     NotificationConfig {
         icon_size: 48,
         notification_width: 370,
-        notification_max_height: 250,
-        max_title_lenght: 100,
-        max_text_lenght: 250,
+        notification_max_height: 260,
+        max_title_lenght: 60,
+        max_text_lenght: 285,
         notification_timeout: 12,
         notification_never_timeout: 0,
         other_action_buttons: false,

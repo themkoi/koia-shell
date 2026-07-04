@@ -25,7 +25,7 @@ slint = { version = "=1.17.0", default-features = false, features = [
     "backend-winit",
     "gettext",
 ] }
-spell-framework = { git = "https://github.com/themkoi/Spell", rev = "f45310d3feff5c9b3961d691ef11ea81685debec" }
+spell-framework = { git = "https://github.com/themkoi/Spell", rev = "6de1cbdb6c9df26fd0c1af28c898d304cee30a0c" }
 tokio = "1.52.3"
 toml = "1.1.2"
 
@@ -36,6 +36,7 @@ chrono = "0.4.45"
 serde_json = "1.0.150"
 upower_dbus = { git = "https://github.com/pop-os/dbus-settings-bindings", rev = "eed01dd3609e90e3c8cd043656734c500956c793" , package = "upower_dbus" }
 zbus = "5.16.0"
+wayle-network = "0.1.2"
 
 [features]
 default = ["framework"]

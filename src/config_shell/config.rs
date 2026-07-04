@@ -31,6 +31,7 @@ pub struct InterractionConfig {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct WindowConfig {
     pub bar_height: u16,
+    pub bar_popup_max_height: u16,
     pub notification_screen: String,
     pub notification_window_width: u16,
 }
@@ -62,6 +63,7 @@ impl Default for Config {
             fallback_display: "eDP-1".to_string(),
             window_config: WindowConfig {
                 bar_height: 38,
+                bar_popup_max_height: 450,
                 notification_screen: "eDP-1".to_string(),
                 notification_window_width: 400,
             },
@@ -194,6 +196,7 @@ pub fn build_config_slint(config: &crate::config::AppConfig) -> ConfigSlint {
         hardware_specific_features: config.config.hardware_config.hardware_specific_features,
         window: WindowConfigSlint {
             bar_height: config.config.window_config.bar_height as f32,
+            bar_popup_max_height: config.config.window_config.bar_popup_max_height as f32,
         },
         interaction: InteractionConfigSlint {
             animation_multiplier: config.config.interaction_config.animation_multiplier,
