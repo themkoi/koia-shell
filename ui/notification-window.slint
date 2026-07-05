@@ -46,6 +46,9 @@ export component NotificationCard inherits Rectangle {
     callback release();
     callback action_clicked(string);
 
+        private property <length> close-button-width: 40px;
+
+
     private property <bool> i-alive: data.id >= 0;
     private property <int> last-id: -99;
     private property <float> life: 1.0;
@@ -148,10 +151,9 @@ export component NotificationCard inherits Rectangle {
             Rectangle {
                 horizontal-stretch: 1;
 
-                HorizontalLayout {
+                notificaitonLayout := HorizontalLayout {
                     alignment: start;
                     width: 100%;
-
                     spacing: 12px;
 
                     VerticalLayout {
@@ -166,7 +168,6 @@ export component NotificationCard inherits Rectangle {
 
                     textLayout := VerticalLayout {
                         spacing: 4px;
-                        horizontal-stretch: 1;
                         width: 100%;
 
                         appNameText := Text {
@@ -182,9 +183,15 @@ export component NotificationCard inherits Rectangle {
                             font-weight: MaterialTypography.title_medium.font-weight;
                             color: MaterialPalette.on_surface;
                             wrap: word-wrap;
+                            
+                            width: root.width 
+                                - (MaterialStyleMetrics.padding_12 * 2) 
+                                - root.close-button-width 
+                                - 6px 
+                                - (root.data.icon.width > 0 && root.data.icon.height > 0 ? root.icon-size + 12px : 0px);
                         }
 
-                        ScrollView {
+                        if data.subtitle != "" || data.message != "": ScrollView {
                             width: 100%;
 
                             height: min(scrollContent.preferred-height + scrollContent.spacing * 2,
@@ -233,8 +240,9 @@ export component NotificationCard inherits Rectangle {
                 }
             }
 
-            VerticalLayout {
+            close-button := VerticalLayout {
                 alignment: start;
+                width: root.close-button-width;
                 FilledIconButton {
                     icon: @image-url("./assets/close.svg");
                     clicked => {
