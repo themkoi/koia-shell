@@ -3,6 +3,7 @@ import {
     FilledIconButton,
     MaterialPalette,
     MaterialTypography,
+    ScrollView,
 } from "@material/material.slint";
 import { ConfigSlint } from "shared-items.slint";
 import {
@@ -137,7 +138,7 @@ export component NotificationCard inherits Rectangle {
         }
     }
 
-    VerticalLayout {
+    topLayout := VerticalLayout {
         padding: MaterialStyleMetrics.padding_12;
         spacing: MaterialStyleMetrics.spacing_6;
 
@@ -148,7 +149,6 @@ export component NotificationCard inherits Rectangle {
                 horizontal-stretch: 1;
 
                 HorizontalLayout {
-                    alignment: start;
                     spacing: 12px;
 
                     VerticalLayout {
@@ -161,39 +161,55 @@ export component NotificationCard inherits Rectangle {
                         }
                     }
 
-                    VerticalLayout {
+                    textLayout := VerticalLayout {
                         spacing: 4px;
                         horizontal-stretch: 1;
-                        vertical-stretch: 1;
-                        max-height: root.max-card-height - 32px;
 
-                        Text {
+                        appNameText := Text {
                             text: data.app-name;
                             font-size: MaterialTypography.body_small.font-size;
                             font-weight: MaterialTypography.body_small.font-weight;
                             color: MaterialPalette.on_surface_variant;
                         }
 
-                        Text {
+                        titleText := Text {
                             text: data.title;
                             font-size: MaterialTypography.title_medium.font-size;
                             font-weight: MaterialTypography.title_medium.font-weight;
                             color: MaterialPalette.on_surface;
                             wrap: word-wrap;
+                            overflow: elide;
                         }
 
-                        if data.subtitle != "": Text {
-                            text: data.subtitle;
-                            font-size: MaterialTypography.body_medium.font-size;
-                            color: MaterialPalette.on_surface_variant;
-                            wrap: word-wrap;
-                        }
+                        ScrollView {
+                            width: 100%;
 
-                        if data.message != "": Text {
-                            text: data.message;
-                            font-size: MaterialTypography.body_medium.font-size;
-                            color: MaterialPalette.on_surface_variant;
-                            wrap: word-wrap;
+                            height: min(scrollContent.preferred-height + scrollContent.spacing * 2,
+                                root.max-card-height
+                                - (MaterialStyleMetrics.padding_12 * 2)
+                                - appNameText.preferred-height
+                                - titleText.preferred-height
+                                - (data.actions.length > 0 && other_action_buttons == true ? 48px : 0px));
+
+                            scrollContent := VerticalLayout {
+                                spacing: MaterialStyleMetrics.spacing_4;
+                                width: 100%;
+                                height: 100%;
+
+                                if data.subtitle != "": Text {
+                                    text: data.subtitle;
+                                    font-size: MaterialTypography.body_medium.font-size;
+                                    color: MaterialPalette.on_surface_variant;
+                                    wrap: word-wrap;
+                                }
+
+                                if data.message != "": Text {
+                                    text: data.message;
+                                    font-size: MaterialTypography.body_medium.font-size;
+                                    color: MaterialPalette.on_surface_variant;
+                                    wrap: word-wrap;
+                                }
+                            }
                         }
                     }
                 }
@@ -232,7 +248,7 @@ export component NotificationCard inherits Rectangle {
             }
         }
 
-        if data.actions.length > 0 && other_action_buttons == true: HorizontalLayout {
+        if data.actions.length > 0 && other_action_buttons == true: otherActions := HorizontalLayout {
             spacing: 8px;
             alignment: start;
             for act in data.actions: VerticalLayout {
@@ -350,21 +366,21 @@ export component notificationWindow inherits Window {
     pure function get_rank(idx: int) -> int {
         if (root.slots[idx].id < 0) { return -1; }
         return (root.slots[0].id > root.slots[idx].id ? 1 : 0) +
-               (root.slots[1].id > root.slots[idx].id ? 1 : 0) +
-               (root.slots[2].id > root.slots[idx].id ? 1 : 0) +
-               (root.slots[3].id > root.slots[idx].id ? 1 : 0) +
-               (root.slots[4].id > root.slots[idx].id ? 1 : 0);
+            (root.slots[1].id > root.slots[idx].id ? 1 : 0) +
+            (root.slots[2].id > root.slots[idx].id ? 1 : 0) +
+            (root.slots[3].id > root.slots[idx].id ? 1 : 0) +
+            (root.slots[4].id > root.slots[idx].id ? 1 : 0);
     }
 
     pure function calculate_y(idx: int) -> length {
         let rank = root.get_rank(idx);
         if (rank < 0) { return 0px; }
         return root.pad +
-               (root.get_rank(0) >= 0 && root.get_rank(0) < rank ? root.h0 + 8px : 0px) +
-               (root.get_rank(1) >= 0 && root.get_rank(1) < rank ? root.h1 + 8px : 0px) +
-               (root.get_rank(2) >= 0 && root.get_rank(2) < rank ? root.h2 + 8px : 0px) +
-               (root.get_rank(3) >= 0 && root.get_rank(3) < rank ? root.h3 + 8px : 0px) +
-               (root.get_rank(4) >= 0 && root.get_rank(4) < rank ? root.h4 + 8px : 0px);
+            (root.get_rank(0) >= 0 && root.get_rank(0) < rank ? root.h0 + 8px : 0px) +
+            (root.get_rank(1) >= 0 && root.get_rank(1) < rank ? root.h1 + 8px : 0px) +
+            (root.get_rank(2) >= 0 && root.get_rank(2) < rank ? root.h2 + 8px : 0px) +
+            (root.get_rank(3) >= 0 && root.get_rank(3) < rank ? root.h3 + 8px : 0px) +
+            (root.get_rank(4) >= 0 && root.get_rank(4) < rank ? root.h4 + 8px : 0px);
     }
 
     callback add-notif(int, string, string, string, string, int, image, [ActionData], bool, int);

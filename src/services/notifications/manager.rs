@@ -68,14 +68,9 @@ impl NotificationManager for notificationWindow {
 
         if let Some(app_config) = CONFIG_CELL.get() {
             let max_title = app_config.config.notification_config.max_title_lenght as usize;
-            let max_text = app_config.config.notification_config.max_text_lenght as usize;
 
             if title.chars().count() > max_title {
                 title = title.chars().take(max_title).collect::<String>() + "...";
-            }
-
-            if body.chars().count() > max_text {
-                body = body.chars().take(max_text).collect::<String>() + "...";
             }
 
             let should_format_html = app_config
