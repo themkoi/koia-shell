@@ -2,8 +2,8 @@ use log::info;
 use slint::{ComponentHandle, Image, ModelRc, ToSharedString, VecModel};
 use spell_framework::{
     vault::{
-        CloseReason, Hint, NotiError, Notification, NotificationManager, Timeout,
-        NOTIFICATION_EVENT,
+        CloseReason, Hint, NOTIFICATION_EVENT, NotiError, Notification, NotificationManager,
+        Timeout,
     },
     wayland_adapter::WinHandle,
 };
@@ -11,7 +11,7 @@ use std::rc::Rc;
 use std::sync::OnceLock;
 use std::{path::Path, thread::sleep};
 
-use crate::{notificationWindow, notificationWindowSpell, ActionData};
+use crate::{ActionData, notificationWindow, notificationWindowSpell};
 
 static CONFIG_CELL: OnceLock<crate::config::AppConfig> = OnceLock::new();
 
@@ -235,7 +235,10 @@ fn resolve_icon(notif: &Notification, app_config: &crate::config::AppConfig) -> 
     if target_string.is_empty() {
         return Image::default();
     }
-
+    target_string = target_string
+        .strip_prefix("file://")
+        .unwrap_or(&target_string)
+        .to_owned();
     let path = Path::new(&target_string);
     if path.is_absolute() && path.exists() {
         if let Ok(img) = Image::load_from_path(path) {

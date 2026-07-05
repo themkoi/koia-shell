@@ -149,6 +149,9 @@ export component NotificationCard inherits Rectangle {
                 horizontal-stretch: 1;
 
                 HorizontalLayout {
+                    alignment: start;
+                    width: 100%;
+
                     spacing: 12px;
 
                     VerticalLayout {
@@ -164,6 +167,7 @@ export component NotificationCard inherits Rectangle {
                     textLayout := VerticalLayout {
                         spacing: 4px;
                         horizontal-stretch: 1;
+                        width: 100%;
 
                         appNameText := Text {
                             text: data.app-name;
@@ -178,7 +182,6 @@ export component NotificationCard inherits Rectangle {
                             font-weight: MaterialTypography.title_medium.font-weight;
                             color: MaterialPalette.on_surface;
                             wrap: word-wrap;
-                            overflow: elide;
                         }
 
                         ScrollView {
