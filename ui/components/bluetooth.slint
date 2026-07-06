@@ -16,26 +16,24 @@ import {
     MaterialPalette,
 } from "../material-1.0/ui/styling/material_palette.slint";
 
-export struct NetworkItem {
-    ssid: string,
-    strength: int,
-    locked: bool,
+export struct BluetoothItem {
+    name: string,
+    address: string,
+    connected: bool,
+    device_type: string,
 }
 
-export struct CompleteNetworkState {
-    wifi_networks: [NetworkItem],
-    wifi_ip: string,
-    wifi_enabled: bool,
-    current_ssid: string,
-    current_strength: int,
-    wired_connected: bool,
-    wired_ip: string,
+export struct CompleteBluetoothState {
+    available: bool,
+    enabled: bool,
+    connected_devices: [BluetoothItem],
+    discovered_devices: [BluetoothItem],
 }
 
-export component NetworkButton inherits Rectangle {
+export component BluetoothButton inherits Rectangle {
     height: 100%;
-    in property <CompleteNetworkState> network;
-    callback network_clicked();
+    in property <CompleteBluetoothState> bluetooth;
+    callback bluetooth_clicked();
 
     HorizontalLayout {
         spacing: 4px;
@@ -54,13 +52,11 @@ export component NetworkButton inherits Rectangle {
             base := BaseButton {
                 border_radius: parent.border_radius;
                 width: 100%;
-                icon: root.network.wired_connected ? @image-url("../assets/network/20x20/ethernet.svg") :
-                    !root.network.wifi_enabled ? @image-url("../assets/network/20x20/wifi_off.svg") :
-                    root.network.current_strength < 20 ? @image-url("../assets/network/20x20/wifi_0.svg") :
-                    root.network.current_strength < 40 ? @image-url("../assets/network/20x20/wifi_1.svg") :
-                    root.network.current_strength < 60 ? @image-url("../assets/network/20x20/wifi_2.svg") :
-                    root.network.current_strength < 80 ? @image-url("../assets/network/20x20/wifi_3.svg") :
-                    @image-url("../assets/network/20x20/wifi_4.svg");
+
+                icon: !root.bluetooth.available ? @image-url("../assets/bluetooth/20x20/bluetooth_disabled.svg") :
+                    !root.bluetooth.enabled ? @image-url("../assets/bluetooth/20x20/bluetooth_disabled.svg") :
+                    root.bluetooth.connected_devices.length > 0 ? @image-url("../assets/bluetooth/20x20/bluetooth_connected.svg") :
+                    @image-url("../assets/bluetooth/20x20/bluetooth.svg");
 
                 spacing: 4px;
                 icon-size: 20px;
@@ -69,7 +65,7 @@ export component NetworkButton inherits Rectangle {
                 color: MaterialPalette.on_surface;
 
                 clicked => {
-                    root.network_clicked();
+                    root.bluetooth_clicked();
                 }
             }
 
@@ -87,15 +83,15 @@ export component NetworkButton inherits Rectangle {
     }
 }
 
-export component NetworkPopup inherits Rectangle {
-    in property <CompleteNetworkState> network;
+export component BluetoothPopup inherits Rectangle {
+    in property <CompleteBluetoothState> bluetooth;
     in property <ConfigSlint> config;
     in property <bool> popup_visible;
 
-    callback set_wifi_enabled(bool);
-    callback disconnect_wifi();
-    callback connect_wifi(string);
-    callback refresh_networks();
+    callback set_bluetooth_enabled(bool);
+    callback connect_bluetooth_device(string);
+    callback disconnect_bluetooth_device(string);
+    callback start_bluetooth_discovery();
 
     animate height {
         duration: 350ms * config.interaction.animation-multiplier;
@@ -120,131 +116,80 @@ export component NetworkPopup inherits Rectangle {
                 padding: MaterialStyleMetrics.padding_12;
 
                 Text {
-                    text: "Network Configuration";
+                    text: "Bluetooth Configuration";
                     font-size: MaterialTypography.label_large.font_size;
                     font-weight: MaterialTypography.label_large.font-weight;
                     horizontal-alignment: center;
                 }
 
-                Rectangle {
+                if root.bluetooth.enabled && root.bluetooth.connected_devices.length > 0:Rectangle {
                     height: 1px;
                     background: MaterialPalette.outline_variant;
                 }
 
-                Text {
-                    text: "Network Interfaces";
+                if root.bluetooth.enabled && root.bluetooth.connected_devices.length > 0:Text {
+                    text: "Connected devices";
                     font-size: MaterialTypography.label_medium.font_size;
                     font-weight: MaterialTypography.label_medium.font-weight;
                     color: MaterialPalette.on_surface_variant;
                 }
 
                 VerticalLayout {
-                    spacing: 8px;
+                    spacing: 6px;
 
-                    Rectangle {
-                        border_radius: MaterialStyleMetrics.border_radius_12;
-                        background: MaterialPalette.surface_container_high;
-                        height: 56px;
-
-                        HorizontalLayout {
-                            padding: 8px;
-                            spacing: 12px;
-                            VerticalLayout {
-                                alignment: center;
-                                Image {
-                                    width: 25px;
-                                    height: 25px;
-                                    source: @image-url("../assets/network/25x25/ethernet.svg");
-                                }
-                            }
-
-                            VerticalLayout {
-                                alignment: center;
-                                MaterialText {
-                                    text: "Ethernet Line";
-                                    style: MaterialTypography.body_large;
-                                }
-
-                                Text {
-                                    text: root.network.wired_connected ? root.network.wired_ip : "Disconnected";
-                                    font-size: 11px;
-                                    opacity: 0.6;
-                                }
-                            }
-
-                            Rectangle {
-                                horizontal-stretch: 1.0;
-                            }
-
-                            VerticalLayout {
-                                alignment: center;
-                                Rectangle {
-                                    width: 80px;
-                                    height: 28px;
-                                    border_radius: MaterialStyleMetrics.border_radius_8;
-                                    background: root.network.wired_connected ? MaterialPalette.primary_container : MaterialPalette.surface_container_highest;
-                                    Text {
-                                        text: root.network.wired_connected ? "Active" : "Offline";
-                                        color: root.network.wired_connected ? MaterialPalette.on_primary_container : MaterialPalette.on_surface_variant;
-                                        font-size: 11px;
-                                        font-weight: 500;
-                                        horizontal-alignment: center;
-                                        vertical-alignment: center;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        border_radius: MaterialStyleMetrics.border_radius_12;
-                        background: MaterialPalette.surface_container_high;
-                        height: 56px;
-
-                        HorizontalLayout {
-                            padding: 8px;
-                            spacing: 12px;
-
-                            VerticalLayout {
-                                alignment: center;
-                                Image {
-                                    width: 25px;
-                                    height: 25px;
-                                    source: !root.network.wifi_enabled ? @image-url("../assets/network/25x25/wifi_off.svg") :
-                                        root.network.current_strength < 20 ? @image-url("../assets/network/25x25/wifi_0.svg") :
-                                        root.network.current_strength < 40 ? @image-url("../assets/network/25x25/wifi_1.svg") :
-                                        root.network.current_strength < 60 ? @image-url("../assets/network/25x25/wifi_2.svg") :
-                                        root.network.current_strength < 80 ? @image-url("../assets/network/25x25/wifi_3.svg") :
-                                        @image-url("../assets/network/25x25/wifi_4.svg");
-                                }
-                            }
+                    if root.bluetooth.enabled && root.bluetooth.connected_devices.length > 0: VerticalLayout {
+                        spacing: 6px;
+                        for device in root.bluetooth.connected_devices: Rectangle {
+                            height: 48px;
+                            border_radius: MaterialStyleMetrics.border_radius_12;
+                            background: MaterialPalette.surface_container_highest;
 
                             HorizontalLayout {
+                                padding-left: MaterialStyleMetrics.padding_12;
+                                padding-right: MaterialStyleMetrics.padding_8;
+                                spacing: 12px;
 
                                 VerticalLayout {
                                     alignment: center;
+                                    horizontal-stretch: 0;
+                                    Image {
+                                        width: 25px;
+                                        height: 25px;
+                                        source: device.device_type == "audio" || device.device_type == "audio-card" || device.device_type == "audio-headset" ? @image-url("../assets/bluetooth/25x25/headphones.svg") :
+                                            device.device_type == "input-keyboard" || device.device_type == "keyboard" ? @image-url("../assets/bluetooth/25x25/keyboard.svg") :
+                                            device.device_type == "input-mouse" || device.device_type == "mouse" ? @image-url("../assets/bluetooth/25x25/mouse.svg") :
+                                            @image-url("../assets/bluetooth/25x25/bluetooth_connected.svg");
+                                    }
+                                }
+
+                                VerticalLayout {
+                                    alignment: center;
+                                    horizontal-stretch: 1;
                                     MaterialText {
-                                        text: root.network.current_ssid != "" ? root.network.current_ssid : "Wireless Interface";
+                                        text: device.name;
                                         style: MaterialTypography.body_large;
+                                        overflow: elide;
                                     }
 
                                     Text {
-                                        text: root.network.wifi_enabled ? root.network.wifi_ip + " • " + root.network.current-strength + "%" : "Hardware Radio Disabled";
+                                        text: device.address;
                                         font-size: 11px;
-                                        opacity: 0.6;
+                                        color: MaterialPalette.primary;
+                                        overflow: elide;
                                     }
                                 }
 
                                 Rectangle {
-                                    horizontal-stretch: 1.0;
+                                    horizontal-stretch: 0;
+                                    width: 4px;
                                 }
 
-                                if root.network.current_ssid != "": VerticalLayout {
+                                VerticalLayout {
                                     alignment: center;
+                                    horizontal-stretch: 0;
                                     Rectangle {
                                         height: 32px;
                                         border_radius: MaterialStyleMetrics.border_radius_28;
-
                                         disc_el := Elevation {
                                             border_radius: parent.border_radius;
                                             background: MaterialPalette.error_container;
@@ -254,7 +199,7 @@ export component NetworkPopup inherits Rectangle {
                                             border_radius: parent.border_radius;
                                             text: "Disconnect";
                                             color: MaterialPalette.on_error_container;
-                                            clicked => { root.disconnect_wifi(); }
+                                            clicked => { disconnect_bluetooth_device(device.address); }
                                         }
                                     }
                                 }
@@ -274,7 +219,7 @@ export component NetworkPopup inherits Rectangle {
                         spacing: MaterialStyleMetrics.spacing_8;
 
                         MaterialText {
-                            text: "Wi-Fi";
+                            text: "Bluetooth Status";
                             font-size: MaterialTypography.label_medium.font_size;
                             font-weight: MaterialTypography.label_medium.font-weight;
                             color: MaterialPalette.on_surface_variant;
@@ -286,8 +231,9 @@ export component NetworkPopup inherits Rectangle {
                             Switch {
                                 height_switch: MaterialStyleMetrics.size_24;
                                 width_switch: MaterialStyleMetrics.size_40;
-                                checked: root.network.wifi_enabled;
-                                checked_state_changed(enabled) => { root.set_wifi_enabled(enabled); };
+                                checked: root.bluetooth.enabled;
+                                enabled: root.bluetooth.available;
+                                checked_state_changed(enabled) => { root.set_bluetooth_enabled(enabled); };
                             }
                         }
                     }
@@ -304,17 +250,15 @@ export component NetworkPopup inherits Rectangle {
                         base_refresh := BaseButton {
                             border_radius: parent.border_radius;
                             width: 100%;
-
+                            enabled: root.bluetooth.enabled;
                             icon: @image-url("../assets/refresh_22.svg");
-                            enabled: root.network.wifi-enabled;
-
                             icon-size: 22px;
                             button_horizontal_padding: MaterialStyleMetrics.padding_8;
                             icon_color: transparent;
                             color: MaterialPalette.on_surface;
 
                             clicked => {
-                                root.refresh_networks();
+                                root.start_bluetooth_discovery();
                             }
                         }
 
@@ -331,11 +275,8 @@ export component NetworkPopup inherits Rectangle {
                     }
                 }
 
-                if root.network.wifi_enabled && root.network.wifi_networks.length > 0: Elevation {
-                    border_radius: MaterialStyleMetrics.border_radius_16;
-                    background: MaterialPalette.surface_container_high;
+                if root.bluetooth.enabled && root.bluetooth.discovered_devices.length > 0: Rectangle {
                     width: 100%;
-
                     vertical-stretch: 1;
                     preferred-height: scroll_content.preferred-height;
 
@@ -349,10 +290,10 @@ export component NetworkPopup inherits Rectangle {
                             spacing: 6px;
                             padding: 2px;
 
-                            for ap in root.network.wifi_networks: Rectangle {
+                            for device in root.bluetooth.discovered_devices: Rectangle {
+                                height: 48px;
                                 border_radius: MaterialStyleMetrics.border_radius_12;
                                 background: MaterialPalette.surface_container_highest;
-                                height: 48px;
 
                                 HorizontalLayout {
                                     padding-left: MaterialStyleMetrics.padding_12;
@@ -361,43 +302,42 @@ export component NetworkPopup inherits Rectangle {
 
                                     VerticalLayout {
                                         alignment: center;
+                                        horizontal-stretch: 0;
                                         Image {
                                             width: 25px;
                                             height: 25px;
-                                            source: ap.locked ? (
-                                                ap.strength < 20 ? @image-url("../assets/network/25x25/wifi_0_locked.svg") :
-                                                ap.strength < 40 ? @image-url("../assets/network/25x25/wifi_1_locked.svg") :
-                                                ap.strength < 60 ? @image-url("../assets/network/25x25/wifi_2_locked.svg") :
-                                                ap.strength < 80 ? @image-url("../assets/network/25x25/wifi_3_locked.svg") :
-                                                @image-url("../assets/network/25x25/wifi_4_locked.svg")) : (
-                                                ap.strength < 20 ? @image-url("../assets/network/25x25/wifi_0.svg") :
-                                                ap.strength < 40 ? @image-url("../assets/network/25x25/wifi_1.svg") :
-                                                ap.strength < 60 ? @image-url("../assets/network/25x25/wifi_2.svg") :
-                                                ap.strength < 80 ? @image-url("../assets/network/25x25/wifi_3.svg") :
-                                                @image-url("../assets/network/25x25/wifi_4.svg"));
+                                            source: device.device_type == "audio" || device.device_type == "audio-card" || device.device_type == "audio-headset" ? @image-url("../assets/bluetooth/25x25/headphones.svg") :
+                                                device.device_type == "input-keyboard" || device.device_type == "keyboard" ? @image-url("../assets/bluetooth/25x25/keyboard.svg") :
+                                                device.device_type == "input-mouse" || device.device_type == "mouse" ? @image-url("../assets/bluetooth/25x25/mouse.svg") :
+                                                @image-url("../assets/bluetooth/25x25/bluetooth.svg");
                                         }
                                     }
 
                                     VerticalLayout {
                                         alignment: center;
+                                        horizontal-stretch: 1;
                                         MaterialText {
-                                            text: ap.ssid;
+                                            text: device.name;
                                             style: MaterialTypography.body_large;
+                                            overflow: elide;
                                         }
 
                                         Text {
-                                            text: "Signal: " + ap.strength + "%";
+                                            text: device.address;
                                             font-size: 11px;
                                             opacity: 0.6;
+                                            overflow: elide;
                                         }
                                     }
 
                                     Rectangle {
-                                        horizontal-stretch: 1.0;
+                                        horizontal-stretch: 0;
+                                        width: 4px;
                                     }
 
                                     VerticalLayout {
                                         alignment: center;
+                                        horizontal-stretch: 0;
                                         Rectangle {
                                             height: 32px;
                                             border_radius: MaterialStyleMetrics.border_radius_28;
@@ -412,7 +352,7 @@ export component NetworkPopup inherits Rectangle {
                                                 text: "Connect";
                                                 color: MaterialPalette.on_secondary_container;
                                                 clicked => {
-                                                    root.connect_wifi(ap.ssid);
+                                                    root.connect_bluetooth_device(device.address);
                                                 }
                                             }
                                         }

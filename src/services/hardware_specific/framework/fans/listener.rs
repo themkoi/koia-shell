@@ -9,8 +9,8 @@ use crate::barWindow;
 #[derive(Deserialize)]
 struct FanEvent {
     strategy: String,
-    speed: Option<u32>,
-    paused: Option<bool>,
+    _speed: Option<u32>,
+    _paused: Option<bool>,
 }
 
 fn format_profile(profile: impl AsRef<str>) -> String {

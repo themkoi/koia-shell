@@ -78,7 +78,7 @@ pub async fn listen_network_changes(
     ui_weak: slint::Weak<barWindow>,
     network_service: Arc<NetworkService>,
 ) {
-    info!("starting unified network property listener");
+    info!("starting network listener");
 
     tokio::spawn(async move {
         let mut primary_stream = network_service.primary.watch();

@@ -37,6 +37,7 @@ use crate::{
         volume::start_volume_management,
         hardware_specific::harware_specific_management,
         network::start_network_management,
+        bluetooth::start_bluetooth_management,
     },
 };
 
@@ -134,6 +135,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     provide_time(bar_ui.as_weak()).await;
 
     start_network_management(bar_ui.as_weak()).await;
+    start_bluetooth_management(bar_ui.as_weak()).await;
 
     start_touch_manager(&config, window_width_bar, window_height_bar, &bar_ui);
     start_command_handler(bar_ui.as_weak());
