@@ -52,11 +52,11 @@ export component BluetoothButton inherits Rectangle {
             base := BaseButton {
                 border_radius: parent.border_radius;
                 width: 100%;
-
+                
                 icon: !root.bluetooth.available ? @image-url("../assets/bluetooth/20x20/bluetooth_disabled.svg") :
-                    !root.bluetooth.enabled ? @image-url("../assets/bluetooth/20x20/bluetooth_disabled.svg") :
-                    root.bluetooth.connected_devices.length > 0 ? @image-url("../assets/bluetooth/20x20/bluetooth_connected.svg") :
-                    @image-url("../assets/bluetooth/20x20/bluetooth.svg");
+                      !root.bluetooth.enabled ? @image-url("../assets/bluetooth/20x20/bluetooth.svg") :
+                      root.bluetooth.connected_devices.length > 0 ? @image-url("../assets/bluetooth/20x20/bluetooth_connected.svg") :
+                                                                    @image-url("../assets/bluetooth/20x20/bluetooth.svg");
 
                 spacing: 4px;
                 icon-size: 20px;
