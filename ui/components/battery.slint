@@ -245,9 +245,7 @@ export component BatteryPopup inherits Rectangle {
                     }
                 }
 
-                if root.batteryData.length > 0 : Elevation {
-                    border_radius: MaterialStyleMetrics.border_radius_16;
-                    background: MaterialPalette.surface_container_high;
+                if root.batteryData.length > 0 : Rectangle {
                     width: 100%;
                     
                     vertical-stretch: 1; 

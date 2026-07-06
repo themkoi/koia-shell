@@ -33,6 +33,11 @@ import {
     NetworkButton,
     NetworkPopup,
 } from "components/network.slint";
+import {
+    CompleteBluetoothState,
+    BluetoothButton,
+    BluetoothPopup,
+} from "components/bluetooth.slint";
 
 import { MaterialStyleMetrics } from "material-1.0/material.slint";
 
@@ -45,7 +50,8 @@ export component barWindow inherits Window {
     in property <[TrayItemSlint]> tray;
     in property <[BatteryDataSlint]> batteryData;
     in-out property <ContextMenuDataSlint> trayMenu;
-    in-out property <CompleteNetworkState> networkData;
+    in property <CompleteNetworkState> networkData;
+    in property <CompleteBluetoothState> bluetoothData;
     in property <int> brightness;
     in property <VolumeDataSlint> volumeData;
     in property <string> powerProfile;
@@ -54,11 +60,6 @@ export component barWindow inherits Window {
     in property <TimeDataSlint> timeData;
     in property <DateDataSlint> dateData;
     in property <StringDateDataSlint> stringDateData;
-
-    property <bool> batteryPopupVis;
-    property <bool> networkPopupVis;
-
-    property <length> popupPadding: 4px;
 
     in property <ConfigSlint> config;
     in-out property <length> window_width <=> self.width;
@@ -93,6 +94,11 @@ export component barWindow inherits Window {
     callback refresh_networks();
     callback connect_wifi(string);
 
+    callback set_bluetooth_enabled(bool);
+    callback connect_bluetooth_device(string);
+    callback disconnect_bluetooth_device(string);
+    callback start_bluetooth_discovery();
+
     callback tray_item_clicked(string, string, length);
     callback menu_action_executed(string, string);
 
@@ -101,6 +107,10 @@ export component barWindow inherits Window {
     public function init_ui() {
         trayMenu.x-pos = layRight.x;
     }
+
+    property <bool> batteryPopupVis;
+    property <bool> networkPopupVis;
+    property <bool> bluetoothPopupVis;
 
     function close_all_popups_except(active_name: string) {
         if (active_name != "BatteryPopup" && root.batteryPopupVis) {
@@ -115,6 +125,10 @@ export component barWindow inherits Window {
             root.trayMenu.visible = false;
             root.manage_touch("TrayMenu", false);
         }
+        if (active_name != "BluetoothMenu" && root.bluetoothPopupVis) {
+            root.bluetoothPopupVis = false;
+            root.manage_touch("BluetoothMenu", false);
+        }
         root.manage_touch(active_name, true);
     }
 
@@ -122,6 +136,7 @@ export component barWindow inherits Window {
         if (root.batteryPopupVis) { root.batteryPopupVis = false; root.manage_touch("BatteryPopup", false); }
         if (root.networkPopupVis) { root.networkPopupVis = false; root.manage_touch("NetworkPopup", false); }
         if (root.trayMenu.visible) { root.trayMenu.visible = false; root.manage_touch("TrayMenu", false); }
+        if (root.bluetoothPopupVis) { root.bluetoothPopupVis = false; root.manage_touch("BluetoothMenu", false); }
     }
 
     layLeft := HorizontalLayout {
@@ -134,10 +149,10 @@ export component barWindow inherits Window {
             border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
 
             Path {
-                width: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
-                height: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
+                width: ((config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16) + 2px;
+                height: ((config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16) + 1px;
                 y: 0px;
-                x: rectLeft.width;
+                x: rectLeft.width - 1px;
                 fill: MaterialPalette.surface_container;
                 commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
             }
@@ -191,10 +206,10 @@ export component barWindow inherits Window {
             border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
 
             Path {
-                width: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
-                height: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
+                width: ((config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16) + 2px;
+                height: ((config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16) + 1px;
                 y: 0px;
-                x: -self.width;
+                x: -self.width + 1px;
                 fill: MaterialPalette.surface_container;
                 fill-rule: evenodd;
                 commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
@@ -254,6 +269,18 @@ export component barWindow inherits Window {
                         }
                     }
                 }
+
+                bluetoothButton := BluetoothButton {
+                    bluetooth: root.bluetoothData;
+                    bluetooth_clicked() => {
+                        root.bluetoothPopupVis = !root.bluetoothPopupVis;
+                        if (root.bluetoothPopupVis) {
+                            root.close_all_popups_except("BluetoothMenu");
+                        } else {
+                            root.manage_touch("BluetoothMenu", false);
+                        }
+                    }
+                }
             }
         }
     }
@@ -274,18 +301,17 @@ export component barWindow inherits Window {
                 border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
 
                 Path {
-                    width: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
-                    height: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
+                    width: ((config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16) + 2px;
+                    height: ((config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16) + 1px;
                     y: 0px;
                     x: -self.width + 1px;
                     fill: MaterialPalette.surface_container;
-                    fill-rule: evenodd;
                     commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
                 }
 
                 Path {
-                    width: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
-                    height: (config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16;
+                    width: ((config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16) + 2px;
+                    height: ((config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16) + 1px;
                     y: 0px;
                     x: rectMiddle.width - 1px;
                     fill: MaterialPalette.surface_container;
@@ -364,7 +390,7 @@ export component barWindow inherits Window {
     }
 
     BatteryPopup {
-        x: clamp(rectLeft.x + layLeft.x,popupPadding,(root.window_width - self.width) - popupPadding);
+        x: clamp(rectLeft.x + layLeft.x,config.window.bar-popup-screen-padding,(root.window_width - self.width) - config.window.bar-popup-screen-padding);
         y: config.window.bar-height + 4px;
         config: config;
         fanProfile: root.fanProfile;
@@ -383,7 +409,7 @@ export component barWindow inherits Window {
     }
 
     NetworkPopup {
-        x: clamp(nettButton.x + rectRight.x + layRight.x,popupPadding,(root.window_width - self.width) - popupPadding);
+        x: clamp(nettButton.x + rectRight.x + layRight.x,config.window.bar-popup-screen-padding,(root.window_width - self.width) - config.window.bar-popup-screen-padding);
         y: config.window.bar-height + 4px;
         config: config;
         network: root.networkData;
@@ -400,6 +426,27 @@ export component barWindow inherits Window {
         }
         connect_wifi(ssid) => {
             root.connect_wifi(ssid)
+        }
+    }
+
+    BluetoothPopup {
+        x: clamp(bluetoothButton.x + rectRight.x + layRight.x,config.window.bar-popup-screen-padding,(root.window_width - self.width) - config.window.bar-popup-screen-padding);
+        y: config.window.bar-height + 4px;
+        config: config;
+        bluetooth: root.bluetoothData;
+        popup_visible: root.bluetoothPopupVis;
+
+        set_bluetooth_enabled(enabled) => {
+            root.set_bluetooth_enabled(enabled);
+        }
+        connect_bluetooth_device(mac) => {
+            root.connect_bluetooth_device(mac);
+        }
+        disconnect_bluetooth_device(mac) => {
+            root.disconnect_bluetooth_device(mac);
+        }
+        start_bluetooth_discovery() => {
+            root.start_bluetooth_discovery()
         }
     }
 
