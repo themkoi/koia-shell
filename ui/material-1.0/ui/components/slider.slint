@@ -1,4 +1,129 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
+// SPDX-License-Identifier: GPL-3.0-only OR LicenseRef-Slint-Royalty-free-2.0 OR LicenseRef-Slint-Software-3.0
+
+export component SliderBase {
+    in property <bool> enabled <=> touch-area.enabled;
+    in property <float> minimum: 0;
+    in property <float> maximum: 100;
+    in property <float> step: 1;
+    in property <Orientation> orientation;
+    in property <length> handle-x;
+    in property <length> handle-y;
+    in property <length> handle-width;
+    in property <length> handle-height;
+    out property <bool> pressed <=> touch-area.enabled;
+    out property <bool> has-hover <=> touch-area.has-hover;
+    out property <bool> vertical: root.orientation == Orientation.vertical;
+    out property <bool> has-focus <=> focus-scope.has-focus;
+    out property <bool> handle-has-hover: touch-area.mouse-x >= root.handle-x && touch-area.mouse-x <= root.handle-x + root.handle-width &&
+        touch-area.mouse-y >= root.handle-y && touch-area.mouse-y <= root.handle-y + root.handle-height;
+    out property <bool> handle-pressed;
+    in-out property <int> value: minimum;
+
+    callback changed(value: float);
+    callback released(value: float);
+
+    private property <length> ref-size: !root.vertical ? root.handle-width : root.handle-height;
+
+    forward-focus: focus-scope;
+
+    touch-area := TouchArea {
+        property <float> pressed-value;
+
+        width: 100%;
+        height: 100%;
+
+        pointer-event(event) => {
+            if (event.button != PointerEventButton.left) {
+                return;
+            }
+            if (event.kind == PointerEventKind.up) {
+                if (root.handle-pressed) {
+                    root.released(root.value);
+                }
+                root.handle-pressed = false;
+                return;
+            }
+            if (!root.handle-has-hover) {
+                root.set-value((!root.vertical ? root.size-to-value(touch-area.mouse-x, root.width) :
+                    root.size-to-value(root.height - touch-area.mouse-y, root.height)) + root.minimum);
+            }
+            self.pressed-value = value;
+            focus-scope.focus();
+            root.handle-pressed = true;
+        }
+
+        moved => {
+            if (!self.enabled) {
+                return;
+            }
+            root.set-value(self.pressed-value + (!vertical ? root.size-to-value(touch-area.mouse-x - touch-area.pressed-x, root.width - root.ref-size) :
+                root.size-to-value(touch-area.pressed-y - touch-area.mouse-y, root.height - root.ref-size)));
+        }
+    }
+
+    focus-scope := FocusScope {
+        x: 0;
+        y: 0;
+        width: 0;
+        height: 0;
+        enabled: root.enabled;
+
+        key-pressed(event) => {
+            if (!self.enabled || root.step <= 0) {
+                return reject;
+            }
+            if ((!vertical && event.text == Key.RightArrow) || (vertical && event.text == Key.UpArrow)) {
+                root.increment();
+                return accept;
+            } else if ((!vertical && event.text == Key.LeftArrow) || (vertical && event.text == Key.DownArrow)) {
+                root.decrement();
+                return accept;
+            } else if (event.text == Key.Home) {
+                root.set-value(root.minimum);
+                return accept;
+            } else if (event.text == Key.End) {
+                root.set-value(root.maximum);
+                return accept;
+            }
+            reject
+        }
+
+        key-released(event) => {
+            if (!self.enabled) {
+                return reject;
+            }
+            if (!vertical && event.text == Key.RightArrow) || (vertical && event.text == Key.DownArrow)
+                || (!vertical && event.text == Key.LeftArrow) || (vertical && event.text == Key.UpArrow)
+                || event.text == Key.Home || event.text == Key.End {
+                root.released(root.value);
+            }
+            return accept;
+        }
+    }
+
+    pure function size-to-value(size: length, range: length) -> float {
+        size * (root.maximum - root.minimum) / range;
+    }
+
+    public function set-value(value: float) {
+        if (root.value == value) {
+            return;
+        }
+        root.value = max(root.minimum, min(root.maximum, value));
+        root.changed(root.value);
+    }
+
+    public function increment() {
+        root.set-value(root.value + root.step);
+    }
+
+    public function decrement() {
+        root.set-value(root.value - root.step);
+    }
+}
+
+// Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 //
 import { MaterialStyleMetrics } from "../styling/material_style_metrics.slint";
@@ -6,150 +131,145 @@ import { MaterialPalette } from "../styling/material_palette.slint";
 import { StateLayer } from "./state_layer.slint";
 
 export component Slider {
-    in property <bool> enabled;
-    in_out property <float> value;
-    in property <float> minimum;
-    in property <int> stop_count: 0;
-    in property <float> maximum: 100;
+    in property <Orientation> orientation <=> base.orientation;
+    in property <float> maximum <=> base.maximum;
+    in property <float> minimum <=> base.minimum;
+    in property <float> step <=> base.step;
+    in property <bool> enabled <=> base.enabled;
+    out property <bool> has-focus <=> base.has-focus;
+    in-out property <int> value <=> base.value;
+    in property <int> stop-count: 0;
+    in property <color> background_color: MaterialPalette.surface_container_highest;
+    in property <color> active_color: MaterialPalette.primary;
 
-    callback released(value: float);
-    callback value_changed(value: float);
+    in property <length> length: 200px;
+    in property <length> thickness: MaterialStyleMetrics.size_16;
+    in property <length> thumb-width: base.vertical ? root.thickness * 3.5 : root.thickness * 1.75;
+    in property <length> thumb-height: base.vertical ? root.thickness * 1.75 : root.thickness * 3.5;
 
-    property <int> steps: root.stop_count > 0 ? (root.maximum - root.minimum) / root.stop_count : 1;
+    callback changed <=> base.changed;
+    
+    callback released(int);
 
-    min_height: 20px;
+    min-width: base.vertical ? root.thickness : 100px;
+    min-height: base.vertical ? 100px : root.thickness;
+    preferred-width: base.vertical ? root.thickness : root.length;
+    preferred-height: base.vertical ? root.length : root.thickness;
+    
+    vertical-stretch: base.vertical ? 1 : 0;
+    horizontal-stretch: base.vertical ? 0 : 1;
+
     accessible-role: slider;
     accessible-enabled: root.enabled;
+    accessible-orientation: root.orientation;
     accessible-value: root.value;
     accessible-value-minimum: root.minimum;
     accessible-value-maximum: root.maximum;
-    accessible-value-step: min(steps, (root.maximum - root.minimum) / 100);
+    accessible-value-step: min(root.step, (root.maximum - root.minimum) / 100);
+
     accessible-action-set-value(v) => {
         if v.is-float() {
-            root.set_value(v.to-float());
+            base.set-value(v.to-float());
         }
     }
-    accessible-action-increment => { root.increment_value(); }
-    accessible-action-decrement => { root.decrement_value(); }
-    forward-focus: focus_scope;
+    accessible-action-increment => { base.increment(); }
+    accessible-action-decrement => { base.decrement(); }
+    forward-focus: base;
 
-    focus_scope := FocusScope {
-        touch_area := TouchArea {
-            track := Rectangle {
-                x: 0;
-                height: MaterialStyleMetrics.size_16;
-                background: MaterialPalette.surface_container_highest;
+    track := Rectangle {
+        x: base.vertical ? (parent.width - self.width) / 2 : 0;
+        y: base.vertical ? 0 : (parent.height - self.height) / 2;
+        
+        width: base.vertical ? root.thickness : parent.width; 
+        height: base.vertical ? parent.height : root.thickness;
+        background: root.background_color;
+        border_radius: (base.vertical ? self.width : self.height) / 2;
+
+        Rectangle {
+            x: 0;
+            y: base.vertical ? thumb.y + thumb.height / 2 + MaterialStyleMetrics.size_6 : 0;
+            
+            width: base.vertical ? parent.width : max(thumb.x + thumb.width / 2 - MaterialStyleMetrics.size_6, 0px);
+            height: base.vertical ? max(parent.height - (thumb.y + thumb.height / 2) - MaterialStyleMetrics.size_6, 0px) : parent.height;
+            
+            border-top-left-radius: base.vertical ? MaterialStyleMetrics.size_1 : track.border_radius;
+            border-bottom-left-radius: track.border_radius;
+            border-top-right-radius: base.vertical ? MaterialStyleMetrics.size_1 : MaterialStyleMetrics.size_1;
+            border-bottom-right-radius: base.vertical ? track.border_radius : MaterialStyleMetrics.size_1;
+            background: root.active_color;
+        }
+
+        if root.stop-count > 1: Rectangle {
+            width: 100%;
+            height: 100%;
+
+            property <float> steps: (root.maximum - root.minimum) / (root.stop-count * 1.0);
+
+            for i in root.stop-count - 1: Rectangle {
+                x: !base.vertical ? (track.width * ((root.minimum + (i + 1) * steps) - root.minimum) / (root.maximum - root.minimum) - self.width / 2) : (parent.width - self.width) / 2;
+                y: base.vertical ? (track.height * (root.maximum - (root.minimum + (i + 1) * steps)) / (root.maximum - root.minimum) - self.height / 2) : (parent.height - self.height) / 2;
+                height: MaterialStyleMetrics.size_4;
+                width: self.height;
                 border_radius: self.height / 2;
-
-                Rectangle {
-                    x: 0;
-                    width: state_layer.x - MaterialStyleMetrics.size_6;
-                    border-top-left-radius: track.border_radius;
-                    border-bottom-left-radius: track.border_radius;
-                    border-top-right-radius: MaterialStyleMetrics.size_1;
-                    border-bottom-right-radius: MaterialStyleMetrics.size_1;
-                    background: thumb.background;
-                }
-
-                if root.stop_count > 1: Rectangle {
-                    width: 100%;
-                    height: 100%;
-
-                    for i in (root.maximum - root.minimum) / root.steps - 1: Rectangle {
-                        x: root.value_to_length(track.width, (i + 1) * root.steps) - self.width / 2;
-                        height: MaterialStyleMetrics.size_4;
-                        width: self.height;
-                        border_radius: self.height / 2;
-                        background: MaterialPalette.outline;
-                    }
-                }
+                background: MaterialPalette.outline;
             }
+        }
+    }
 
-            state_layer := Rectangle {
-                x: root.value_to_length(track.width, root.value);
-                width: 0;
-                height: track.height + (MaterialStyleMetrics.size_14 * 2);
-                StateLayer {
-                    height: track.height + (MaterialStyleMetrics.size_16 * 2);
-                    width: thumb.width + (MaterialStyleMetrics.size_2 * 2);
-                    border_radius: self.width / 2;
-                    pressed: touch_area.pressed;
-                    has_hover: touch_area.has_hover;
-                    has_focus: focus_scope.has_focus;
-                    enabled: root.enabled;
-                    background: thumb.background;
-                    display_background: thumb_area.pressed || thumb_area.has_hover || focus_scope.has_focus;
+    thumb := Rectangle {
+        x: base.vertical ? (parent.width - self.width) / 2 : clamp((parent.width - self.width) * (root.value - root.minimum) / (root.maximum - root.minimum), 0, parent.width - self.width);
+        y: base.vertical ? clamp((parent.height - self.height) * (root.maximum - root.value) / (root.maximum - root.minimum), 0, parent.height - self.height) : (parent.height - self.height) / 2;
+        
+        width: root.thumb-width;
+        height: root.thumb-height;
+        background: transparent;
 
-                    thumb_area := TouchArea {
-                        height: track.height + (MaterialStyleMetrics.size_14 * 2);
-                        width: self.height;
-                        thumb := Rectangle {
-                            width: MaterialStyleMetrics.size_4;
-                            border_radius: self.width / 2;
-                            background: MaterialPalette.primary;
-                        }
+        ripple-container := Rectangle {
+            x: (parent.width - self.width) / 2;
+            y: (parent.height - self.height) / 2;
+            width: visual-thumb.width + MaterialStyleMetrics.size_14;
+            height: visual-thumb.height + MaterialStyleMetrics.size_14;
 
-                        moved => {
-                            root.set_value(root.length_to_value(state_layer.x + (self.mouse_x - self.pressed_x), track.width));
-                        }
+            StateLayer {
+                x: 0;
+                y: 0;
+                width: parent.width;
+                height: parent.height;
+                border_radius: min(parent.width, parent.height) / 2;
 
-                        pointer_event(event) => {
-                            if event.kind == PointerEventKind.up {
-                                root.released(root.value);
-                            }
-                        }
-                    }
-                }
-            }
+                pressed: base.handle-pressed;
+                has_hover: base.handle-has-hover;
+                has_focus: base.has-focus;
+                enabled: root.enabled;
 
-            pointer_event(event) => {
-                if event.kind == PointerEventKind.down && event.button == PointerEventButton.left {
-                    root.set_value(root.length_to_value(self.mouse_x, track.width));
-                }
-                if event.kind == PointerEventKind.up {
-                    root.released(root.value);
-                }
+                background: root.active_color;
+                display_background: base.handle-pressed
+                    || base.handle-has-hover
+                    || base.has-focus;
             }
         }
 
-        key_pressed(event) => {
-            if event.text == Key.LeftArrow {
-                root.decrement_value();
-                return accept;
-            }
-            if event.text == Key.RightArrow {
-                root.increment_value();
-                return accept;
-            }
-            reject
+        visual-thumb := Rectangle {
+            x: (parent.width - self.width) / 2;
+            y: (parent.height - self.height) / 2;
+            width: base.vertical ? parent.width : MaterialStyleMetrics.size_4;
+            height: base.vertical ? MaterialStyleMetrics.size_4 : parent.height;
+            border_radius: min(self.width, self.height) / 2;
+            background: root.active_color;
         }
     }
 
-    changed value => {
-        root.value_changed(root.value);
-    }
+    base := SliderBase {
+        width: 100%;
+        height: 100%;
+        handle-x: thumb.x;
+        handle-y: thumb.y;
+        handle-width: thumb.width;
+        handle-height: thumb.height;
 
-    pure function value_to_length(width: length, value: float) -> length {
-        clamp(width * (value - root.minimum) / (root.maximum - root.minimum), 0, width)
-    }
-
-    pure function length_to_value(x: length, width: length) -> float {
-        x * (root.maximum - root.minimum) / width
-    }
-
-    function set_value(value: float) {
-        if root.steps > 1 {
-            root.value = clamp(round(value / root.steps) * root.steps, root.minimum, root.maximum)
-        } else {
-            root.value = clamp(value, root.minimum, root.maximum)
+        released(val) => {
+            self.clear-focus();
+            root.released(val);
         }
-    }
-
-    function increment_value() {
-        root.set_value(root.value + root.steps);
-    }
-
-    function decrement_value() {
-        root.set_value(root.value - root.steps);
     }
 }

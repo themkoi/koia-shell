@@ -225,8 +225,8 @@ export component NotificationCard inherits Rectangle {
                 }
 
                 TouchArea {
-                    width: 100%;
-                    height: 100%;
+                    width: root.width;
+                    height: root.height;
                     clicked => {
                         root.action_clicked("default");
                         if (!root.data.resident) {

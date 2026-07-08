@@ -331,9 +331,7 @@ export component NetworkPopup inherits Rectangle {
                     }
                 }
 
-                if root.network.wifi_enabled && root.network.wifi_networks.length > 0: Elevation {
-                    border_radius: MaterialStyleMetrics.border_radius_16;
-                    background: MaterialPalette.surface_container_high;
+                if root.network.wifi_enabled && root.network.wifi_networks.length > 0: Rectangle {
                     width: 100%;
 
                     vertical-stretch: 1;

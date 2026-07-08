@@ -26,7 +26,9 @@ import {
     VolumeDataSlint,
 } from "components/volume.slint";
 import {
+    ExternalBrightnessState,
     BrightnessButton,
+    BrightnessPopup,
 } from "components/brightness.slint";
 import {
     CompleteNetworkState,
@@ -52,7 +54,8 @@ export component barWindow inherits Window {
     in-out property <ContextMenuDataSlint> trayMenu;
     in property <CompleteNetworkState> networkData;
     in property <CompleteBluetoothState> bluetoothData;
-    in property <int> brightness;
+    in-out property <ExternalBrightnessState> extBrightnessData;
+    in-out property <int> brightness;
     in property <VolumeDataSlint> volumeData;
     in property <string> powerProfile;
     in property <string> fanProfile;
@@ -85,7 +88,11 @@ export component barWindow inherits Window {
 
     callback set_volume(int, int);
     callback set_muted(bool);
+
     callback set_brightness(int, int);
+    callback refresh_ext_brightness();
+    callback set_ext_brightness(string, int);
+
     callback set_power_profile(string);
     callback set_fan_profile(string);
 
@@ -111,6 +118,7 @@ export component barWindow inherits Window {
     property <bool> batteryPopupVis;
     property <bool> networkPopupVis;
     property <bool> bluetoothPopupVis;
+    property <bool> brightnessPopupVis;
 
     function close_all_popups_except(active_name: string) {
         if (active_name != "BatteryPopup" && root.batteryPopupVis) {
@@ -129,6 +137,10 @@ export component barWindow inherits Window {
             root.bluetoothPopupVis = false;
             root.manage_touch("BluetoothMenu", false);
         }
+        if (active_name != "BrightnessMenu" && root.brightnessPopupVis) {
+            root.brightnessPopupVis = false;
+            root.manage_touch("BrightnessMenu", false);
+        }
         root.manage_touch(active_name, true);
     }
 
@@ -137,6 +149,7 @@ export component barWindow inherits Window {
         if (root.networkPopupVis) { root.networkPopupVis = false; root.manage_touch("NetworkPopup", false); }
         if (root.trayMenu.visible) { root.trayMenu.visible = false; root.manage_touch("TrayMenu", false); }
         if (root.bluetoothPopupVis) { root.bluetoothPopupVis = false; root.manage_touch("BluetoothMenu", false); }
+        if (root.brightnessPopupVis) { root.brightnessPopupVis = false; root.manage_touch("BrightnessMenu", false); }
     }
 
     layLeft := HorizontalLayout {
@@ -248,8 +261,17 @@ export component barWindow inherits Window {
                     }
                 }
 
-                BrightnessButton {
+                brightnessButton :=BrightnessButton {
                     brightness: brightness;
+                    brightness_clicked => {
+                        refresh_ext_brightness();
+                        root.brightnessPopupVis = !root.brightnessPopupVis;
+                        if (root.brightnessPopupVis) {
+                            root.close_all_popups_except("BrightnessMenu");
+                        } else {
+                            root.manage_touch("BrightnessMenu", false);
+                        }
+                    }
                     brightness_scroll_up() => {
                         set_brightness(brightness,config.interaction.brightness-scroll-step)
                     }
@@ -448,6 +470,37 @@ export component barWindow inherits Window {
         start_bluetooth_discovery() => {
             root.start_bluetooth_discovery()
         }
+    }
+
+    BrightnessPopup {
+        x: clamp(brightnessButton.x + rectRight.x + layRight.x,config.window.bar-popup-screen-padding,(root.window_width - self.width) - config.window.bar-popup-screen-padding);
+        y: config.window.bar-height + 4px;
+        config: config;
+        brightness <=> root.brightness;
+        extBrightnessData <=> root.extBrightnessData;
+        popup_visible: root.brightnessPopupVis;
+
+        refresh_external_brightness => {
+            root.refresh_ext_brightness();
+        }
+        set_brightness(val) => {
+            root.set_brightness(val, 0);
+        }
+        set_external_brightness(id,val) => {
+            root.set_ext_brightness(id, val);
+        }
+        // set_bluetooth_enabled(enabled) => {
+        //     root.set_bluetooth_enabled(enabled);
+        // }
+        // connect_bluetooth_device(mac) => {
+        //     root.connect_bluetooth_device(mac);
+        // }
+        // disconnect_bluetooth_device(mac) => {
+        //     root.disconnect_bluetooth_device(mac);
+        // }
+        // start_bluetooth_discovery() => {
+        //     root.start_bluetooth_discovery()
+        // }
     }
 
     Path {

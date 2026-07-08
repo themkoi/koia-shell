@@ -9,7 +9,14 @@ pub async fn start_brightness_adjuster(
     let brightness_device = config.config.hardware_config.brightness_device.clone();
     if let Some(ui) = ui_weak.upgrade() {
         ui.on_set_brightness(move |brightness, delta| {
-            let brightness_calc = (brightness + delta).min(100).max(0);
+            // If delta is 0, treat 'brightness' as the absolute target.
+            // Otherwise, calculate the relative change.
+            let brightness_calc = if delta == 0 {
+                brightness.min(100).max(0)
+            } else {
+                (brightness + delta).min(100).max(0)
+            };
+
             let device = brightness_device.clone();
 
             tokio::spawn(async move {
