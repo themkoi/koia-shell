@@ -8,16 +8,16 @@ use std::{
 };
 
 use crate::{
-    config_shell::components::taskbar::{default_taskbar, TaskbarConfig},
     ConfigSlint, TaskbarConfigSlint,
+    config_shell::components::taskbar::{TaskbarConfig, default_taskbar},
 };
 use crate::{
+    InteractionConfigSlint, NoticificationConfigSlint, TrayConfigSlint, WindowConfigSlint,
     config_shell::components::{
-        notifications::{default_notificaiton, NotificationConfig},
-        theme::{default_dark_scheme, default_light_scheme, MaterialScheme},
-        tray::{default_tray, TrayConfig},
+        notifications::{NotificationConfig, default_notificaiton},
+        theme::{MaterialScheme, default_dark_scheme, default_light_scheme},
+        tray::{TrayConfig, default_tray},
     },
-    InteractionConfigSlint, TrayConfigSlint, WindowConfigSlint, NoticificationConfigSlint
 };
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -60,7 +60,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             icon_theme: "Papirus-Dark".to_string(),
-            default_display: "DP-3".to_string(),
+            default_display: "GIGA-BYTE TECHNOLOGY CO., LTD. G27QC A 0x00000439".to_string(),
             fallback_display: "eDP-1".to_string(),
             window_config: WindowConfig {
                 bar_height: 38,
@@ -219,7 +219,8 @@ pub fn build_config_slint(config: &crate::config::AppConfig) -> ConfigSlint {
         },
         notification: NoticificationConfigSlint {
             icon_size: config.config.notification_config.icon_size as f32,
-            notification_max_height: config.config.notification_config.notification_max_height as f32,
+            notification_max_height: config.config.notification_config.notification_max_height
+                as f32,
             notification_width: config.config.notification_config.notification_width as f32,
             other_action_buttons: config.config.notification_config.other_action_buttons,
         },

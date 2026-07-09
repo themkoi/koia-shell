@@ -30,9 +30,13 @@ fn refresh_network_ui(ui: &barWindow, network_service: &Arc<NetworkService>) {
             .access_points
             .get()
             .iter()
+            .filter(|ap| {
+                let ssid = ap.ssid.get();
+                !ssid.is_empty()
+            })
             .map(|ap| {
                 let name = ap.ssid.get().to_string();
-                
+
                 let sec_status = format!("{:?}", ap.security.get());
                 let locked = !sec_status.contains("None") && !sec_status.is_empty();
 

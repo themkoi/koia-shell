@@ -1,5 +1,5 @@
 use clap::Parser;
-use slint::{language::ColorScheme, ComponentHandle};
+use slint::{ComponentHandle, language::ColorScheme};
 use spell_framework::{
     self, cast_spell,
     layer_properties::{Dimension, LayerAnchor, LayerType, WindowConf},
@@ -28,16 +28,14 @@ use config_shell::config;
 mod services;
 use crate::{
     config_shell::{components::theme::build_config_palette, config::build_config_slint},
-    helpers::{displays::display::is_display_connected, touch_area::manager::start_touch_manager},
+    helpers::{displays::display::get_display_info, touch_area::manager::start_touch_manager},
     services::{
-        battery::listener::listen_battery_changes, brightness::start_brightness_management,
-        notifications::manager::start_notification_service,
+        battery::listener::listen_battery_changes, bluetooth::start_bluetooth_management,
+        brightness::start_brightness_management, hardware_specific::harware_specific_management,
+        network::start_network_management, notifications::manager::start_notification_service,
         power_profiles::start_power_profile_management, taskbar::taskbar::run_taskbar,
         time::provider::provide_time, tray::manager::start_system_tray,
         volume::start_volume_management,
-        hardware_specific::harware_specific_management,
-        network::start_network_management,
-        bluetooth::start_bluetooth_management,
     },
 };
 
@@ -52,20 +50,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
     let monitor: String;
+    let mut display_height: u16 = 1080;
 
     if args.monitor.is_empty() {
-        if is_display_connected(config.config.default_display.clone().as_str()) {
-            monitor = config.config.default_display.clone();
+        if let Some((connector_name, size)) = get_display_info(&config.config.default_display) {
+            monitor = connector_name;
+            display_height = size.1 as u16;
         } else {
-            monitor = config.config.fallback_display.clone();
+            let (connector_name, size) = get_display_info(&config.config.fallback_display).unwrap();
+            monitor = connector_name;
+            display_height = size.1 as u16;
         }
     } else {
         monitor = args.monitor;
     }
 
+    let (connector_notification, size_notification) = get_display_info(&config.config.window_config.notification_screen).unwrap();
+
     let bar_conf = WindowConf::builder()
         .width(Dimension::Full)
-        .height(Dimension::Full)
+        .height(display_height as u32)
         .anchor_1(LayerAnchor::TOP)
         .margins(0, 0, 0, 0)
         .exclusive_zone(config.config.window_config.bar_height.into())
@@ -91,8 +95,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .notification_window_width
                 .clone() as u32,
         )
-        .height(Dimension::Full)
-        .monitor(config.config.window_config.notification_screen.clone())
+        .height(size_notification.1 as u32)
+        .monitor(connector_notification)
         .anchor_1(LayerAnchor::TOP)
         .anchor_2(LayerAnchor::RIGHT)
         .margins(0, 0, 0, 0)
@@ -105,13 +109,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // bar init
     let bar_ui = barWindowSpell::invoke_spell("bar", bar_conf);
     let window_width_bar = bar_ui.get_window_width();
-    let window_height_bar = bar_ui.get_window_height();
+    let window_height_bar = display_height;
 
     bar_ui.subtract_input_region(
         0,
         config.config.window_config.bar_height.into(),
         window_width_bar as i32,
-        (window_height_bar - config.config.window_config.bar_height as f32) as i32,
+        (window_height_bar as f32 - config.config.window_config.bar_height as f32) as i32,
     );
 
     if args.theme == "dark" {
@@ -137,7 +141,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     start_network_management(bar_ui.as_weak()).await;
     start_bluetooth_management(bar_ui.as_weak()).await;
 
-    start_touch_manager(&config, window_width_bar, window_height_bar, &bar_ui);
+    start_touch_manager(&config, window_width_bar, window_height_bar as f32, &bar_ui);
     start_command_handler(bar_ui.as_weak());
 
     start_system_tray(&config, bar_ui.as_weak()).await;
@@ -163,7 +167,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     notification_ui.set_config(config_slint.clone());
 
-    let window_height_notifi = notification_ui.get_window_height();
+    let window_height_notifi = size_notification.1;
 
     notification_ui.subtract_input_region(
         0,

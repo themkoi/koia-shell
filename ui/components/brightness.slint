@@ -9,7 +9,7 @@ import {
 } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
 import { ConfigSlint } from "../shared-items.slint";
-import { MaterialPalette } from "../material-1.0/material.slint";
+import { MaterialPalette, MaterialStyleMetrics } from "../material-1.0/material.slint";
 
 
 export struct BrightnessItem {
@@ -227,6 +227,7 @@ export component BrightnessPopup inherits Rectangle {
                                 minimum: 0;
                                 maximum: 100;
                                 thickness: 10px;
+                                thumb-height: 10px * 2.7;
                                 background_color: MaterialPalette.surface_container;
                                 value <=> root.brightness;
                                 changed(val) => {
@@ -281,65 +282,71 @@ export component BrightnessPopup inherits Rectangle {
                             padding: 2px;
 
                             for monitor in root.extBrightnessData.brightness_items: Rectangle {
-                                height: 64px;
+                                height: 60px;
                                 border_radius: MaterialStyleMetrics.border_radius_12;
                                 background: MaterialPalette.surface_container_highest;
-                                HorizontalLayout {
+                                VerticalLayout {
+                                    spacing: MaterialStyleMetrics.spacing_6;
                                     alignment: center;
-                                    MaterialText {
-                                        text: monitor.name != "" ? monitor.name : "External Display";
-                                        style: MaterialTypography.body_medium;
-                                        overflow: elide;
-                                        vertical-stretch: 0;
-                                    }
-                                }
 
-                                HorizontalLayout {
-                                    padding-left: MaterialStyleMetrics.padding_12;
-                                    padding-right: MaterialStyleMetrics.padding_12;
-                                    spacing: 12px;
-
-                                    VerticalLayout {
-                                        horizontal-stretch: 1;
-                                        vertical-stretch: 0;
-                                        spacing: 4px;
-
-                                        HorizontalLayout {
-                                            spacing: 8px;
-                                            alignment: center;
-
-                                            VerticalLayout {
-                                                alignment: center;
-                                                Image {
-                                                    width: 25px;
-                                                    height: 25px;
-                                                    source: @image-url("../assets/brightness/25x25/brightness_external.svg");
-                                                }
-                                            }
-
-                                            Slider {
-                                                horizontal-stretch: 1;
-                                                minimum: 0;
-                                                maximum: 100;
-                                                thickness: 10px;
-                                                background_color: MaterialPalette.surface_container;
-                                                value <=> monitor.brightness;
-                                                released(val) => {
-                                                    root.set_external_brightness(monitor.id, val);
-                                                }
-                                            }
+                                    HorizontalLayout {
+                                        alignment: center;
+                                        MaterialText {
+                                            text: monitor.name != "" ? monitor.name : "External Display";
+                                            style: MaterialTypography.label_medium;
+                                            overflow: elide;
+                                            vertical-stretch: 0;
                                         }
                                     }
 
-                                    VerticalLayout {
-                                        alignment: center;
-                                        horizontal-stretch: 0;
-                                        Text {
-                                            text: monitor.brightness + "%";
-                                            font-size: MaterialTypography.body_medium.font_size;
-                                            color: MaterialPalette.on_surface;
-                                            width: 36px;
-                                            horizontal-alignment: right;
+                                    HorizontalLayout {
+                                        padding-left: MaterialStyleMetrics.padding_12;
+                                        padding-right: MaterialStyleMetrics.padding_12;
+                                        spacing: 12px;
+
+                                        VerticalLayout {
+                                            horizontal-stretch: 1;
+                                            vertical-stretch: 0;
+                                            spacing: 4px;
+
+                                            HorizontalLayout {
+                                                spacing: 8px;
+                                                alignment: center;
+
+                                                VerticalLayout {
+                                                    alignment: center;
+                                                    Image {
+                                                        width: 25px;
+                                                        height: 25px;
+                                                        source: @image-url("../assets/brightness/25x25/brightness_external.svg");
+                                                    }
+                                                }
+
+                                                Slider {
+                                                    horizontal-stretch: 1;
+                                                    minimum: 0;
+                                                    maximum: 100;
+                                                    thickness: 10px;
+                                                    thumb-height: 10px * 2.7;
+                                                    background_color: MaterialPalette.surface_container;
+                                                    value <=> monitor.brightness;
+                                                    released(val) => {
+                                                        root.set_external_brightness(monitor.id, val);
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        VerticalLayout {
+                                            alignment: center;
+                                            horizontal-stretch: 0;
+                                            Text {
+                                                text: monitor.brightness + "%";
+                                                font-size: MaterialTypography.body_medium.font_size;
+                                                color: MaterialPalette.on_surface;
+                                                width: 36px;
+                                                horizontal-alignment: right;
+                                            }
                                         }
                                     }
                                 }
