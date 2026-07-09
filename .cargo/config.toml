@@ -1,0 +1,7 @@
+# .cargo/config.toml
+
+[build]
+rustflags = [
+    "-C", "target-cpu=native",
+    "-C", "link-arg=-Wl,--gc-sections",
+]

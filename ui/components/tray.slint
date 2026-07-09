@@ -51,7 +51,8 @@ export component TrayRow inherits Rectangle {
     height: 100%;
 
     callback item_clicked(string, string, length);
-    Rectangle {
+
+    if items.length != 0 :Rectangle {
         border_radius: MaterialStyleMetrics.border_radius_28;
         background: MaterialPalette.surface_container_highest;
         height: 100%;

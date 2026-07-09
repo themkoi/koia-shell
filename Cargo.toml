@@ -20,7 +20,7 @@ slint = { version = "=1.17.1", default-features = false, features = [
     "std",
     "backend-winit",
 ] }
-spell-framework = { git = "https://github.com/themkoi/Spell", rev = "d12e7f21fd2c60ef81e730c111d4706dd4963cbe" }
+spell-framework = { git = "https://github.com/themkoi/Spell", rev = "b0cad1b25adc6c8650604e8e9158f4c612e10d59" }
 toml = "1.1.2"
 tokio = "1.52.3"
 notify = "8.2.0"
