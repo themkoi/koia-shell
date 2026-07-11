@@ -43,6 +43,13 @@ pub struct HardwareConfig {
     pub hardware_specific_features: bool,
 }
 
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct SettingsConfig {
+    pub persistent_sync_brightness: bool,
+    pub sync_brightness: bool,
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Config {
     pub icon_theme: String,
@@ -51,6 +58,7 @@ pub struct Config {
     pub window_config: WindowConfig,
     pub hardware_config: HardwareConfig,
     pub interaction_config: InterractionConfig,
+    pub settings_config: SettingsConfig,
     pub taskbar_config: TaskbarConfig,
     pub tray_config: TrayConfig,
     pub notification_config: NotificationConfig,
@@ -84,6 +92,10 @@ impl Default for Config {
                 volume_scroll_step: 3,
                 allow_overflow_volume: true,
                 brightness_scroll_step: 5,
+            },
+            settings_config: SettingsConfig  {
+                persistent_sync_brightness: true,
+                sync_brightness: true,
             },
             taskbar_config: default_taskbar(),
             tray_config: default_tray(),

@@ -23,11 +23,13 @@ slint::include_modules!();
 spell_framework::generate_widgets![barWindow, clipboardWindow, notificationWindow];
 
 mod config_shell;
+mod data_shell;
 use config_shell::config;
 
 mod services;
 use crate::{
     config_shell::{components::theme::build_config_palette, config::build_config_slint},
+    data_shell::data::{build_session_data_slint, load_or_create_session_data},
     helpers::{displays::display::get_display_info, touch_area::manager::start_touch_manager},
     services::{
         battery::listener::listen_battery_changes, bluetooth::start_bluetooth_management,
@@ -47,6 +49,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "info"),
     );
     let config = config::load_app_config().unwrap();
+    let data = load_or_create_session_data(&config.config).unwrap();
     let args = Args::parse();
 
     let monitor: String;
@@ -65,7 +68,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         monitor = args.monitor;
     }
 
-    let (connector_notification, size_notification) = get_display_info(&config.config.window_config.notification_screen).unwrap();
+    let (connector_notification, size_notification) =
+        get_display_info(&config.config.window_config.notification_screen).unwrap();
 
     let bar_conf = WindowConf::builder()
         .width(Dimension::Full)
@@ -106,6 +110,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let schemes = build_config_palette(&config);
     let config_slint = build_config_slint(&config);
+    let session_data_slint = build_session_data_slint(&data);
+
     // bar init
     let bar_ui = barWindowSpell::invoke_spell("bar", bar_conf);
     let window_width_bar = bar_ui.get_window_width();
@@ -123,8 +129,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     MaterialPalette::get(&bar_ui.ui).set_schemes(schemes.clone());
     bar_ui.set_config(config_slint.clone());
+    bar_ui.set_sessionData(session_data_slint.clone());
     bar_ui.invoke_init_ui();
 
+    let config_arc = config.config.clone();
+
+bar_ui.on_write_session_data(move |ui_session_data| {
+    let SessionDataSlint { sync_brightness } = ui_session_data;
+    
+    let session_data = crate::data_shell::data::SessionData { sync_brightness };
+    let config = config_arc.clone();
+
+    tokio::spawn(async move {
+        if let Err(e) = crate::data_shell::data::save_session_data(&config, session_data) {
+            log::error!("Failed to save session data: {:?}", e);
+        }
+    });
+});
     run_taskbar(&config, bar_ui.as_weak()).await;
 
     start_volume_management(

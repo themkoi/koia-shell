@@ -21,7 +21,14 @@ async fn get_brightness_status(device_name: &str) -> u32 {
         .and_then(|s| s.trim().parse::<u32>().ok())
         .unwrap_or(100);
 
-    ((brightness as f32 / max_brightness as f32) * 100.0) as u32
+    if max_brightness == 0 {
+        return 0;
+    }
+
+    let raw_percentage = ((brightness as f32 / max_brightness as f32) * 100.0).round() as u32;
+
+
+    raw_percentage.min(100)
 }
 
 pub async fn listen_brightness_changes(

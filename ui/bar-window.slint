@@ -6,7 +6,11 @@ import {
     MaterialStyleMetrics,
     MaterialTypography,
 } from "@material/material.slint";
-import { TaskbarConfigSlint, ConfigSlint } from "shared-items.slint";
+import {
+    TaskbarConfigSlint,
+    ConfigSlint,
+    SessionDataSlint,
+} from "shared-items.slint";
 
 import { Workspace, Taskbar } from "components/taskbar.slint";
 import {
@@ -65,8 +69,12 @@ export component barWindow inherits Window {
     in property <StringDateDataSlint> stringDateData;
 
     in property <ConfigSlint> config;
+    in-out property <SessionDataSlint> sessionData;
     in-out property <length> window_width <=> self.width;
     in-out property <length> window_height <=> self.height;
+
+    callback write_session_data(SessionDataSlint);
+    changed sessionData => { write_session_data(sessionData); }
 
     in property <[{ name: string, icon: image }]> power_profiles: [
         { name: "Power Saver", icon: @image-url("./assets/profiles/power/power_saver.svg") },
@@ -92,6 +100,22 @@ export component barWindow inherits Window {
     callback set_brightness(int, int);
     callback refresh_ext_brightness();
     callback set_ext_brightness(string, int);
+    callback set_ext_brightness_all(int);
+    function handle_set_brightness(val: int, delta: int) {
+        root.brightness = root.brightness - delta;
+        root.set_brightness(root.brightness,0);
+        if (root.sessionData.sync-brightness) {
+            root.set_ext_brightness_all(root.brightness);
+        }
+    }
+    function handle_set_external_brightness(id: string, val: int) {
+        if (root.sessionData.sync-brightness) {
+            root.set_ext_brightness_all(val);
+            root.set_brightness(val, 0);
+        } else {
+            root.set_ext_brightness(id, val);
+        }
+    }
 
     callback set_power_profile(string);
     callback set_fan_profile(string);
@@ -261,7 +285,7 @@ export component barWindow inherits Window {
                     }
                 }
 
-                brightnessButton :=BrightnessButton {
+                brightnessButton := BrightnessButton {
                     brightness: brightness;
                     brightness_clicked => {
                         refresh_ext_brightness();
@@ -273,10 +297,10 @@ export component barWindow inherits Window {
                         }
                     }
                     brightness_scroll_up() => {
-                        set_brightness(brightness,config.interaction.brightness-scroll-step)
+                        handle_set_brightness(brightness,config.interaction.brightness-scroll-step)
                     }
                     brightness_scroll_down() => {
-                        set_brightness(brightness, -config.interaction.brightness-scroll-step)
+                        handle_set_brightness(brightness, -config.interaction.brightness-scroll-step)
                     }
                 }
 
@@ -479,28 +503,17 @@ export component barWindow inherits Window {
         brightness <=> root.brightness;
         extBrightnessData <=> root.extBrightnessData;
         popup_visible: root.brightnessPopupVis;
+        sync_brightness <=> root.sessionData.sync-brightness;
 
         refresh_external_brightness => {
             root.refresh_ext_brightness();
         }
         set_brightness(val) => {
-            root.set_brightness(val, 0);
+            handle_set_brightness(val,0);
         }
-        set_external_brightness(id,val) => {
-            root.set_ext_brightness(id, val);
+        set_external_brightness(id, val) => {
+            handle_set_external_brightness(id, val)
         }
-        // set_bluetooth_enabled(enabled) => {
-        //     root.set_bluetooth_enabled(enabled);
-        // }
-        // connect_bluetooth_device(mac) => {
-        //     root.connect_bluetooth_device(mac);
-        // }
-        // disconnect_bluetooth_device(mac) => {
-        //     root.disconnect_bluetooth_device(mac);
-        // }
-        // start_bluetooth_discovery() => {
-        //     root.start_bluetooth_discovery()
-        // }
     }
 
     Path {

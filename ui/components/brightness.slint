@@ -6,10 +6,14 @@ import {
     ScrollView,
     Slider,
     MaterialText,
+    Switch,
 } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
 import { ConfigSlint } from "../shared-items.slint";
-import { MaterialPalette, MaterialStyleMetrics } from "../material-1.0/material.slint";
+import {
+    MaterialPalette,
+    MaterialStyleMetrics,
+} from "../material-1.0/material.slint";
 
 
 export struct BrightnessItem {
@@ -104,6 +108,7 @@ export component BrightnessButton inherits Rectangle {
 export component BrightnessPopup inherits Rectangle {
     in-out property <int> brightness;
     in-out property <ExternalBrightnessState> extBrightnessData;
+    in-out property <bool> sync_brightness;
     in property <ConfigSlint> config;
     in property <bool> popup_visible;
 
@@ -156,11 +161,25 @@ export component BrightnessPopup inherits Rectangle {
                         alignment: space-between;
                         VerticalLayout {
                             alignment: center;
-                            Text {
-                                text: "Brightness";
-                                font-size: MaterialTypography.label_medium.font_size;
-                                font-weight: MaterialTypography.label_medium.font-weight;
-                                color: MaterialPalette.on_surface_variant;
+                            HorizontalLayout {
+                                spacing: MaterialStyleMetrics.spacing_8;
+                                VerticalLayout {
+                                    alignment: center;
+                                    Text {
+                                        text: "Sync All";
+                                        font-size: MaterialTypography.label_medium.font_size;
+                                        font-weight: MaterialTypography.label_medium.font-weight;
+                                        color: MaterialPalette.on_surface_variant;
+                                    }
+                                }
+
+                                Switch {
+                                    height_switch: MaterialStyleMetrics.size_24;
+                                    width_switch: MaterialStyleMetrics.size_40;
+                                    checked: root.sync_brightness;
+                                    enabled: true;
+                                    checked_state_changed(enabled) => { root.sync_brightness = enabled; };
+                                }
                             }
                         }
 
@@ -330,7 +349,7 @@ export component BrightnessPopup inherits Rectangle {
                                                     thumb-height: 10px * 2.7;
                                                     background_color: MaterialPalette.surface_container;
                                                     value <=> monitor.brightness;
-                                                    released(val) => {
+                                                    changed(val) => {
                                                         root.set_external_brightness(monitor.id, val);
                                                     }
                                                 }

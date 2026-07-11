@@ -27,8 +27,9 @@ pub async fn start_brightness_adjuster(
                     tokio::fs::read_to_string(&max_brightness_path).await
                 {
                     if let Ok(max_brightness) = max_brightness_str.trim().parse::<u32>() {
-                        let actual_brightness =
-                            (brightness_calc as f32 / 100.0 * max_brightness as f32) as u32;
+                        let actual_brightness = ((brightness_calc as f32 / 100.0
+                            * max_brightness as f32)
+                            .round()) as u32;
                         let _ =
                             tokio::fs::write(&brightness_path, actual_brightness.to_string()).await;
                     }

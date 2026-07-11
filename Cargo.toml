@@ -19,8 +19,9 @@ slint = { version = "=1.17.1", default-features = false, features = [
     "renderer-skia",
     "std",
     "backend-winit",
+    "serde",
 ] }
-spell-framework = { git = "https://github.com/themkoi/Spell", rev = "b0cad1b25adc6c8650604e8e9158f4c612e10d59" }
+spell-framework = { git = "https://github.com/themkoi/Spell", rev = "7c1abc8b547f8008c8f1b7b32a3383979fe69ba5" }
 toml = "1.1.2"
 tokio = "1.52.3"
 notify = "8.2.0"
@@ -35,6 +36,7 @@ wayle-power-profiles = "0.1.4"
 wayle-network = "0.1.2"
 wayle-bluetooth = "0.1.2"
 ddc-hi = "0.4.1"
+ron = "0.12.2"
 
 [features]
 default = ["framework"]
