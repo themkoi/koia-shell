@@ -22,8 +22,7 @@ export struct NetworkItem {
     locked: bool,
 }
 
-export struct CompleteNetworkState {
-    wifi_networks: [NetworkItem],
+export struct NetworkMetadata {
     wifi_ip: string,
     wifi_enabled: bool,
     current_ssid: string,
@@ -34,7 +33,7 @@ export struct CompleteNetworkState {
 
 export component NetworkButton inherits Rectangle {
     height: 100%;
-    in property <CompleteNetworkState> network;
+    in property <NetworkMetadata> metadata;
     callback network_clicked();
 
     HorizontalLayout {
@@ -54,12 +53,12 @@ export component NetworkButton inherits Rectangle {
             base := BaseButton {
                 border_radius: parent.border_radius;
                 width: 100%;
-                icon: root.network.wired_connected ? @image-url("../assets/network/20x20/ethernet.svg") :
-                    !root.network.wifi_enabled ? @image-url("../assets/network/20x20/wifi_off.svg") :
-                    root.network.current_strength < 20 ? @image-url("../assets/network/20x20/wifi_0.svg") :
-                    root.network.current_strength < 40 ? @image-url("../assets/network/20x20/wifi_1.svg") :
-                    root.network.current_strength < 60 ? @image-url("../assets/network/20x20/wifi_2.svg") :
-                    root.network.current_strength < 80 ? @image-url("../assets/network/20x20/wifi_3.svg") :
+                icon: root.metadata.wired_connected ? @image-url("../assets/network/20x20/ethernet.svg") :
+                    !root.metadata.wifi_enabled ? @image-url("../assets/network/20x20/wifi_off.svg") :
+                    root.metadata.current_strength < 20 ? @image-url("../assets/network/20x20/wifi_0.svg") :
+                    root.metadata.current_strength < 40 ? @image-url("../assets/network/20x20/wifi_1.svg") :
+                    root.metadata.current_strength < 60 ? @image-url("../assets/network/20x20/wifi_2.svg") :
+                    root.metadata.current_strength < 80 ? @image-url("../assets/network/20x20/wifi_3.svg") :
                     @image-url("../assets/network/20x20/wifi_4.svg");
 
                 spacing: 4px;
@@ -88,7 +87,8 @@ export component NetworkButton inherits Rectangle {
 }
 
 export component NetworkPopup inherits Rectangle {
-    in property <CompleteNetworkState> network;
+    in property <NetworkMetadata> metadata;
+    in property <[NetworkItem]> wifi_networks;
     in property <ConfigSlint> config;
     in property <bool> popup_visible;
 
@@ -166,7 +166,7 @@ export component NetworkPopup inherits Rectangle {
                                 }
 
                                 Text {
-                                    text: root.network.wired_connected ? root.network.wired_ip : "Disconnected";
+                                    text: root.metadata.wired_connected ? root.metadata.wired_ip : "Disconnected";
                                     font-size: 11px;
                                     opacity: 0.6;
                                 }
@@ -182,10 +182,10 @@ export component NetworkPopup inherits Rectangle {
                                     width: 80px;
                                     height: 28px;
                                     border_radius: MaterialStyleMetrics.border_radius_8;
-                                    background: root.network.wired_connected ? MaterialPalette.primary_container : MaterialPalette.surface_container_highest;
+                                    background: root.metadata.wired_connected ? MaterialPalette.primary_container : MaterialPalette.surface_container_highest;
                                     Text {
-                                        text: root.network.wired_connected ? "Active" : "Offline";
-                                        color: root.network.wired_connected ? MaterialPalette.on_primary_container : MaterialPalette.on_surface_variant;
+                                        text: root.metadata.wired_connected ? "Active" : "Offline";
+                                        color: root.metadata.wired_connected ? MaterialPalette.on_primary_container : MaterialPalette.on_surface_variant;
                                         font-size: 11px;
                                         font-weight: 500;
                                         horizontal-alignment: center;
@@ -210,26 +210,25 @@ export component NetworkPopup inherits Rectangle {
                                 Image {
                                     width: 25px;
                                     height: 25px;
-                                    source: !root.network.wifi_enabled ? @image-url("../assets/network/25x25/wifi_off.svg") :
-                                        root.network.current_strength < 20 ? @image-url("../assets/network/25x25/wifi_0.svg") :
-                                        root.network.current_strength < 40 ? @image-url("../assets/network/25x25/wifi_1.svg") :
-                                        root.network.current_strength < 60 ? @image-url("../assets/network/25x25/wifi_2.svg") :
-                                        root.network.current_strength < 80 ? @image-url("../assets/network/25x25/wifi_3.svg") :
+                                    source: !root.metadata.wifi_enabled ? @image-url("../assets/network/25x25/wifi_off.svg") :
+                                        root.metadata.current_strength < 20 ? @image-url("../assets/network/25x25/wifi_0.svg") :
+                                        root.metadata.current_strength < 40 ? @image-url("../assets/network/25x25/wifi_1.svg") :
+                                        root.metadata.current_strength < 60 ? @image-url("../assets/network/25x25/wifi_2.svg") :
+                                        root.metadata.current_strength < 80 ? @image-url("../assets/network/25x25/wifi_3.svg") :
                                         @image-url("../assets/network/25x25/wifi_4.svg");
                                 }
                             }
 
                             HorizontalLayout {
-
                                 VerticalLayout {
                                     alignment: center;
                                     MaterialText {
-                                        text: root.network.current_ssid != "" ? root.network.current_ssid : "Wireless Interface";
+                                        text: root.metadata.current_ssid != "" ? root.metadata.current_ssid : "Wireless Interface";
                                         style: MaterialTypography.body_large;
                                     }
 
                                     Text {
-                                        text: root.network.wifi_enabled ? root.network.wifi_ip + " • " + root.network.current-strength + "%" : "Hardware Radio Disabled";
+                                        text: root.metadata.wifi_enabled ? root.metadata.wifi_ip + " • " + root.metadata.current_strength + "%" : "Hardware Radio Disabled";
                                         font-size: 11px;
                                         opacity: 0.6;
                                     }
@@ -239,7 +238,7 @@ export component NetworkPopup inherits Rectangle {
                                     horizontal-stretch: 1.0;
                                 }
 
-                                if root.network.current_ssid != "": VerticalLayout {
+                                if root.metadata.current_ssid != "": VerticalLayout {
                                     alignment: center;
                                     Rectangle {
                                         height: 32px;
@@ -286,7 +285,7 @@ export component NetworkPopup inherits Rectangle {
                             Switch {
                                 height_switch: MaterialStyleMetrics.size_24;
                                 width_switch: MaterialStyleMetrics.size_40;
-                                checked: root.network.wifi_enabled;
+                                checked: root.metadata.wifi_enabled;
                                 checked_state_changed(enabled) => { root.set_wifi_enabled(enabled); };
                             }
                         }
@@ -306,7 +305,7 @@ export component NetworkPopup inherits Rectangle {
                             width: 100%;
 
                             icon: @image-url("../assets/refresh_22.svg");
-                            enabled: root.network.wifi-enabled;
+                            enabled: root.metadata.wifi_enabled;
 
                             icon-size: 22px;
                             button_horizontal_padding: MaterialStyleMetrics.padding_8;
@@ -331,9 +330,8 @@ export component NetworkPopup inherits Rectangle {
                     }
                 }
 
-                if root.network.wifi_enabled && root.network.wifi_networks.length > 0: Rectangle {
+                if root.metadata.wifi_enabled && root.wifi_networks.length > 0: Rectangle {
                     width: 100%;
-
                     vertical-stretch: 1;
                     preferred-height: scroll_content.preferred-height;
 
@@ -347,7 +345,7 @@ export component NetworkPopup inherits Rectangle {
                             spacing: 6px;
                             padding: 2px;
 
-                            for ap in root.network.wifi_networks: Rectangle {
+                            for ap in root.wifi_networks: Rectangle {
                                 border_radius: MaterialStyleMetrics.border_radius_12;
                                 background: MaterialPalette.surface_container_highest;
                                 height: 48px;

@@ -97,3 +97,11 @@ pub fn build_session_data_slint(data: &crate::data_shell::data::SessionData) -> 
         sync_brightness: data.sync_brightness,
     }
 }
+
+impl From<SessionDataSlint> for SessionData {
+    fn from(value: SessionDataSlint) -> Self {
+        Self {
+            sync_brightness: value.sync_brightness,
+        }
+    }
+}

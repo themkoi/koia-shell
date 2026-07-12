@@ -1,24 +1,38 @@
 use futures::StreamExt;
 use log::info;
+use slint::Model;
 use slint::{ModelRc, ToSharedString, VecModel};
+use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 use wayle_bluetooth::BluetoothService;
 
 use crate::BluetoothItem;
-use crate::CompleteBluetoothState;
 use crate::barWindow;
 
+thread_local! {
+    static CONNECTED_DEVICES_MODEL: RefCell<Rc<VecModel<BluetoothItem>>> = RefCell::new(Rc::new(VecModel::default()));
+    static DISCOVERED_DEVICES_MODEL: RefCell<Rc<VecModel<BluetoothItem>>> = RefCell::new(Rc::new(VecModel::default()));
+}
+
 fn refresh_bluetooth_ui(ui: &barWindow, bt_service: &Arc<BluetoothService>) {
+    let current_connected = ui.get_bluetooth_connected_devices();
+    let current_discovered = ui.get_bluetooth_discovered_devices();
+
+    tl_models_init(ui, &current_connected, &current_discovered);
+
+    // 2. Update primitive scalar attributes
     let available = bt_service.available.get();
     let enabled = bt_service.enabled.get();
     
-    let connected_addresses = bt_service.connected.get(); 
-    
+    ui.set_bluetooth_available(available);
+    ui.set_bluetooth_enabled(enabled);
+
     let mut connected_items = Vec::new();
     let mut discovered_items = Vec::new();
 
     if available {
+        let connected_addresses = bt_service.connected.get(); 
         let (connected, discovered): (Vec<_>, Vec<_>) = bt_service
             .devices
             .get()
@@ -27,7 +41,6 @@ fn refresh_bluetooth_ui(ui: &barWindow, bt_service: &Arc<BluetoothService>) {
                 let name = device.name.get().unwrap_or_else(|| "Unknown Device".to_string());
                 let address = device.address.get();
                 let is_connected = connected_addresses.contains(&address);
-                
                 let dev_type = device.icon.get().unwrap_or_else(|| "unknown".to_string()); 
 
                 BluetoothItem {
@@ -43,12 +56,39 @@ fn refresh_bluetooth_ui(ui: &barWindow, bt_service: &Arc<BluetoothService>) {
         discovered_items = discovered;
     }
 
-    ui.set_bluetoothData(CompleteBluetoothState {
-        available,
-        enabled,
-        connected_devices: ModelRc::from(Rc::new(VecModel::from(connected_items))),
-        discovered_devices: ModelRc::from(Rc::new(VecModel::from(discovered_items))),
-    });
+    crate::helpers::slint_vector::vector::update_vec_model(
+        &CONNECTED_DEVICES_MODEL,
+        &connected_items,
+        |item| item.clone(),
+    );
+
+    crate::helpers::slint_vector::vector::update_vec_model(
+        &DISCOVERED_DEVICES_MODEL,
+        &discovered_items,
+        |item| item.clone(),
+    );
+}
+
+fn tl_models_init(
+    ui: &barWindow, 
+    curr_conn: &ModelRc<BluetoothItem>, 
+    curr_disc: &ModelRc<BluetoothItem>
+) -> (Rc<VecModel<BluetoothItem>>, Rc<VecModel<BluetoothItem>>) {
+    CONNECTED_DEVICES_MODEL.with(|conn_cell| {
+        DISCOVERED_DEVICES_MODEL.with(|disc_cell| {
+            let conn_rc = conn_cell.borrow().clone();
+            let disc_rc = disc_cell.borrow().clone();
+
+            if curr_conn.clone().as_any().downcast_ref::<VecModel<BluetoothItem>>().is_none() {
+                ui.set_bluetooth_connected_devices(ModelRc::from(conn_rc.clone()));
+            }
+            if curr_disc.clone().as_any().downcast_ref::<VecModel<BluetoothItem>>().is_none() {
+                ui.set_bluetooth_discovered_devices(ModelRc::from(disc_rc.clone()));
+            }
+
+            (conn_rc, disc_rc)
+        })
+    })
 }
 
 pub async fn listen_bluetooth_changes(

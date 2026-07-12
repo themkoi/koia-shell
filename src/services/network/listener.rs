@@ -1,15 +1,30 @@
 use futures::StreamExt;
 use log::info;
+use slint::Model;
 use slint::{ModelRc, ToSharedString, VecModel};
+use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 use wayle_network::NetworkService;
 
-use crate::CompleteNetworkState;
 use crate::NetworkItem;
+use crate::NetworkMetadata;
 use crate::barWindow;
 
+thread_local! {
+    static WIFI_NETWORKS_MODEL: RefCell<Rc<VecModel<NetworkItem>>> = RefCell::new(Rc::new(VecModel::default()));
+}
+
 fn refresh_network_ui(ui: &barWindow, network_service: &Arc<NetworkService>) {
+    let current_networks = ui.get_wifi_networks();
+    WIFI_NETWORKS_MODEL.with(|cell| {
+        let rc = cell.borrow().clone();
+        if current_networks.clone().as_any().downcast_ref::<VecModel<NetworkItem>>().is_none() {
+            ui.set_wifi_networks(ModelRc::from(rc.clone()));
+        }
+        rc
+    });
+
     let mut wifi_enabled = false;
     let mut current_ssid = String::new();
     let mut wifi_ip = "No Hardware".to_string();
@@ -67,15 +82,20 @@ fn refresh_network_ui(ui: &barWindow, network_service: &Arc<NetworkService>) {
         None => (false, "Disconnected".to_string()),
     };
 
-    ui.set_networkData(CompleteNetworkState {
+    ui.set_networkMetadata(NetworkMetadata {
         wifi_enabled,
         current_ssid: current_ssid.to_shared_string(),
         current_strength: current_strength.into(),
-        wifi_networks: ModelRc::from(Rc::new(VecModel::from(wifi_items))),
         wifi_ip: wifi_ip.to_shared_string(),
         wired_connected,
         wired_ip: wired_ip.to_shared_string(),
     });
+
+    crate::helpers::slint_vector::vector::update_vec_model(
+        &WIFI_NETWORKS_MODEL,
+        &wifi_items,
+        |item| item.clone(),
+    );
 }
 
 pub async fn listen_network_changes(

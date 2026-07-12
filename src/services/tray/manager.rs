@@ -1,6 +1,7 @@
 use crate::{barWindow, ContextMenuActionSlint, ContextMenuDataSlint, TrayItemSlint};
 use log::{error, info};
 use slint::{Image, ModelRc, Rgba8Pixel, SharedPixelBuffer, VecModel, Weak};
+use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 use tokio::time::{sleep, Duration, Instant};
@@ -9,6 +10,10 @@ use system_tray::client::{ActivateRequest, Client};
 use system_tray::item::IconPixmap;
 use system_tray::menu::{MenuItem, MenuType, ToggleState};
 
+thread_local! {
+    static TRAY_ITEMS_MODEL: RefCell<Rc<VecModel<TrayItemSlint>>> = RefCell::new(Rc::new(VecModel::default()));
+}
+
 struct IntermediateTrayItem {
     id: String,
     title: String,
@@ -16,12 +21,12 @@ struct IntermediateTrayItem {
     active: bool,
     icon_source: IconSource,
 }
+
 enum IconSource {
     Path(String),
     Buffer(SharedPixelBuffer<Rgba8Pixel>),
     None,
 }
-
 
 struct ThreadSafeTrayData {
     id: String,
@@ -468,31 +473,31 @@ fn populate_ui_items(
             active: raw_item.active,
             icon_source,
         });
-
     }
 
     let _ = ui_weak_clone.upgrade_in_event_loop(move |ui| {
-        let mut ui_items = Vec::new();
+        let model = crate::helpers::slint_vector::vector::update_vec_model(
+            &TRAY_ITEMS_MODEL,
+            &intermediate_items,
+            |item| {
+                let tray_icon = match &item.icon_source {
+                    IconSource::Path(path_str) => {
+                        Image::load_from_path(std::path::Path::new(path_str)).unwrap_or_default()
+                    }
+                    IconSource::Buffer(buf) => Image::from_rgba8(buf.clone()),
+                    IconSource::None => Image::default(),
+                };
 
-        for item in intermediate_items {
-            let tray_icon = match item.icon_source {
-                IconSource::Path(path_str) => {
-                    Image::load_from_path(std::path::Path::new(&path_str)).unwrap_or_default()
+                TrayItemSlint {
+                    id: item.id.clone().into(),
+                    title: item.title.clone().into(),
+                    icon: tray_icon,
+                    status: item.status.clone().into(),
+                    active: item.active,
                 }
-                IconSource::Buffer(buf) => Image::from_rgba8(buf),
-                IconSource::None => Image::default(),
-            };
+            },
+        );
 
-            ui_items.push(TrayItemSlint {
-                id: item.id.into(),
-                title: item.title.into(),
-                icon: tray_icon,
-                status: item.status.into(),
-                active: item.active,
-            });
-        }
-
-        let model = ModelRc::from(Rc::new(VecModel::from(ui_items)));
-        ui.set_tray(model);
+        ui.set_tray(ModelRc::from(model));
     });
 }

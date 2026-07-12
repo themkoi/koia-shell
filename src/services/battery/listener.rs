@@ -1,10 +1,16 @@
 use futures::stream::{select_all, StreamExt};
 use log::info;
-use slint::{ToSharedString, VecModel};
+use slint::Model;
+use slint::{ModelRc, ToSharedString, VecModel};
+use std::cell::RefCell;
 use std::rc::Rc;
 use upower_dbus::{BatteryState, BatteryType, DeviceProxy, UPowerProxy};
 
 use crate::{barWindow, BatteryDataSlint};
+
+thread_local! {
+    static BATTERY_DEVICES_MODEL: RefCell<Rc<VecModel<BatteryDataSlint>>> = RefCell::new(Rc::new(VecModel::default()));
+}
 
 fn determine_icon(kind: BatteryType) -> String {
     match kind {
@@ -144,6 +150,13 @@ pub async fn listen_battery_changes(ui_weak: slint::Weak<barWindow>) {
 
             let _ = slint::invoke_from_event_loop(move || {
                 if let Some(ui) = ui_update.upgrade() {
+                    let current_model_rc = ui.get_batteryData();
+                    if current_model_rc.clone().as_any().downcast_ref::<VecModel<BatteryDataSlint>>().is_none() {
+                        BATTERY_DEVICES_MODEL.with(|cell| {
+                            ui.set_batteryData(ModelRc::from(cell.borrow().clone()));
+                        });
+                    }
+
                     let mut battery_list = Vec::new();
 
                     battery_list.push(BatteryDataSlint {
@@ -162,8 +175,11 @@ pub async fn listen_battery_changes(ui_weak: slint::Weak<barWindow>) {
                         });
                     }
 
-                    let model = Rc::new(VecModel::from(battery_list));
-                    ui.set_batteryData(model.into());
+                    crate::helpers::slint_vector::vector::update_vec_model(
+                        &BATTERY_DEVICES_MODEL,
+                        &battery_list,
+                        |item| item.clone(),
+                    );
                 }
             });
 

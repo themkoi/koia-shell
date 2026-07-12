@@ -28,7 +28,7 @@ pub fn default_taskbar() -> TaskbarConfig {
             .into_iter()
             .map(String::from)
             .collect(),
-        taskbar_max_width: 1000,
-        indicator_max_width: 800,
+        taskbar_max_width: 1500,
+        indicator_max_width: 1000,
     }
 }

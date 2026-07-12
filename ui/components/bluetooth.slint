@@ -23,16 +23,13 @@ export struct BluetoothItem {
     device_type: string,
 }
 
-export struct CompleteBluetoothState {
-    available: bool,
-    enabled: bool,
-    connected_devices: [BluetoothItem],
-    discovered_devices: [BluetoothItem],
-}
-
 export component BluetoothButton inherits Rectangle {
     height: 100%;
-    in property <CompleteBluetoothState> bluetooth;
+    
+    in property <bool> bluetooth_available;
+    in property <bool> bluetooth_enabled;
+    in property <[BluetoothItem]> bluetooth_connected_devices;
+    
     callback bluetooth_clicked();
 
     HorizontalLayout {
@@ -53,9 +50,9 @@ export component BluetoothButton inherits Rectangle {
                 border_radius: parent.border_radius;
                 width: 100%;
 
-                icon: !root.bluetooth.available ? @image-url("../assets/bluetooth/20x20/bluetooth_disabled.svg") :
-                    !root.bluetooth.enabled ? @image-url("../assets/bluetooth/20x20/bluetooth_disabled.svg") :
-                    root.bluetooth.connected_devices.length > 0 ? @image-url("../assets/bluetooth/20x20/bluetooth_connected.svg") :
+                icon: !root.bluetooth_available ? @image-url("../assets/bluetooth/20x20/bluetooth_disabled.svg") :
+                    !root.bluetooth_enabled ? @image-url("../assets/bluetooth/20x20/bluetooth_disabled.svg") :
+                    root.bluetooth_connected_devices.length > 0 ? @image-url("../assets/bluetooth/20x20/bluetooth_connected.svg") :
                     @image-url("../assets/bluetooth/20x20/bluetooth.svg");
 
                 spacing: 4px;
@@ -84,7 +81,12 @@ export component BluetoothButton inherits Rectangle {
 }
 
 export component BluetoothPopup inherits Rectangle {
-    in property <CompleteBluetoothState> bluetooth;
+    // Decoupled properties to align with optimized update_vec_model handling
+    in property <bool> bluetooth_available;
+    in property <bool> bluetooth_enabled;
+    in property <[BluetoothItem]> bluetooth_connected_devices;
+    in property <[BluetoothItem]> bluetooth_discovered_devices;
+    
     in property <ConfigSlint> config;
     in property <bool> popup_visible;
 
@@ -122,12 +124,12 @@ export component BluetoothPopup inherits Rectangle {
                     horizontal-alignment: center;
                 }
 
-                if root.bluetooth.enabled && root.bluetooth.connected_devices.length > 0:Rectangle {
+                if root.bluetooth_enabled && root.bluetooth_connected_devices.length > 0: Rectangle {
                     height: 1px;
                     background: MaterialPalette.outline_variant;
                 }
 
-                if root.bluetooth.enabled && root.bluetooth.connected_devices.length > 0:Text {
+                if root.bluetooth_enabled && root.bluetooth_connected_devices.length > 0: Text {
                     text: "Connected devices";
                     font-size: MaterialTypography.label_medium.font_size;
                     font-weight: MaterialTypography.label_medium.font-weight;
@@ -137,9 +139,9 @@ export component BluetoothPopup inherits Rectangle {
                 VerticalLayout {
                     spacing: 6px;
 
-                    if root.bluetooth.enabled && root.bluetooth.connected_devices.length > 0: VerticalLayout {
+                    if root.bluetooth_enabled && root.bluetooth_connected_devices.length > 0: VerticalLayout {
                         spacing: 6px;
-                        for device in root.bluetooth.connected_devices: Rectangle {
+                        for device in root.bluetooth_connected_devices: Rectangle {
                             height: 48px;
                             border_radius: MaterialStyleMetrics.border_radius_12;
                             background: MaterialPalette.surface_container_highest;
@@ -231,8 +233,8 @@ export component BluetoothPopup inherits Rectangle {
                             Switch {
                                 height_switch: MaterialStyleMetrics.size_24;
                                 width_switch: MaterialStyleMetrics.size_40;
-                                checked: root.bluetooth.enabled;
-                                enabled: root.bluetooth.available;
+                                checked: root.bluetooth_enabled;
+                                enabled: root.bluetooth_available;
                                 checked_state_changed(enabled) => { root.set_bluetooth_enabled(enabled); };
                             }
                         }
@@ -250,7 +252,7 @@ export component BluetoothPopup inherits Rectangle {
                         base_refresh := BaseButton {
                             border_radius: parent.border_radius;
                             width: 100%;
-                            enabled: root.bluetooth.enabled;
+                            enabled: root.bluetooth_enabled;
                             icon: @image-url("../assets/refresh_22.svg");
                             icon-size: 22px;
                             button_horizontal_padding: MaterialStyleMetrics.padding_8;
@@ -275,7 +277,7 @@ export component BluetoothPopup inherits Rectangle {
                     }
                 }
 
-                if root.bluetooth.enabled && root.bluetooth.discovered_devices.length > 0: Rectangle {
+                if root.bluetooth_enabled && root.bluetooth_discovered_devices.length > 0: Rectangle {
                     width: 100%;
                     vertical-stretch: 1;
                     preferred-height: scroll_content.preferred-height;
@@ -290,7 +292,7 @@ export component BluetoothPopup inherits Rectangle {
                             spacing: 6px;
                             padding: 2px;
 
-                            for device in root.bluetooth.discovered_devices: Rectangle {
+                            for device in root.bluetooth_discovered_devices: Rectangle {
                                 height: 48px;
                                 border_radius: MaterialStyleMetrics.border_radius_12;
                                 background: MaterialPalette.surface_container_highest;

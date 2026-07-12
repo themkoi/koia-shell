@@ -28,10 +28,7 @@ use config_shell::config;
 
 mod services;
 use crate::{
-    config_shell::{components::theme::build_config_palette, config::build_config_slint},
-    data_shell::data::{build_session_data_slint, load_or_create_session_data},
-    helpers::{displays::display::get_display_info, touch_area::manager::start_touch_manager},
-    services::{
+    config_shell::{components::theme::build_config_palette, config::build_config_slint}, data_shell::data::{SessionData, build_session_data_slint, load_or_create_session_data}, helpers::{displays::display::get_display_info, touch_area::manager::start_touch_manager}, services::{
         battery::listener::listen_battery_changes, bluetooth::start_bluetooth_management,
         brightness::start_brightness_management, hardware_specific::harware_specific_management,
         network::start_network_management, notifications::manager::start_notification_service,
@@ -115,6 +112,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // bar init
     let bar_ui = barWindowSpell::invoke_spell("bar", bar_conf);
     let window_width_bar = bar_ui.get_window_width();
+    println!("window width {}", window_width_bar);
     let window_height_bar = display_height;
 
     bar_ui.subtract_input_region(
@@ -132,20 +130,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     bar_ui.set_sessionData(session_data_slint.clone());
     bar_ui.invoke_init_ui();
 
-    let config_arc = config.config.clone();
+    let config_clone = config.config.clone();
 
-bar_ui.on_write_session_data(move |ui_session_data| {
-    let SessionDataSlint { sync_brightness } = ui_session_data;
-    
-    let session_data = crate::data_shell::data::SessionData { sync_brightness };
-    let config = config_arc.clone();
+    bar_ui.on_write_session_data(move |ui_session_data| {
 
-    tokio::spawn(async move {
-        if let Err(e) = crate::data_shell::data::save_session_data(&config, session_data) {
-            log::error!("Failed to save session data: {:?}", e);
-        }
+        let session_data: SessionData = ui_session_data.into();
+        let config = config_clone.clone();
+
+        tokio::spawn(async move {
+            if let Err(e) = crate::data_shell::data::save_session_data(&config, session_data) {
+                log::error!("Failed to save session data: {:?}", e);
+            }
+        });
     });
-});
     run_taskbar(&config, bar_ui.as_weak()).await;
 
     start_volume_management(

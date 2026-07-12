@@ -1,11 +1,11 @@
-use std::path::Path;
-use std::rc::Rc;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
+use std::path::Path;
+use std::rc::Rc;
 
 use log::{debug, info};
-use niri_ipc::{socket::Socket, Event, Request, Window};
-use slint::{Image, Model, ModelRc, VecModel};
+use niri_ipc::{Event, Request, Window, socket::Socket};
+use slint::{Image, ModelRc, VecModel};
 
 use crate::barWindow;
 use crate::services::taskbar::cache::{get_cache_folder, load_cache};
@@ -21,10 +21,10 @@ pub async fn run_taskbar(
     ui_weak: slint::Weak<barWindow>,
 ) -> tokio::task::JoinHandle<()> {
     info!("starting taskbar");
-    
+
     let mut cache_folder = get_cache_folder();
     cache_folder.push("icons");
-    
+
     tokio::fs::create_dir_all(&cache_folder).await.unwrap();
 
     let config_internal = config.config.clone();
@@ -99,66 +99,54 @@ pub async fn run_taskbar(
 
             slint::invoke_from_event_loop(move || {
                 if let Some(ui) = ui_weak_clone.upgrade() {
-                    WORKSPACES_MODEL.with(|ws_cell| {
-                        WINDOW_MODELS.with(|win_cell| {
-                            let ws_model = ws_cell.borrow().clone();
-                            let mut win_map = win_cell.borrow_mut();
+                    WINDOW_MODELS.with(|win_cell| {
+                        let mut win_map = win_cell.borrow_mut();
+                        let mut workspace_items = Vec::new();
 
-                            if ws_model.row_count() == 0 && !paths_to_pass.is_empty() {
-                                ui.set_workspaces(ModelRc::from(ws_model.clone()));
-                            }
+                        for (ws_id, windows) in &paths_to_pass {
+                            let win_model = win_map
+                                .entry(*ws_id)
+                                .or_insert_with(|| Rc::new(VecModel::default()))
+                                .clone();
 
-                            for (ws_id, windows) in &paths_to_pass {
-                                let win_model = win_map.entry(*ws_id).or_insert_with(|| Rc::new(VecModel::default()));
-                                
-                                while win_model.row_count() > windows.len() {
-                                    win_model.remove(win_model.row_count() - 1);
-                                }
-                                
-                                for (idx, (w_id, app_id, title, icon_path, is_focused)) in windows.iter().enumerate() {
+                            crate::helpers::slint_vector::vector::update_model_direct(
+                                &win_model,
+                                windows,
+                                |(w_id, app_id, title, icon_path, is_focused)| {
                                     let icon_image = if !icon_path.is_empty() {
-                                        Image::load_from_path(Path::new(icon_path)).unwrap_or_default()
+                                        Image::load_from_path(Path::new(icon_path))
+                                            .unwrap_or_default()
                                     } else {
                                         Image::default()
                                     };
 
-                                    let win_data = crate::Window {
+                                    crate::Window {
                                         id: *w_id as i32,
                                         app_id: app_id.clone(),
                                         title: title.clone(),
                                         icon: icon_image,
                                         is_focused: *is_focused,
-                                    };
-
-                                    if idx < win_model.row_count() {
-                                        win_model.set_row_data(idx, win_data);
-                                    } else {
-                                        win_model.push(win_data);
                                     }
-                                }
-                            }
+                                },
+                            );
 
-                            while ws_model.row_count() > paths_to_pass.len() {
-                                ws_model.remove(ws_model.row_count() - 1);
-                            }
+                            workspace_items.push((*ws_id, win_model));
+                        }
 
-                            for (idx, (ws_id, _)) in paths_to_pass.iter().enumerate() {
-                                let win_model = win_map.get(ws_id).unwrap().clone();
-                                let ws_data = crate::Workspace {
-                                    id: *ws_id,
-                                    windows: ModelRc::from(win_model),
-                                };
+                        let final_ws_model = crate::helpers::slint_vector::vector::update_vec_model(
+                            &WORKSPACES_MODEL,
+                            &workspace_items,
+                            |(ws_id, win_model)| crate::Workspace {
+                                id: *ws_id,
+                                windows: ModelRc::from(win_model.clone()),
+                            },
+                        );
 
-                                if idx < ws_model.row_count() {
-                                    ws_model.set_row_data(idx, ws_data);
-                                } else {
-                                    ws_model.push(ws_data);
-                                }
-                            }
+                        ui.set_workspaces(ModelRc::from(final_ws_model));
 
-                            let active_ws_ids: HashSet<i32> = paths_to_pass.iter().map(|(id, _)| *id).collect();
-                            win_map.retain(|id, _| active_ws_ids.contains(id));
-                        });
+                        let active_ws_ids: HashSet<i32> =
+                            paths_to_pass.iter().map(|(id, _)| *id).collect();
+                        win_map.retain(|id, _| active_ws_ids.contains(id));
                     });
                 }
             })

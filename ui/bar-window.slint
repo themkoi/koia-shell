@@ -35,12 +35,13 @@ import {
     BrightnessPopup,
 } from "components/brightness.slint";
 import {
-    CompleteNetworkState,
+    NetworkItem,
+    NetworkMetadata,
     NetworkButton,
     NetworkPopup,
 } from "components/network.slint";
 import {
-    CompleteBluetoothState,
+    BluetoothItem,
     BluetoothButton,
     BluetoothPopup,
 } from "components/bluetooth.slint";
@@ -56,8 +57,16 @@ export component barWindow inherits Window {
     in property <[TrayItemSlint]> tray;
     in property <[BatteryDataSlint]> batteryData;
     in-out property <ContextMenuDataSlint> trayMenu;
-    in property <CompleteNetworkState> networkData;
-    in property <CompleteBluetoothState> bluetoothData;
+    
+    // Refactored Network Architecture
+    in property <NetworkMetadata> networkMetadata;
+    in property <[NetworkItem]> wifi_networks;
+    
+    in property <bool> bluetooth_available;
+    in property <bool> bluetooth_enabled;
+    in property <[BluetoothItem]> bluetooth_connected_devices;
+    in property <[BluetoothItem]> bluetooth_discovered_devices;
+
     in-out property <ExternalBrightnessState> extBrightnessData;
     in-out property <int> brightness;
     in property <VolumeDataSlint> volumeData;
@@ -305,7 +314,7 @@ export component barWindow inherits Window {
                 }
 
                 nettButton := NetworkButton {
-                    network: root.networkData;
+                    metadata: root.networkMetadata;
                     network_clicked() => {
                         root.networkPopupVis = !root.networkPopupVis;
                         if (root.networkPopupVis) {
@@ -317,7 +326,9 @@ export component barWindow inherits Window {
                 }
 
                 bluetoothButton := BluetoothButton {
-                    bluetooth: root.bluetoothData;
+                    bluetooth_available: root.bluetooth_available;
+                    bluetooth_enabled: root.bluetooth_enabled;
+                    bluetooth_connected_devices: root.bluetooth_connected_devices;
                     bluetooth_clicked() => {
                         root.bluetoothPopupVis = !root.bluetoothPopupVis;
                         if (root.bluetoothPopupVis) {
@@ -398,8 +409,8 @@ export component barWindow inherits Window {
     }
 
     HorizontalLayout {
-        y: 0px;
         x: 0px;
+        y: 0px;
         width: 100%;
         height: config.window.bar-height;
         alignment: center;
@@ -458,7 +469,8 @@ export component barWindow inherits Window {
         x: clamp(nettButton.x + rectRight.x + layRight.x,config.window.bar-popup-screen-padding,(root.window_width - self.width) - config.window.bar-popup-screen-padding);
         y: config.window.bar-height + 4px;
         config: config;
-        network: root.networkData;
+        metadata: root.networkMetadata;
+        wifi_networks: root.wifi_networks;
         popup_visible: root.networkPopupVis;
 
         set_wifi_enabled(enabled) => {
@@ -479,7 +491,12 @@ export component barWindow inherits Window {
         x: clamp(bluetoothButton.x + rectRight.x + layRight.x,config.window.bar-popup-screen-padding,(root.window_width - self.width) - config.window.bar-popup-screen-padding);
         y: config.window.bar-height + 4px;
         config: config;
-        bluetooth: root.bluetoothData;
+        
+        bluetooth_available: root.bluetooth_available;
+        bluetooth_enabled: root.bluetooth_enabled;
+        bluetooth_connected_devices: root.bluetooth_connected_devices;
+        bluetooth_discovered_devices: root.bluetooth_discovered_devices;
+        
         popup_visible: root.bluetoothPopupVis;
 
         set_bluetooth_enabled(enabled) => {
