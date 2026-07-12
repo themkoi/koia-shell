@@ -4,7 +4,7 @@ use spell_framework::{
     self, cast_spell,
     layer_properties::{Dimension, LayerAnchor, LayerType, WindowConf},
 };
-use std::env;
+use std::{env, time::Duration};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
@@ -34,7 +34,7 @@ use crate::{
         network::start_network_management, notifications::manager::start_notification_service,
         power_profiles::start_power_profile_management, taskbar::taskbar::run_taskbar,
         time::provider::provide_time, tray::manager::start_system_tray,
-        volume::start_volume_management,
+        volume::start_volume_management, sys_info::listener::listen_sysinfo_changes,
     },
 };
 
@@ -153,6 +153,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     start_brightness_management(&config, bar_ui.as_weak()).await;
     harware_specific_management(&config, bar_ui.as_weak()).await;
     start_power_profile_management(bar_ui.as_weak()).await;
+    listen_sysinfo_changes(bar_ui.as_weak(),Duration::from_secs(config.config.sys_info_polling_duration.into())).await;
     listen_battery_changes(bar_ui.as_weak()).await;
     provide_time(bar_ui.as_weak()).await;
 

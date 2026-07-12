@@ -55,6 +55,7 @@ pub struct Config {
     pub icon_theme: String,
     pub default_display: String,
     pub fallback_display: String,
+    pub sys_info_polling_duration: u16,
     pub window_config: WindowConfig,
     pub hardware_config: HardwareConfig,
     pub interaction_config: InterractionConfig,
@@ -70,6 +71,7 @@ impl Default for Config {
             icon_theme: "Papirus-Dark".to_string(),
             default_display: "GIGA-BYTE TECHNOLOGY CO., LTD. G27QC A 0x00000439".to_string(),
             fallback_display: "eDP-1".to_string(),
+            sys_info_polling_duration: 5,
             window_config: WindowConfig {
                 bar_height: 38,
                 bar_popup_max_height: 450,

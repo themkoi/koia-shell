@@ -58,7 +58,6 @@ export component barWindow inherits Window {
     in property <[BatteryDataSlint]> batteryData;
     in-out property <ContextMenuDataSlint> trayMenu;
     
-    // Refactored Network Architecture
     in property <NetworkMetadata> networkMetadata;
     in property <[NetworkItem]> wifi_networks;
     
@@ -72,6 +71,10 @@ export component barWindow inherits Window {
     in property <VolumeDataSlint> volumeData;
     in property <string> powerProfile;
     in property <string> fanProfile;
+
+    in property <int> cpuUsage;
+    in property <int> cpuTemp;
+    in property <int> memoryUsage;
 
     in property <TimeDataSlint> timeData;
     in property <DateDataSlint> dateData;

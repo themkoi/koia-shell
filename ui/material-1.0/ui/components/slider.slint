@@ -144,8 +144,11 @@ export component Slider {
 
     in property <length> length: 200px;
     in property <length> thickness: MaterialStyleMetrics.size_16;
-    in property <length> thumb-width: base.vertical ? root.thickness * 3.5 : root.thickness * 1.75;
-    in property <length> thumb-height: base.vertical ? root.thickness * 1.75 : root.thickness * 3.5;
+    in property <length> thumb-width: base.vertical ? root.thickness * 3.5 : root.thickness * 0.6;
+    in property <length> thumb-height: base.vertical ? root.thickness * 0.6 : root.thickness * 3.5;
+    
+    in property <length> thumb-padding: 0px;
+    in property <length> track-gap: 4px;
 
     callback changed <=> base.changed;
     
@@ -185,12 +188,13 @@ export component Slider {
         background: root.background_color;
         border_radius: (base.vertical ? self.width : self.height) / 2;
 
+        // Active Track Filler
         Rectangle {
             x: 0;
-            y: base.vertical ? thumb.y + thumb.height / 2 + MaterialStyleMetrics.size_6 : 0;
+            y: base.vertical ? thumb.y + thumb.height - root.thumb-padding + root.track-gap : 0;
             
-            width: base.vertical ? parent.width : max(thumb.x + thumb.width / 2 - MaterialStyleMetrics.size_6, 0px);
-            height: base.vertical ? max(parent.height - (thumb.y + thumb.height / 2) - MaterialStyleMetrics.size_6, 0px) : parent.height;
+            width: base.vertical ? parent.width : max(thumb.x + root.thumb-padding - root.track-gap, 0px);
+            height: base.vertical ? max(parent.height - (thumb.y + thumb.height - root.thumb-padding + root.track-gap), 0px) : parent.height;
             
             border-top-left-radius: base.vertical ? MaterialStyleMetrics.size_1 : track.border_radius;
             border-bottom-left-radius: track.border_radius;
@@ -252,8 +256,8 @@ export component Slider {
         visual-thumb := Rectangle {
             x: (parent.width - self.width) / 2;
             y: (parent.height - self.height) / 2;
-            width: base.vertical ? parent.width : MaterialStyleMetrics.size_4;
-            height: base.vertical ? MaterialStyleMetrics.size_4 : parent.height;
+            width: max(0px, parent.width - root.thumb-padding * 2);
+            height: max(0px, parent.height - root.thumb-padding * 2);
             border_radius: min(self.width, self.height) / 2;
             background: root.active_color;
         }

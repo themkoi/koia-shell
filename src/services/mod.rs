@@ -9,3 +9,4 @@ pub(crate) mod notifications;
 pub(crate) mod hardware_specific;
 pub(crate) mod network;
 pub(crate) mod bluetooth;
+pub(crate) mod sys_info;

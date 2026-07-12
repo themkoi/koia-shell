@@ -22,7 +22,6 @@ pub async fn start_bluetooth_actions(
                 tokio::spawn(async move {
                     let result = if enabled {
                         bt.enable().await
-                        bt.
                     } else {
                         bt.disable().await
                     };

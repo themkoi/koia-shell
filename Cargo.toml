@@ -37,6 +37,7 @@ wayle-network = "0.1.2"
 wayle-bluetooth = "0.1.2"
 ddc-hi = "0.4.1"
 ron = "0.12.2"
+wayle-sysinfo = "0.1.2"
 
 [features]
 default = ["framework"]

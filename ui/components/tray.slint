@@ -31,20 +31,6 @@ export struct ContextMenuDataSlint {
     actions: [ContextMenuActionSlint]
 }
 
-export component TrayItem inherits Rectangle {
-    in property <TrayItemSlint> item;
-    in property <length> icon-size;
-    background: item.active ? MaterialPalette.secondary : MaterialPalette.surface_variant;
-    border_radius: MaterialStyleMetrics.border_radius_8;
-    padding: MaterialStyleMetrics.padding_8;
-
-    Image {
-        source: root.item.icon;
-        width: root.icon-size;
-        height: root.icon-size;
-    }
-}
-
 export component TrayRow inherits Rectangle {
     in property <[TrayItemSlint]> items;
     in property <TrayConfigSlint> config;
