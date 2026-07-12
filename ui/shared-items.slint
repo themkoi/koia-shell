@@ -30,8 +30,13 @@ export struct InteractionConfigSlint {
     brightness_scroll_step: int,
 }
 
+export struct HardwareConfigSlint {
+    hardware_specific_features: bool,
+    temp_alert: int,
+}
+
 export struct ConfigSlint {
-    hardware_specific_features:bool,
+    hardware: HardwareConfigSlint,
     window: WindowConfigSlint,
     interaction: InteractionConfigSlint,
     taskbar: TaskbarConfigSlint,

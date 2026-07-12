@@ -1,0 +1,116 @@
+import {
+    Elevation,
+    ScrollView,
+    MaterialPalette,
+    MaterialTypography,
+    MaterialStyleMetrics,
+    ToolTipMaterial,
+} from "@material/material.slint";
+import { ConfigSlint } from "../shared-items.slint";
+
+export component SysInfoRow inherits Rectangle {
+    in property <int> cpuUsage;
+    in property <int> cpuTemp;
+    in property <int> memoryUsage;
+    in property <ConfigSlint> config;
+
+    height: 100%;
+    HorizontalLayout {
+        padding-left: 5px;
+        Rectangle {
+            border_radius: MaterialStyleMetrics.border_radius_28;
+            background: MaterialPalette.surface_container_highest;
+            height: 100%;
+
+            HorizontalLayout {
+                spacing: 3.5px;
+                padding: 4px;
+                height: 100%;
+
+                Rectangle {
+                    background: MaterialPalette.surface_container_high.transparentize(0.15);
+                    border_radius: MaterialStyleMetrics.border_radius_28;
+                    horizontal-stretch: 1;
+
+                    HorizontalLayout {
+                        spacing: 6px;
+                        padding-left: 12px;
+                        padding-right: 12px;
+                        alignment: center;
+                        VerticalLayout {
+                            alignment: center;
+                            Image {
+                                source: @image-url("../assets/sysinfo/cpu.svg");
+                                width: 20px;
+                                height: 20px;
+                                colorize: MaterialPalette.on_surface;
+                            }
+                        }
+
+                        Text {
+                            text: root.cpuUsage + "%";
+                            color: MaterialPalette.on_surface;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                Rectangle {
+                    background: MaterialPalette.surface_container_high.transparentize(0.15);
+                    border_radius: MaterialStyleMetrics.border_radius_28;
+                    horizontal-stretch: 1;
+
+                    HorizontalLayout {
+                        spacing: 6px;
+                        padding-left: 12px;
+                        padding-right: 12px;
+                        alignment: center;
+                        VerticalLayout {
+                            alignment: center;
+                            Image {
+                                source: @image-url("../assets/sysinfo/memory.svg");
+                                width: 20px;
+                                height: 20px;
+                                colorize: MaterialPalette.on_surface;
+                            }
+                        }
+
+                        Text {
+                            text: root.memoryUsage + "%";
+                            color: MaterialPalette.on_surface;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            // Todo change alert color thingy 
+            Rectangle {
+                    background: root.cpuTemp > config.hardware.temp-alert ? MaterialPalette.error_container : MaterialPalette.surface_container_high.transparentize(0.15);
+                    border_radius: MaterialStyleMetrics.border_radius_28;
+                    horizontal-stretch: 1;
+
+                    HorizontalLayout {
+                        spacing: 6px;
+                        padding-left: 12px;
+                        padding-right: 12px;
+                        alignment: center;
+                        VerticalLayout {
+                            alignment: center;
+                            Image {
+                                source: root.cpuTemp > config.hardware.temp-alert ? @image-url("../assets/sysinfo/temp_alert.svg") : @image-url("../assets/sysinfo/temp.svg");
+                                width: 20px;
+                                height: 20px;
+                                colorize: root.cpuTemp > config.hardware.temp-alert ? MaterialPalette.error : MaterialPalette.on_surface;
+                            }
+                        }
+
+                        Text {
+                            text: root.cpuTemp + "°C";
+                            color: root.cpuTemp > config.hardware.temp-alert ? MaterialPalette.on_error_container : MaterialPalette.on_surface;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

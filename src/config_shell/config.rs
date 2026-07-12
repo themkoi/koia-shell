@@ -8,8 +8,7 @@ use std::{
 };
 
 use crate::{
-    ConfigSlint, TaskbarConfigSlint,
-    config_shell::components::taskbar::{TaskbarConfig, default_taskbar},
+    ConfigSlint, HardwareConfigSlint, TaskbarConfigSlint, config_shell::components::taskbar::{TaskbarConfig, default_taskbar},
 };
 use crate::{
     InteractionConfigSlint, NoticificationConfigSlint, TrayConfigSlint, WindowConfigSlint,
@@ -41,8 +40,9 @@ pub struct WindowConfig {
 pub struct HardwareConfig {
     pub brightness_device: String,
     pub hardware_specific_features: bool,
+    pub sys_info_polling_duration: u16,
+    pub temp_alert: u16,
 }
-
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SettingsConfig {
@@ -55,7 +55,6 @@ pub struct Config {
     pub icon_theme: String,
     pub default_display: String,
     pub fallback_display: String,
-    pub sys_info_polling_duration: u16,
     pub window_config: WindowConfig,
     pub hardware_config: HardwareConfig,
     pub interaction_config: InterractionConfig,
@@ -71,7 +70,6 @@ impl Default for Config {
             icon_theme: "Papirus-Dark".to_string(),
             default_display: "GIGA-BYTE TECHNOLOGY CO., LTD. G27QC A 0x00000439".to_string(),
             fallback_display: "eDP-1".to_string(),
-            sys_info_polling_duration: 5,
             window_config: WindowConfig {
                 bar_height: 38,
                 bar_popup_max_height: 450,
@@ -83,11 +81,15 @@ impl Default for Config {
             hardware_config: HardwareConfig {
                 brightness_device: "amdgpu_bl1".to_string(),
                 hardware_specific_features: false,
+                sys_info_polling_duration: 5,
+                temp_alert: 85,
             },
             #[cfg(not(feature = "default_hardware"))]
             hardware_config: HardwareConfig {
                 brightness_device: "amdgpu_bl1".to_string(),
                 hardware_specific_features: true,
+                sys_info_polling_duration: 5,
+                temp_alert: 90,
             },
             interaction_config: InterractionConfig {
                 animation_multiplier: 1.0,
@@ -95,7 +97,7 @@ impl Default for Config {
                 allow_overflow_volume: true,
                 brightness_scroll_step: 5,
             },
-            settings_config: SettingsConfig  {
+            settings_config: SettingsConfig {
                 persistent_sync_brightness: true,
                 sync_brightness: true,
             },
@@ -209,7 +211,10 @@ pub fn load_app_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
 
 pub fn build_config_slint(config: &crate::config::AppConfig) -> ConfigSlint {
     ConfigSlint {
-        hardware_specific_features: config.config.hardware_config.hardware_specific_features,
+        hardware: HardwareConfigSlint {
+            hardware_specific_features: config.config.hardware_config.hardware_specific_features,
+            temp_alert: config.config.hardware_config.temp_alert as i32,
+        },
         window: WindowConfigSlint {
             bar_height: config.config.window_config.bar_height as f32,
             bar_popup_max_height: config.config.window_config.bar_popup_max_height as f32,

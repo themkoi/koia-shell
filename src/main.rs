@@ -153,7 +153,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     start_brightness_management(&config, bar_ui.as_weak()).await;
     harware_specific_management(&config, bar_ui.as_weak()).await;
     start_power_profile_management(bar_ui.as_weak()).await;
-    listen_sysinfo_changes(bar_ui.as_weak(),Duration::from_secs(config.config.sys_info_polling_duration.into())).await;
+    listen_sysinfo_changes(bar_ui.as_weak(),Duration::from_secs(config.config.hardware_config.sys_info_polling_duration.into())).await;
     listen_battery_changes(bar_ui.as_weak()).await;
     provide_time(bar_ui.as_weak()).await;
 

@@ -45,6 +45,9 @@ import {
     BluetoothButton,
     BluetoothPopup,
 } from "components/bluetooth.slint";
+import {
+    SysInfoRow,
+} from "components/sysinfo.slint";
 
 import { MaterialStyleMetrics } from "material-1.0/material.slint";
 
@@ -239,6 +242,12 @@ export component barWindow inherits Window {
                     }
                     profiles: root.power_profiles;
                     powerProfile: powerProfile;
+                }
+                SysInfoRow {
+                    cpuUsage: root.cpuUsage;
+                    cpuTemp: root.cpuTemp;
+                    memoryUsage: root.memoryUsage;
+                    config: root.config;
                 }
             }
         }
