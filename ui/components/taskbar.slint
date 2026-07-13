@@ -46,6 +46,10 @@ export component Taskbar inherits Rectangle {
     touch := TouchArea {
         width: is_expanded ? clamp(taskLay.preferred-width,0px,config.taskbar.taskbar-max-width) + 40px : clamp(indicatorRect.preferred-width,0px,config.taskbar.indicator_max_width);
         height: 100%;
+        animate width {
+            duration: 150ms * animation_multiplier;
+            easing: ease-in-out;
+        }
 
         init-layout := VerticalLayout {
             height: 100%;
@@ -200,12 +204,6 @@ export component Taskbar inherits Rectangle {
 
                 Rectangle {
                     width: 100%;
-                    background: rgba(
-                        MaterialPalette.surface_tint.red,
-                        MaterialPalette.surface_tint.green,
-                        MaterialPalette.surface_tint.blue,
-                        0.25);
-
                     visible: root.workspaces.length > 0 && (root.workspaces.length > 1 || (root.workspaces.length == 1 && root.workspaces[0].windows.length > 1));
 
                     height: self.visible ? 7px : 0px;
@@ -221,6 +219,18 @@ export component Taskbar inherits Rectangle {
                     border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
                     border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
                     clip: true;
+                    HorizontalLayout {
+                        alignment: center;
+                        Rectangle {
+                            height: 99%;
+                            width: 99%;
+                            background: rgba(
+                        MaterialPalette.surface_tint.red,
+                        MaterialPalette.surface_tint.green,
+                        MaterialPalette.surface_tint.blue,
+                        0.25);
+                        }
+                    }
 
                     ScrollView {
                         width: 100%;
@@ -230,7 +240,8 @@ export component Taskbar inherits Rectangle {
                         hide_scrollbars: true;
 
                         indicatorRect := HorizontalLayout {
-                            width: 100%;
+                            width: 105%;
+                            height: 105%;
                             spacing: 10px;
                             alignment: center;
 

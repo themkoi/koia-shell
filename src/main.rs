@@ -50,16 +50,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
     let monitor: String;
-    let mut display_height: u16 = 1080;
+    let mut display_size_bar: (u16, u16) = (1080,1920);
 
     if args.monitor.is_empty() {
         if let Some((connector_name, size)) = get_display_info(&config.config.default_display) {
             monitor = connector_name;
-            display_height = size.1 as u16;
+            display_size_bar.1 = size.1 as u16;
         } else {
             let (connector_name, size) = get_display_info(&config.config.fallback_display).unwrap();
             monitor = connector_name;
-            display_height = size.1 as u16;
+            display_size_bar.1 = size.1 as u16;
         }
     } else {
         monitor = args.monitor;
@@ -70,7 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let bar_conf = WindowConf::builder()
         .width(Dimension::Full)
-        .height(display_height as u32)
+        .height(display_size_bar.1 as u32)
         .anchor_1(LayerAnchor::TOP)
         .margins(0, 0, 0, 0)
         .exclusive_zone(config.config.window_config.bar_height.into())
@@ -106,14 +106,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap();
 
     let schemes = build_config_palette(&config);
-    let config_slint = build_config_slint(&config);
     let session_data_slint = build_session_data_slint(&data);
 
     // bar init
     let bar_ui = barWindowSpell::invoke_spell("bar", bar_conf);
     let window_width_bar = bar_ui.get_window_width();
-    println!("window width {}", window_width_bar);
-    let window_height_bar = display_height;
+    let window_height_bar = bar_ui.get_window_height();
+    let config_slint = build_config_slint(&config, window_width_bar);
 
     bar_ui.subtract_input_region(
         0,

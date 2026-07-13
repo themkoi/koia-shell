@@ -5,7 +5,6 @@ use spell_framework::{
         CloseReason, Hint, NOTIFICATION_EVENT, NotiError, Notification, NotificationManager,
         Timeout,
     },
-    wayland_adapter::WinHandle,
 };
 use std::rc::Rc;
 use std::sync::OnceLock;
@@ -120,17 +119,21 @@ pub async fn start_notification_service(
     let Some(window) = ui_window_weak.upgrade() else {
         return;
     };
+    let handle = ui_spell.get_handler().clone();
+    handle.add_input_region(0, 0, 100, 100);
 
-    let loop_handle_clone = ui_spell.way.loop_handle.clone();
-    let handle = WinHandle(loop_handle_clone);
-    let handlse = handle.clone();
-
-    window.on_a_input_region(move |x, y, width, height| {
-        handle.add_input_region(x, y, width, height);
+    window.on_a_input_region({
+        let handle = ui_spell.get_handler().clone();
+        move |x, y, width, height| {
+            handle.add_input_region(x, y, width, height);
+        }
     });
 
-    window.on_r_input_region(move |x, y, width, height| {
-        handlse.subtract_input_region(x, y, width, height);
+    window.on_r_input_region({
+        let handle = ui_spell.get_handler().clone();
+        move |x, y, width, height| {
+            handle.subtract_input_region(x, y, width, height);
+        }
     });
 
     window.on_noti_close(move |id| {

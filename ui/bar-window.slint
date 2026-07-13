@@ -117,7 +117,7 @@ export component barWindow inherits Window {
     callback set_ext_brightness(string, int);
     callback set_ext_brightness_all(int);
     function handle_set_brightness(val: int, delta: int) {
-        root.brightness = root.brightness - delta;
+        root.brightness = root.brightness + delta;
         root.set_brightness(root.brightness,0);
         if (root.sessionData.sync-brightness) {
             root.set_ext_brightness_all(root.brightness);
@@ -318,7 +318,7 @@ export component barWindow inherits Window {
                         }
                     }
                     brightness_scroll_up() => {
-                        handle_set_brightness(brightness,config.interaction.brightness-scroll-step)
+                        handle_set_brightness(brightness, config.interaction.brightness-scroll-step)
                     }
                     brightness_scroll_down() => {
                         handle_set_brightness(brightness, -config.interaction.brightness-scroll-step)

@@ -46,8 +46,7 @@ export component NotificationCard inherits Rectangle {
     callback release();
     callback action_clicked(string);
 
-        private property <length> close-button-width: 40px;
-
+    private property <length> close-button-width: 40px;
 
     private property <bool> i-alive: data.id >= 0;
     private property <int> last-id: -99;
@@ -183,11 +182,11 @@ export component NotificationCard inherits Rectangle {
                             font-weight: MaterialTypography.title_medium.font-weight;
                             color: MaterialPalette.on_surface;
                             wrap: word-wrap;
-                            
-                            width: root.width 
-                                - (MaterialStyleMetrics.padding_12 * 2) 
-                                - root.close-button-width 
-                                - 6px 
+
+                            width: root.width
+                                - (MaterialStyleMetrics.padding_12 * 2)
+                                - root.close-button-width
+                                - 6px
                                 - (root.data.icon.width > 0 && root.data.icon.height > 0 ? root.icon-size + 12px : 0px);
                         }
 
@@ -284,6 +283,7 @@ export component NotificationCard inherits Rectangle {
 export component notificationWindow inherits Window {
     in property <ConfigSlint> config;
     in-out property <length> window_height <=> self.height;
+    in-out property <length> window_width <=> self.height;
 
     background: transparent;
     default-font-size: 10px;

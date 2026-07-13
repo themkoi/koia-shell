@@ -209,7 +209,7 @@ pub fn load_app_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
     })
 }
 
-pub fn build_config_slint(config: &crate::config::AppConfig) -> ConfigSlint {
+pub fn build_config_slint(config: &crate::config::AppConfig,window_bar_width: f32) -> ConfigSlint {
     ConfigSlint {
         hardware: HardwareConfigSlint {
             hardware_specific_features: config.config.hardware_config.hardware_specific_features,
@@ -227,8 +227,8 @@ pub fn build_config_slint(config: &crate::config::AppConfig) -> ConfigSlint {
         },
         taskbar: TaskbarConfigSlint {
             icon_size: config.config.taskbar_config.icon_size as f32,
-            indicator_max_width: config.config.taskbar_config.indicator_max_width as f32,
-            taskbar_max_width: config.config.taskbar_config.taskbar_max_width as f32,
+            indicator_max_width: window_bar_width as f32 * config.config.taskbar_config.indicator_max_width as f32,
+            taskbar_max_width: window_bar_width as f32 * config.config.taskbar_config.taskbar_max_width as f32,
         },
         tray: TrayConfigSlint {
             icon_size: config.config.tray_config.icon_size as f32,
