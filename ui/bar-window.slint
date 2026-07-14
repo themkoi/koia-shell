@@ -48,8 +48,14 @@ import {
 import {
     SysInfoRow,
 } from "components/sysinfo.slint";
+import {
+    MediaWidget,
+} from "components/media.slint";
 
 import { MaterialStyleMetrics } from "material-1.0/material.slint";
+import {
+    MaterialPalette,
+} from "material-1.0/ui/styling/material_palette.slint";
 
 export struct TimeDataSlint { hour: int, minute: int }
 export struct DateDataSlint { day: int, month: int, year: int }
@@ -60,10 +66,10 @@ export component barWindow inherits Window {
     in property <[TrayItemSlint]> tray;
     in property <[BatteryDataSlint]> batteryData;
     in-out property <ContextMenuDataSlint> trayMenu;
-    
+
     in property <NetworkMetadata> networkMetadata;
     in property <[NetworkItem]> wifi_networks;
-    
+
     in property <bool> bluetooth_available;
     in property <bool> bluetooth_enabled;
     in property <[BluetoothItem]> bluetooth_connected_devices;
@@ -78,6 +84,9 @@ export component barWindow inherits Window {
     in property <int> cpuUsage;
     in property <int> cpuTemp;
     in property <int> memoryUsage;
+
+    in property <string> mediaTitle;
+    in property <string> mediaPlaybackState;
 
     in property <TimeDataSlint> timeData;
     in property <DateDataSlint> dateData;
@@ -140,6 +149,10 @@ export component barWindow inherits Window {
     callback refresh_networks();
     callback connect_wifi(string);
 
+    callback media_play_pause();
+    callback media_next();
+    callback media_previous();
+
     callback set_bluetooth_enabled(bool);
     callback connect_bluetooth_device(string);
     callback disconnect_bluetooth_device(string);
@@ -196,6 +209,10 @@ export component barWindow inherits Window {
         x: 0px;
         width: rectLeft.preferred-width;
         height: config.window.bar-height;
+        animate width {
+            duration: 100ms * root.config.interaction.animation_multiplier;
+            easing: ease-in-out;
+        }
         rectLeft := Rectangle {
             background: MaterialPalette.surface_container;
             border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
@@ -243,6 +260,7 @@ export component barWindow inherits Window {
                     profiles: root.power_profiles;
                     powerProfile: powerProfile;
                 }
+
                 SysInfoRow {
                     cpuUsage: root.cpuUsage;
                     cpuTemp: root.cpuTemp;
@@ -258,6 +276,10 @@ export component barWindow inherits Window {
         x: root.window_width - self.width;
         width: rectRight.preferred-width;
         height: config.window.bar-height;
+        animate width {
+            duration: 100ms * root.config.interaction.animation_multiplier;
+            easing: ease-in-out;
+        }
         rectRight := Rectangle {
             height: 100%;
             background: MaterialPalette.surface_container;
@@ -360,6 +382,10 @@ export component barWindow inherits Window {
         width: 100%;
         height: config.window.bar-height;
         alignment: center;
+        animate width {
+            duration: 100ms * root.config.interaction.animation_multiplier;
+            easing: ease-in-out;
+        }
         Rectangle {
             width: 100%;
 
@@ -395,6 +421,17 @@ export component barWindow inherits Window {
                     padding-left: 15px;
                     padding-right: 15px;
                     padding-top: 2px;
+
+                    MediaWidget {
+                        mediaTitle: root.mediaTitle;
+                        mediaPlaybackState: root.mediaPlaybackState;
+                        window_width: root.window_width;
+
+                        media_play_pause => {
+                            root.media_play_pause();
+                        }
+                    }
+
                     VerticalLayout {
                         alignment: center;
                         spacing: -3px;
@@ -503,12 +540,12 @@ export component barWindow inherits Window {
         x: clamp(bluetoothButton.x + rectRight.x + layRight.x,config.window.bar-popup-screen-padding,(root.window_width - self.width) - config.window.bar-popup-screen-padding);
         y: config.window.bar-height + 4px;
         config: config;
-        
+
         bluetooth_available: root.bluetooth_available;
         bluetooth_enabled: root.bluetooth_enabled;
         bluetooth_connected_devices: root.bluetooth_connected_devices;
         bluetooth_discovered_devices: root.bluetooth_discovered_devices;
-        
+
         popup_visible: root.bluetoothPopupVis;
 
         set_bluetooth_enabled(enabled) => {

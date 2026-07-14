@@ -1,0 +1,100 @@
+import {
+    Elevation,
+    ScrollView,
+    MaterialPalette,
+    MaterialTypography,
+    MaterialStyleMetrics,
+    CheckBox,
+    RadioButton,
+    CheckState,
+    VerticalDivider,
+} from "@material/material.slint";
+import { BaseButton } from "@material/ui/components/base_button.slint";
+
+export component MediaWidget inherits Rectangle {
+    in property <string> mediaTitle: "";
+    in property <string> mediaPlaybackState: "Paused";
+    in property <length> window_width; 
+
+    callback media_play_pause();
+
+    width: self.mediaTitle != "" ? mediaLayout.preferred-width : 0px;
+    clip: self.mediaTitle != "" ? false : true;
+
+    mediaLayout := HorizontalLayout {
+        padding-right: 10px;
+        spacing: MaterialStyleMetrics.spacing_6;
+
+        VerticalLayout {
+            alignment: center;
+            Text {
+                max-width: root.window_width * 0.08;
+                vertical-alignment: bottom;
+                horizontal-alignment: center;
+                text: root.mediaTitle;
+                font-size: MaterialTypography.title_small.font-size;
+                font-weight: MaterialTypography.title_small.font-weight;
+                overflow: elide;
+            }
+        }
+
+        VerticalLayout {
+            alignment: center;
+            Rectangle {
+                border_radius: MaterialStyleMetrics.border_radius_28;
+                height: 26px;
+                width: 26px;
+                vertical-stretch: 0;
+
+                elevation := Elevation {
+                    border_radius: parent.border_radius;
+                    width: parent.width;
+                    height: parent.height;
+                    background: transparent;
+                }
+
+                base := BaseButton {
+                    border_radius: parent.border_radius;
+                    width: parent.width;
+                    height: 100%;
+
+                    icon: root.mediaPlaybackState == "Playing" ?
+                        @image-url("../assets/media/20x20/pause.svg") :
+                        @image-url("../assets/media/20x20/play.svg");
+
+                    spacing: 4px;
+                    icon-size: 20px;
+                    button_horizontal_padding: 0px;
+                    button_vertical_padding: 0px;
+                    icon_color: MaterialPalette.on_surface;
+                    color: MaterialPalette.on_surface;
+
+                    clicked => {
+                        root.media_play_pause();
+                    }
+                }
+
+                states [
+                    hover when base.has_hover && !base.pressed && !base.enter_pressed: {
+                        elevation.level: 2;
+                        elevation.background: MaterialPalette.surface_container_high;
+                    }
+                    pressed when base.pressed || base.enter_pressed: {
+                        elevation.level: 1;
+                        elevation.background: MaterialPalette.surface_container_highest;
+                    }
+                ]
+            }
+        }
+
+        VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 5px;
+                height: 50%;
+                border_radius: MaterialStyleMetrics.border_radius_16;
+                background: MaterialPalette.primary;
+            }
+        }
+    }
+}

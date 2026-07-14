@@ -28,13 +28,17 @@ use config_shell::config;
 
 mod services;
 use crate::{
-    config_shell::{components::theme::build_config_palette, config::build_config_slint}, data_shell::data::{SessionData, build_session_data_slint, load_or_create_session_data}, helpers::{displays::display::get_display_info, touch_area::manager::start_touch_manager}, services::{
+    config_shell::{components::theme::build_config_palette, config::build_config_slint},
+    data_shell::data::{SessionData, build_session_data_slint, load_or_create_session_data},
+    helpers::{displays::display::get_display_info, touch_area::manager::start_touch_manager},
+    services::{
         battery::listener::listen_battery_changes, bluetooth::start_bluetooth_management,
         brightness::start_brightness_management, hardware_specific::harware_specific_management,
         network::start_network_management, notifications::manager::start_notification_service,
-        power_profiles::start_power_profile_management, taskbar::taskbar::run_taskbar,
-        time::provider::provide_time, tray::manager::start_system_tray,
-        volume::start_volume_management, sys_info::listener::listen_sysinfo_changes,
+        power_profiles::start_power_profile_management, sys_info::listener::listen_sysinfo_changes,
+        taskbar::taskbar::run_taskbar, time::provider::provide_time,
+        tray::manager::start_system_tray, volume::start_volume_management,
+        media::start_media_management,
     },
 };
 
@@ -50,7 +54,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
     let monitor: String;
-    let mut display_size_bar: (u16, u16) = (1080,1920);
+    let mut display_size_bar: (u16, u16) = (1080, 1920);
 
     if args.monitor.is_empty() {
         if let Some((connector_name, size)) = get_display_info(&config.config.default_display) {
@@ -100,7 +104,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .monitor(connector_notification)
         .anchor_1(LayerAnchor::TOP)
         .anchor_2(LayerAnchor::RIGHT)
-        .margins(0, 0, 0, 0)
+        .margins(
+            0,
+-(config.config.window_config.notification_window_width as i32 /2 as i32),
+            0,
+            0,
+        )
         .layer_type(LayerType::Overlay)
         .build()
         .unwrap();
@@ -132,7 +141,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config_clone = config.config.clone();
 
     bar_ui.on_write_session_data(move |ui_session_data| {
-
         let session_data: SessionData = ui_session_data.into();
         let config = config_clone.clone();
 
@@ -152,9 +160,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     start_brightness_management(&config, bar_ui.as_weak()).await;
     harware_specific_management(&config, bar_ui.as_weak()).await;
     start_power_profile_management(bar_ui.as_weak()).await;
-    listen_sysinfo_changes(bar_ui.as_weak(),Duration::from_secs(config.config.hardware_config.sys_info_polling_duration.into())).await;
+    listen_sysinfo_changes(
+        bar_ui.as_weak(),
+        Duration::from_secs(
+            config
+                .config
+                .hardware_config
+                .sys_info_polling_duration
+                .into(),
+        ),
+    )
+    .await;
     listen_battery_changes(bar_ui.as_weak()).await;
     provide_time(bar_ui.as_weak()).await;
+
+    start_media_management(bar_ui.as_weak()).await;
 
     start_network_management(bar_ui.as_weak()).await;
     start_bluetooth_management(bar_ui.as_weak()).await;

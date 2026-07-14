@@ -219,18 +219,6 @@ export component Taskbar inherits Rectangle {
                     border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
                     border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
                     clip: true;
-                    HorizontalLayout {
-                        alignment: center;
-                        Rectangle {
-                            height: 99%;
-                            width: 99%;
-                            background: rgba(
-                        MaterialPalette.surface_tint.red,
-                        MaterialPalette.surface_tint.green,
-                        MaterialPalette.surface_tint.blue,
-                        0.25);
-                        }
-                    }
 
                     ScrollView {
                         width: 100%;
