@@ -179,18 +179,20 @@ export component ScrollView {
 
     left_shadow := Rectangle {
         x: 0;
-        y: 0;
+        // Centers the container vertically relative to the flickable height
+        y: (flickable.height - self.height) / 2;
         width: 15px;
-        height: flickable.height + horizontal_bar.height;
+        height: flickable.height; 
         opacity: flickable.viewport_x < 0px ? 1.0 : 0.0;
         animate opacity { duration: 200ms; }
         clip: true; 
 
         Rectangle {
             x: -5px;
-            y: 25px;
+            // Keeps the inner drop-shadow rectangle centered inside the container
+            y: (parent.height - self.height) / 2; 
             width: 5px;
-            height: parent.height - 50px; 
+            height: parent.height * 80%; // Dynamic height (80% of parent height)
             background: rgba(0, 0, 0, 0.60);
             drop-shadow-blur: 12px;
             drop-shadow-color: rgba(0, 0, 0, 0.90);
@@ -199,18 +201,20 @@ export component ScrollView {
 
     right_shadow := Rectangle {
         x: flickable.width - self.width;
-        y: 0;
+        // Centers the container vertically relative to the flickable height
+        y: (flickable.height - self.height) / 2;
         width: 15px;
-        height: flickable.height + horizontal_bar.height;
+        height: flickable.height;
         opacity: (flickable.viewport_width + flickable.viewport_x) > flickable.width ? 1.0 : 0.0;
         animate opacity { duration: 200ms; }
         clip: true;
 
         Rectangle {
             x: parent.width;
-            y: 25px;
+            // Keeps the inner drop-shadow rectangle centered inside the container
+            y: (parent.height - self.height) / 2; 
             width: 5px;
-            height: parent.height - 50px;
+            height: parent.height * 80%; // Dynamic height (80% of parent height)
             background: rgba(0, 0, 0, 0.60);
             drop-shadow-blur: 12px;
             drop-shadow-color: rgba(0, 0, 0, 0.90);
@@ -227,9 +231,9 @@ export component ScrollView {
         clip: true;
 
         Rectangle {
-            x: 25px;
+            x: parent.width * 10%; // Scales 10% from the left
             y: -5px; 
-            width: parent.width - 50px; 
+            width: parent.width * 80%; // Dynamic width (80% of parent width)
             height: 5px;
             background: rgba(0, 0, 0, 0.60);
             drop-shadow-blur: 12px;
@@ -247,15 +251,16 @@ export component ScrollView {
         clip: true;
 
         Rectangle {
-            x: 25px;
+            x: parent.width * 10%; // Scales 10% from the left
             y: parent.height;
-            width: parent.width - 50px;
+            width: parent.width * 80%; // Dynamic width (80% of parent width)
             height: 5px;
             background: rgba(0, 0, 0, 0.60);
             drop-shadow-blur: 12px;
             drop-shadow-color: rgba(0, 0, 0, 0.90);
         }
     }
+    
     vertical_bar := ScrollBar {
         enabled: root.enabled && !root.horizontal_scroll;
         visible: !hide_scrollbars;

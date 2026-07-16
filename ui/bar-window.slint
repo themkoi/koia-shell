@@ -1,5 +1,5 @@
 import { Palette } from "std-widgets.slint";
-import { FilledButton, Elevation } from "@material/material.slint";
+import { FilledButton, Elevation, MenuItem } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
 import {
     MaterialPalette,
@@ -28,6 +28,8 @@ import {
 import {
     VolumeButton,
     VolumeDataSlint,
+    AudioDeviceSlint,
+    VolumePopup,
 } from "components/volume.slint";
 import {
     ExternalBrightnessState,
@@ -78,6 +80,11 @@ export component barWindow inherits Window {
     in-out property <ExternalBrightnessState> extBrightnessData;
     in-out property <int> brightness;
     in property <VolumeDataSlint> volumeData;
+    in-out property <VolumeDataSlint> inputVolumeData;
+    in-out property <[AudioDeviceSlint]> output_devices;
+    in-out property <[AudioDeviceSlint]> input_devices;
+    in-out property <string> current_output_name;
+    in-out property <string> current_input_name;
     in property <string> powerProfile;
     in property <string> fanProfile;
 
@@ -120,6 +127,12 @@ export component barWindow inherits Window {
 
     callback set_volume(int, int);
     callback set_muted(bool);
+
+    callback set_input_volume(int, int);
+    callback set_input_muted(bool);
+
+    callback select_output_device(string);
+    callback select_input_device(string);
 
     callback set_brightness(int, int);
     callback refresh_ext_brightness();
@@ -171,6 +184,7 @@ export component barWindow inherits Window {
     property <bool> networkPopupVis;
     property <bool> bluetoothPopupVis;
     property <bool> brightnessPopupVis;
+    property <bool> volumePopupVis;
 
     function close_all_popups_except(active_name: string) {
         if (active_name != "BatteryPopup" && root.batteryPopupVis) {
@@ -193,6 +207,10 @@ export component barWindow inherits Window {
             root.brightnessPopupVis = false;
             root.manage_touch("BrightnessMenu", false);
         }
+        if (active_name != "VolumeMenu" && root.volumePopupVis) {
+            root.volumePopupVis = false;
+            root.manage_touch("VolumeMenu", false);
+        }
         root.manage_touch(active_name, true);
     }
 
@@ -202,6 +220,7 @@ export component barWindow inherits Window {
         if (root.trayMenu.visible) { root.trayMenu.visible = false; root.manage_touch("TrayMenu", false); }
         if (root.bluetoothPopupVis) { root.bluetoothPopupVis = false; root.manage_touch("BluetoothMenu", false); }
         if (root.brightnessPopupVis) { root.brightnessPopupVis = false; root.manage_touch("BrightnessMenu", false); }
+        if (root.volumePopupVis) { root.volumePopupVis = false; root.manage_touch("VolumeMenu", false); }
     }
 
     layLeft := HorizontalLayout {
@@ -315,8 +334,16 @@ export component barWindow inherits Window {
                     }
                 }
 
-                VolumeButton {
+                volumeButton := VolumeButton {
                     volume: volumeData;
+                    volume_clicked => {
+                        root.volumePopupVis = !root.volumePopupVis;
+                        if (root.volumePopupVis) {
+                            root.close_all_popups_except("VolumeMenu");
+                        } else {
+                            root.manage_touch("VolumeMenu", false);
+                        }
+                    }
                     volume_right_clicked() => {
                         set_muted(!volumeData.muted);
                     }
@@ -580,6 +607,27 @@ export component barWindow inherits Window {
         set_external_brightness(id, val) => {
             handle_set_external_brightness(id, val)
         }
+    }
+
+    VolumePopup {
+        x: clamp(volumeButton.x + rectRight.x + layRight.x, config.window.bar-popup-screen-padding, (root.window_width - self.width) - config.window.bar-popup-screen-padding);
+        y: config.window.bar-height + 4px;
+        config: root.config;
+        popup_visible: root.volumePopupVis;
+
+        volumeData: root.volumeData;
+        inputVolumeData: root.inputVolumeData;
+        output_devices: root.output_devices;
+        input_devices: root.input_devices;
+        current_input_name: root.current_input_name;
+        current_output_name: root.current_output_name;
+
+        set_volume(v, device) => { root.set_volume(v, device); }
+        set_muted(m) => { root.set_muted(m); }
+        set_input_volume(v, device) => { root.set_input_volume(v, device); }
+        set_input_muted(m) => { root.set_input_muted(m); }
+        select_output_device(name) => {debug("fish"); root.select_output_device(name); }
+        select_input_device(name) => { root.select_input_device(name); }
     }
 
     Path {

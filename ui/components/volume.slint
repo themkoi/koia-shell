@@ -1,12 +1,156 @@
+// Copyright © SixtyFPS GmbH <info@slint.dev>
+// SPDX-License-Identifier: MIT
+
 import {
     Elevation,
     MaterialPalette,
     MaterialStyleMetrics,
     MaterialTypography,
+    ScrollView,
+    Slider,
+    Switch,
+    TextField,
 } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
+import { ConfigSlint } from "../shared-items.slint";
 
-export struct VolumeDataSlint { volume: int, muted: bool}
+export struct VolumeDataSlint { volume: int, muted: bool }
+
+export struct AudioDeviceSlint {
+    id: string,
+    name: string,
+    is_default: bool,
+}
+
+export component AudioDeviceDropDown inherits Rectangle {
+    in property <string> label <=> text_field.label;
+    in property <bool> enabled <=> text_field.enabled;
+    in property <[AudioDeviceSlint]> devices;
+    in-out property <string> active_name <=> text_field.text;
+    in-out property <int> current_index: -1;
+
+    callback selected(string, int); 
+
+    property <length> item_height: MaterialStyleMetrics.size_48;
+    property <int> max_displayed_items: 5;
+
+    min_width: text_field.min_width;
+    min_height: text_field.min_height;
+    forward_focus: text_field;
+    accessible-role: combobox;
+    accessible_enabled: root.enabled;
+    accessible_expandable: true;
+    accessible_value <=> text_field.text;
+    accessible_action_expand => { menu.show(); }
+
+    text_field := TextField {
+        width: 100%;
+        height: 100%;
+        read_only: true;
+    }
+
+    state_layer := Rectangle {
+        width: 100%;
+        height: 100%;
+        background: touch_area.has_hover ? MaterialPalette.on_surface.with_alpha(0.08) : transparent;
+        border-radius: MaterialStyleMetrics.border_radius_4;
+    }
+
+    touch_area := TouchArea {
+        width: 100%;
+        height: 100%;
+        enabled: root.enabled;
+        clicked => {
+            if (root.devices.length > 0) {
+                menu.show();
+            }
+        }
+    }
+
+    menu := PopupWindow {
+        x: 0;
+        y: root.height + 4px;
+        width: root.width;
+        close_policy: close_on_click_outside;
+
+        VerticalLayout {
+            alignment: start;
+
+            Rectangle {
+                width: 100%;
+                height: min(
+                    max(root.item_height, root.devices.length * root.item_height), 
+                    root.max_displayed_items * root.item_height);
+                background: MaterialPalette.surface_container;
+                border-radius: MaterialStyleMetrics.border_radius_12;
+
+                ScrollView {
+                    width: root.width;
+
+                    VerticalLayout {
+                        alignment: start;
+                        padding: 4px;
+                        spacing: 2px;
+
+                        for dev[idx] in root.devices: item-rect := Rectangle {
+                            height: root.item_height;
+                            background: dev.name == root.active_name
+                                ? MaterialPalette.secondary_container
+                                : item_touch.has_hover ? MaterialPalette.surface_container_highest : transparent;
+                            border-radius: MaterialStyleMetrics.border_radius_12;
+
+                            HorizontalLayout {
+                                padding-left: 12px;
+                                padding-right: 12px;
+                                spacing: 8px;
+
+                                Text {
+                                    horizontal-stretch: 1;
+                                    vertical-alignment: center;
+                                    text: dev.name;
+                                    color: dev.name == root.active_name
+                                        ? MaterialPalette.on_secondary_container
+                                        : MaterialPalette.on_surface;
+                                    font-size: MaterialTypography.body_medium.font-size;
+                                    overflow: elide;
+                                }
+                            }
+
+                            item_touch := TouchArea {
+                                width: 100%;
+                                height: 100%;
+                                clicked => {
+                                    root.update_selection(idx);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    function update_selection(index: int) {
+        root.update_text(index);
+        root.current_index = index;
+        menu.close();
+        if (index >= 0 && index < root.devices.length) {
+            root.selected(root.devices[index].id, index);
+        }
+    }
+
+    function update_text(index: int) {
+        if index < 0 || root.current_index >= root.devices.length {
+            text_field.text = "";
+            return;
+        }
+        text_field.text = root.devices[index].name;
+    }
+
+    changed current_index => {
+        root.update_text(root.current_index);
+    }
+}
 
 export component VolumeButton inherits Rectangle {
     height: 100%;
@@ -37,9 +181,15 @@ export component VolumeButton inherits Rectangle {
                 border_radius: parent.border_radius;
                 width: 100%;
 
-                icon: root.volume.muted ? @image-url("../assets/volume/volume_mute.svg") : root.volume.volume <= 0 ? @image-url("../assets/volume/volume_0.svg") : root.volume.volume <= 40 ? @image-url("../assets/volume/volume_1.svg") : @image-url("../assets/volume/volume_2.svg");
+                icon: root.volume.muted
+                    ? @image-url("../assets/volume/volume_mute.svg")
+                    : root.volume.volume <= 0
+                    ? @image-url("../assets/volume/volume_0.svg")
+                    : root.volume.volume <= 40
+                    ? @image-url("../assets/volume/volume_1.svg")
+                    : @image-url("../assets/volume/volume_2.svg");
 
-                text: root.volume.muted ? "Muted" : root.volume.volume + "%";
+                text: root.volume.muted ? "" : root.volume.volume + "%";
                 style: MaterialTypography.label_medium;
                 spacing: MaterialStyleMetrics.spacing_4;
 
@@ -79,6 +229,257 @@ export component VolumeButton inherits Rectangle {
                     elevation.background: MaterialPalette.surface_container_highest;
                 }
             ]
+        }
+    }
+}
+
+export component VolumePopup inherits Rectangle {
+    in-out property <VolumeDataSlint> volumeData: { volume: 50, muted: false };
+    in-out property <VolumeDataSlint> inputVolumeData: { volume: 50, muted: false };
+
+    in property <[AudioDeviceSlint]> output_devices: [];
+    in property <[AudioDeviceSlint]> input_devices: [];
+
+    in-out property <string> current_output_name: "";
+    in-out property <string> current_input_name: "";
+
+    in property <ConfigSlint> config;
+    in property <bool> popup_visible;
+
+    callback set_volume(int, int);
+    callback set_muted(bool);
+
+    callback set_input_volume(int, int);
+    callback set_input_muted(bool);
+
+    callback select_output_device(string);
+    callback select_input_device(string);
+
+    animate height {
+        duration: 350ms * config.interaction.animation-multiplier;
+        easing: ease-in-out-back;
+    }
+    width: 330px;
+    height: root.popup_visible ? clamp(layout.preferred-height, 0px, config.window.bar-popup-max-height) : 0px;
+    clip: true;
+
+    TouchArea {
+        elevation := Elevation {
+            level: 2;
+            border_radius: MaterialStyleMetrics.border_radius_16;
+            background: MaterialPalette.surface_container_low;
+            width: 100%;
+            height: 100%;
+
+            layout := VerticalLayout {
+                width: 100%;
+                spacing: 12px;
+                alignment: start;
+                padding: MaterialStyleMetrics.padding_12;
+
+                HorizontalLayout {
+                    alignment: center;
+                    width: 100%;
+                    Text {
+                        text: "Audio Control Center";
+                        font-size: MaterialTypography.label_large.font_size;
+                        font-weight: MaterialTypography.label_large.font-weight;
+                        color: MaterialPalette.on_surface;
+                    }
+                }
+
+                Rectangle {
+                    height: 1px;
+                    background: MaterialPalette.outline_variant;
+                }
+
+                // playback / output section
+                VerticalLayout {
+                    spacing: 6px;
+
+                    HorizontalLayout {
+                        alignment: space-between;
+                        Text {
+                            text: "Playback / Output";
+                            font-size: MaterialTypography.label_medium.font_size;
+                            font-weight: MaterialTypography.label_medium.font-weight;
+                            color: MaterialPalette.on_surface_variant;
+                        }
+
+                        HorizontalLayout {
+                            spacing: MaterialStyleMetrics.spacing_4;
+                            Text {
+                                text: "Muted";
+                                font-size: MaterialTypography.body_small.font_size;
+                                color: MaterialPalette.on_surface_variant;
+                                vertical-alignment: center;
+                            }
+
+                            Switch {
+                                height_switch: MaterialStyleMetrics.size_24;
+                                width_switch: MaterialStyleMetrics.size_40;
+                                checked: root.volumeData.muted;
+                                checked_state_changed(enabled) => { root.set_muted(enabled); }
+                            }
+                        }
+                    }
+
+                    AudioDeviceDropDown {
+                        width: 100%;
+                        label: "Select Output Device";
+                        devices: root.output_devices;
+                        active_name: root.current_output_name;
+                        selected(id, idx) => {
+                            root.select_output_device(id);
+                        }
+                    }
+
+                    Rectangle {
+                        height: 54px;
+                        border_radius: MaterialStyleMetrics.border_radius_12;
+                        background: MaterialPalette.surface_container_highest;
+
+                        HorizontalLayout {
+                            padding-left: MaterialStyleMetrics.padding_12;
+                            padding-right: MaterialStyleMetrics.padding_12;
+                            spacing: 12px;
+
+                            VerticalLayout {
+                                alignment: center;
+                                Image {
+                                    width: 25px;
+                                    height: 25px;
+                                    source: root.volumeData.muted
+                                        ? @image-url("../assets/volume/volume_mute.svg")
+                                        : root.volumeData.volume <= 0
+                                        ? @image-url("../assets/volume/volume_0.svg")
+                                        : root.volumeData.volume <= 40
+                                        ? @image-url("../assets/volume/volume_1.svg")
+                                        : @image-url("../assets/volume/volume_2.svg");
+                                }
+                            }
+
+                            Slider {
+                                horizontal-stretch: 1;
+                                minimum: 0;
+                                maximum: 100;
+                                thickness: 10px;
+                                thumb-height: 10px * 2.7;
+                                background_color: MaterialPalette.surface_container;
+                                value: root.volumeData.volume;
+                                changed(val) => {
+                                    root.set_volume(round(val), 0);
+                                }
+                            }
+
+                            VerticalLayout {
+                                alignment: center;
+                                Text {
+                                    text: root.volumeData.volume + "%";
+                                    font-size: MaterialTypography.body_medium.font_size;
+                                    color: MaterialPalette.on_surface;
+                                    width: 36px;
+                                    horizontal-alignment: right;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    height: 1px;
+                    background: MaterialPalette.outline_variant;
+                }
+
+                // recording / input section
+                VerticalLayout {
+                    spacing: 6px;
+
+                    HorizontalLayout {
+                        alignment: space-between;
+                        Text {
+                            text: "Recording / Input";
+                            font-size: MaterialTypography.label_medium.font_size;
+                            font-weight: MaterialTypography.label_medium.font-weight;
+                            color: MaterialPalette.on_surface_variant;
+                        }
+
+                        HorizontalLayout {
+                            spacing: MaterialStyleMetrics.spacing_4;
+                            Text {
+                                text: "Muted";
+                                font-size: MaterialTypography.body_small.font_size;
+                                color: MaterialPalette.on_surface_variant;
+                                vertical-alignment: center;
+                            }
+
+                            Switch {
+                                height_switch: MaterialStyleMetrics.size_24;
+                                width_switch: MaterialStyleMetrics.size_40;
+                                checked: root.inputVolumeData.muted;
+                                checked_state_changed(enabled) => { root.set_input_muted(enabled); }
+                            }
+                        }
+                    }
+
+                    AudioDeviceDropDown {
+                        width: 100%;
+                        label: "Select Input Device";
+                        devices: root.input_devices;
+                        active_name: root.current_input_name;
+                        selected(id, idx) => {
+                            root.select_input_device(id);
+                        }
+                    }
+
+                    Rectangle {
+                        height: 54px;
+                        border_radius: MaterialStyleMetrics.border_radius_12;
+                        background: MaterialPalette.surface_container_highest;
+
+                        HorizontalLayout {
+                            padding-left: MaterialStyleMetrics.padding_12;
+                            padding-right: MaterialStyleMetrics.padding_12;
+                            spacing: 12px;
+
+                            VerticalLayout {
+                                alignment: center;
+                                Image {
+                                    width: 25px;
+                                    height: 25px;
+                                    source: root.inputVolumeData.muted
+                                        ? @image-url("../assets/volume/volume_mute.svg")
+                                        : @image-url("../assets/volume/volume_1.svg");
+                                }
+                            }
+
+                            Slider {
+                                horizontal-stretch: 1;
+                                minimum: 0;
+                                maximum: 100;
+                                thickness: 10px;
+                                thumb-height: 10px * 2.7;
+                                background_color: MaterialPalette.surface_container;
+                                value: root.inputVolumeData.volume;
+                                changed(val) => {
+                                    root.set_input_volume(round(val), 0);
+                                }
+                            }
+
+                            VerticalLayout {
+                                alignment: center;
+                                Text {
+                                    text: root.inputVolumeData.volume + "%";
+                                    font-size: MaterialTypography.body_medium.font_size;
+                                    color: MaterialPalette.on_surface;
+                                    width: 36px;
+                                    horizontal-alignment: right;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

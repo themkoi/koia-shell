@@ -21,7 +21,6 @@ fn refresh_bluetooth_ui(ui: &barWindow, bt_service: &Arc<BluetoothService>) {
 
     tl_models_init(ui, &current_connected, &current_discovered);
 
-    // 2. Update primitive scalar attributes
     let available = bt_service.available.get();
     let enabled = bt_service.enabled.get();
     
