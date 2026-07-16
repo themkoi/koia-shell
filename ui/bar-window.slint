@@ -626,7 +626,7 @@ export component barWindow inherits Window {
         set_muted(m) => { root.set_muted(m); }
         set_input_volume(v, device) => { root.set_input_volume(v, device); }
         set_input_muted(m) => { root.set_input_muted(m); }
-        select_output_device(name) => {debug("fish"); root.select_output_device(name); }
+        select_output_device(name) => {root.select_output_device(name); }
         select_input_device(name) => { root.select_input_device(name); }
     }
 

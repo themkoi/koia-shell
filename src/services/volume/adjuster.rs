@@ -87,7 +87,6 @@ info!("help");
         ui.on_select_output_device(move |id| {
             let audio_service = Arc::clone(&audio_service_select_out);
             let target_desc = id.to_string();
-info!("help");
 
             tokio::spawn(async move {
                 let outputs = audio_service.output_devices.get();
@@ -102,7 +101,6 @@ info!("help");
         ui.on_select_input_device(move |id| {
             let audio_service = Arc::clone(&audio_service_select_in);
             let target_desc = id.to_string();
-info!("help");
             tokio::spawn(async move {
                 let inputs = audio_service.input_devices.get();
                 if let Some(device) = inputs.iter().find(|d| d.name.get() == target_desc) {
