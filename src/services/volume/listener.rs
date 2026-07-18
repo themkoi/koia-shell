@@ -1,5 +1,5 @@
 use futures::StreamExt;
-use log::{info, error};
+use log::{info};
 use slint::{Model, ModelRc, ToSharedString, VecModel};
 use std::cell::RefCell;
 use std::rc::Rc;

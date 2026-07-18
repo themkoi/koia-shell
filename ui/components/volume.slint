@@ -366,7 +366,7 @@ export component VolumePopup inherits Rectangle {
                                 thickness: 10px;
                                 thumb-height: 10px * 2.7;
                                 background_color: MaterialPalette.surface_container;
-                                value: root.volumeData.volume;
+                                value <=> root.volumeData.volume;
                                 changed(val) => {
                                     root.set_volume(round(val), 0);
                                 }
@@ -460,7 +460,7 @@ export component VolumePopup inherits Rectangle {
                                 thickness: 10px;
                                 thumb-height: 10px * 2.7;
                                 background_color: MaterialPalette.surface_container;
-                                value: root.inputVolumeData.volume;
+                                value <=> root.inputVolumeData.volume;
                                 changed(val) => {
                                     root.set_input_volume(round(val), 0);
                                 }

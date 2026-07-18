@@ -55,6 +55,17 @@ pub fn get_icon_desktop_fallback(
     desktop_icon_index: &HashMap<String, String>,
 ) -> Option<String> {
     let icon_name = desktop_icon_index.get(&app_id.to_lowercase())?;
+    let path = Path::new(icon_name);
+
+    if path.is_absolute() {
+        if path.extension().is_some() {
+            return Some(icon_name.clone());
+        }
+
+        if path.exists() {
+            return Some(icon_name.clone());
+        }
+    }
 
     lookup(icon_name)
         .with_theme(icon_theme)
@@ -75,9 +86,7 @@ impl SerializeState {
         check_cache_validity: &bool,
     ) -> Self {
         let mut cache_changed = false;
-
         let desktop_icon_index = build_desktop_icon_index();
-
         let mut resolved: HashMap<String, String> = HashMap::new();
 
         let unique_apps: Vec<String> = state
@@ -205,7 +214,6 @@ impl SerializeState {
         }
 
         let mut workspaces: Vec<Workspace> = workspaces_map.into_values().collect();
-        
         workspaces.sort_by_key(|ws| ws.id);
 
         for ws in &mut workspaces {

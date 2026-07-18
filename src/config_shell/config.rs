@@ -8,7 +8,8 @@ use std::{
 };
 
 use crate::{
-    ConfigSlint, HardwareConfigSlint, TaskbarConfigSlint, config_shell::components::taskbar::{TaskbarConfig, default_taskbar},
+    ConfigSlint, HardwareConfigSlint, TaskbarConfigSlint,
+    config_shell::components::taskbar::{TaskbarConfig, default_taskbar},
 };
 use crate::{
     InteractionConfigSlint, NoticificationConfigSlint, TrayConfigSlint, WindowConfigSlint,
@@ -48,6 +49,12 @@ pub struct HardwareConfig {
 pub struct SettingsConfig {
     pub persistent_sync_brightness: bool,
     pub sync_brightness: bool,
+    pub persistent_dark_mode: bool,
+    pub dark_mode: bool,
+    pub persistent_caffeine: bool,
+    pub caffeine: bool,
+    pub persistent_dnd: bool,
+    pub dnd: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -88,7 +95,7 @@ impl Default for Config {
             hardware_config: HardwareConfig {
                 brightness_device: "amdgpu_bl1".to_string(),
                 hardware_specific_features: true,
-                sys_info_polling_duration: 5,
+                sys_info_polling_duration: 1,
                 temp_alert: 90,
             },
             interaction_config: InterractionConfig {
@@ -100,6 +107,12 @@ impl Default for Config {
             settings_config: SettingsConfig {
                 persistent_sync_brightness: true,
                 sync_brightness: true,
+                persistent_dark_mode: true,
+                dark_mode: true,
+                persistent_caffeine: false,
+                caffeine: false,
+                persistent_dnd: false,
+                dnd: false,
             },
             taskbar_config: default_taskbar(),
             tray_config: default_tray(),
@@ -209,7 +222,7 @@ pub fn load_app_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
     })
 }
 
-pub fn build_config_slint(config: &crate::config::AppConfig,window_bar_width: f32) -> ConfigSlint {
+pub fn build_config_slint(config: &crate::config::AppConfig, window_bar_width: f32) -> ConfigSlint {
     ConfigSlint {
         hardware: HardwareConfigSlint {
             hardware_specific_features: config.config.hardware_config.hardware_specific_features,
@@ -227,8 +240,10 @@ pub fn build_config_slint(config: &crate::config::AppConfig,window_bar_width: f3
         },
         taskbar: TaskbarConfigSlint {
             icon_size: config.config.taskbar_config.icon_size as f32,
-            indicator_max_width: window_bar_width as f32 * config.config.taskbar_config.indicator_max_width as f32,
-            taskbar_max_width: window_bar_width as f32 * config.config.taskbar_config.taskbar_max_width as f32,
+            indicator_max_width: window_bar_width as f32
+                * config.config.taskbar_config.indicator_max_width as f32,
+            taskbar_max_width: window_bar_width as f32
+                * config.config.taskbar_config.taskbar_max_width as f32,
         },
         tray: TrayConfigSlint {
             icon_size: config.config.tray_config.icon_size as f32,

@@ -166,6 +166,8 @@ export component barWindow inherits Window {
     callback media_next();
     callback media_previous();
 
+    callback set_caffeine(bool);
+
     callback set_bluetooth_enabled(bool);
     callback connect_bluetooth_device(string);
     callback disconnect_bluetooth_device(string);
@@ -228,10 +230,6 @@ export component barWindow inherits Window {
         x: 0px;
         width: rectLeft.preferred-width;
         height: config.window.bar-height;
-        animate width {
-            duration: 100ms * root.config.interaction.animation_multiplier;
-            easing: ease-in-out;
-        }
         rectLeft := Rectangle {
             background: MaterialPalette.surface_container;
             border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
@@ -519,6 +517,7 @@ export component barWindow inherits Window {
 
         menu_action_executed(item_id, action_id) => {
             root.menu_action_executed(item_id, action_id);
+            root.manage_touch("TrayAction", false);
         }
     }
 

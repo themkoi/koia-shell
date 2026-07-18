@@ -2,10 +2,12 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::rc::Rc;
+use std::fs::File;
+use std::io::Read;
 
 use log::{debug, info};
 use niri_ipc::{Event, Request, Window, socket::Socket};
-use slint::{Image, ModelRc, VecModel};
+use slint::{Image, ModelRc, Rgba8Pixel, SharedPixelBuffer, VecModel};
 
 use crate::barWindow;
 use crate::services::taskbar::cache::{get_cache_folder, load_cache};
@@ -14,6 +16,42 @@ use crate::services::taskbar::serialize::SerializeState;
 thread_local! {
     static WORKSPACES_MODEL: RefCell<Rc<VecModel<crate::Workspace>>> = RefCell::new(Rc::new(VecModel::default()));
     static WINDOW_MODELS: RefCell<HashMap<i32, Rc<VecModel<crate::Window>>>> = RefCell::new(HashMap::new());
+}
+
+
+fn load_image_explicitly(path: &Path) -> Image {
+    if !path.exists() || path.is_dir() {
+        return Image::default();
+    }
+
+    if path.extension().is_some() {
+        if let Ok(img) = Image::load_from_path(path) {
+            return img;
+        }
+    }
+
+    let mut file = match File::open(path) {
+        Ok(f) => f,
+        Err(_) => return Image::default(),
+    };
+    let mut buffer = Vec::new();
+    if file.read_to_end(&mut buffer).is_err() {
+        return Image::default();
+    }
+
+    if let Ok(dynamic_img) = image::load_from_memory(&buffer) {
+        let rgba = dynamic_img.to_rgba8();
+        let (width, height) = rgba.dimensions();
+        let raw_pixels = rgba.into_raw();
+
+        let mut pixel_buffer = SharedPixelBuffer::<Rgba8Pixel>::new(width, height);
+        let make_pixels = pixel_buffer.make_mut_bytes();
+        make_pixels.copy_from_slice(&raw_pixels);
+
+        return Image::from_rgba8(pixel_buffer);
+    }
+
+    Image::default()
 }
 
 pub async fn run_taskbar(
@@ -81,7 +119,8 @@ pub async fn run_taskbar(
                     if !path_str.is_empty() {
                         let path = Path::new(&path_str);
                         if path.exists() {
-                            let _ = Image::load_from_path(path);
+                            // Warm up loading explicitly using our checker
+                            let _ = load_image_explicitly(path);
                         }
                     }
                     windows_paths.push((
@@ -114,8 +153,7 @@ pub async fn run_taskbar(
                                 windows,
                                 |(w_id, app_id, title, icon_path, is_focused)| {
                                     let icon_image = if !icon_path.is_empty() {
-                                        Image::load_from_path(Path::new(icon_path))
-                                            .unwrap_or_default()
+                                        load_image_explicitly(Path::new(icon_path))
                                     } else {
                                         Image::default()
                                     };

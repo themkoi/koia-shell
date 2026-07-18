@@ -1,8 +1,7 @@
 use clap::Parser;
 use slint::{ComponentHandle, language::ColorScheme};
 use spell_framework::{
-    self, cast_spell,
-    layer_properties::{Dimension, LayerAnchor, LayerType, WindowConf},
+    self, cast_spell, layer_properties::{Dimension, LayerAnchor, LayerType, WindowConf}, macro_internal::info,
 };
 use std::{env, time::Duration};
 
@@ -12,10 +11,6 @@ struct Args {
     /// Monitor name (default: focused)
     #[arg(short, long, default_value = "")]
     monitor: String,
-
-    /// Theme mode: dark or light (default: dark)
-    #[arg(short, long, value_parser = ["dark", "light"], default_value = "dark")]
-    theme: String,
 }
 
 slint::include_modules!();
@@ -34,11 +29,12 @@ use crate::{
     services::{
         battery::listener::listen_battery_changes, bluetooth::start_bluetooth_management,
         brightness::start_brightness_management, hardware_specific::harware_specific_management,
-        network::start_network_management, notifications::manager::start_notification_service,
+        media::start_media_management, network::start_network_management,
+        notifications::manager::start_notification_service,
         power_profiles::start_power_profile_management, sys_info::listener::listen_sysinfo_changes,
         taskbar::taskbar::run_taskbar, time::provider::provide_time,
         tray::manager::start_system_tray, volume::start_volume_management,
-        media::start_media_management,
+        idle_management::idle_management,
     },
 };
 
@@ -106,7 +102,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .anchor_2(LayerAnchor::RIGHT)
         .margins(
             0,
--(config.config.window_config.notification_window_width as i32 /2 as i32),
+            -(config.config.window_config.notification_window_width as i32 / 2 as i32),
             0,
             0,
         )
@@ -130,7 +126,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         (window_height_bar as f32 - config.config.window_config.bar_height as f32) as i32,
     );
 
-    if args.theme == "dark" {
+    if data.dark_mode == true {
         Palette::get(&bar_ui.ui).set_color_scheme(ColorScheme::Dark);
     }
     MaterialPalette::get(&bar_ui.ui).set_schemes(schemes.clone());
@@ -140,16 +136,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let config_clone = config.config.clone();
 
-    bar_ui.on_write_session_data(move |ui_session_data| {
-        let session_data: SessionData = ui_session_data.into();
-        let config = config_clone.clone();
-
-        tokio::spawn(async move {
-            if let Err(e) = crate::data_shell::data::save_session_data(&config, session_data) {
-                log::error!("Failed to save session data: {:?}", e);
-            }
-        });
-    });
     run_taskbar(&config, bar_ui.as_weak()).await;
 
     start_volume_management(
@@ -176,6 +162,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     start_media_management(bar_ui.as_weak()).await;
 
+    idle_management(bar_ui.as_weak()).await;
+
     start_network_management(bar_ui.as_weak()).await;
     start_bluetooth_management(bar_ui.as_weak()).await;
 
@@ -187,7 +175,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // clipboard init
     let clipboard_ui = clipboardWindowSpell::invoke_spell("clipboardWindow", clipboard_conf);
 
-    if args.theme == "dark" {
+    if data.dark_mode == true {
         Palette::get(&clipboard_ui.ui).set_color_scheme(ColorScheme::Dark);
     }
     MaterialPalette::get(&clipboard_ui.ui).set_schemes(schemes.clone());
@@ -198,7 +186,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let notification_ui =
         notificationWindowSpell::invoke_spell("notificationWindow", notification_conf);
 
-    if args.theme == "dark" {
+    if data.dark_mode == true {
         Palette::get(&notification_ui.ui).set_color_scheme(ColorScheme::Dark);
     }
     MaterialPalette::get(&notification_ui.ui).set_schemes(schemes.clone());
@@ -219,6 +207,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     start_notification_service(config, &notification_ui).await;
 
+    let notification_ui_weak = notification_ui.as_weak();
+    bar_ui.on_write_session_data(move |ui_session_data| {
+        let session_data: SessionData = ui_session_data.into();
+        let config = config_clone.clone();
+        if let Some(ui) = notification_ui_weak.upgrade() {
+            ui.set_dnd(session_data.dnd);
+        }
+        info!("Writing session data");
+
+        tokio::spawn(async move {
+            if let Err(e) = crate::data_shell::data::save_session_data(&config, session_data) {
+                log::error!("Failed to save session data: {:?}", e);
+            }
+        });
+    });
     // Calling the event loop function for running the window
     cast_spell!(
         windows: [clipboard_ui, bar_ui],

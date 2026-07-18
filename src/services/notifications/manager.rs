@@ -1,10 +1,7 @@
 use log::info;
 use slint::{ComponentHandle, Image, ModelRc, ToSharedString, VecModel};
-use spell_framework::{
-    vault::{
-        CloseReason, Hint, NOTIFICATION_EVENT, NotiError, Notification, NotificationManager,
-        Timeout,
-    },
+use spell_framework::vault::{
+    CloseReason, Hint, NOTIFICATION_EVENT, NotiError, Notification, NotificationManager, Timeout,
 };
 use std::rc::Rc;
 use std::sync::OnceLock;
@@ -20,6 +17,7 @@ impl NotificationManager for notificationWindow {
             "Received new notification via framework: {}",
             notification.summary
         );
+        if self.get_dnd() {
 
         let mut is_resident = false;
         let mut urgency_level = 1;
@@ -84,20 +82,19 @@ impl NotificationManager for notificationWindow {
                 body = html_to_markdown(&body);
             }
         }
-
-        self.invoke_add_notif(
-            notification.id as i32,
-            notification.appname.to_shared_string(),
-            title.to_shared_string(),
-            notification.subtitle.unwrap_or_default().to_shared_string(),
-            body.to_shared_string(),
-            give_timeout(notification.timeout),
-            resolved_icon,
-            ModelRc::from(actions_model),
-            is_resident,
-            urgency_level,
-        );
-
+            self.invoke_add_notif(
+                notification.id as i32,
+                notification.appname.to_shared_string(),
+                title.to_shared_string(),
+                notification.subtitle.unwrap_or_default().to_shared_string(),
+                body.to_shared_string(),
+                give_timeout(notification.timeout),
+                resolved_icon,
+                ModelRc::from(actions_model),
+                is_resident,
+                urgency_level,
+            );
+        }
         Ok(())
     }
 
