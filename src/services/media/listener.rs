@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use futures::StreamExt;
-use log::{info};
-use slint::ToSharedString;
+use log::{info, error};
+use slint::{ToSharedString, Image};
 use wayle_media::MediaService;
 
 use crate::barWindow;
@@ -9,12 +9,26 @@ use crate::barWindow;
 fn update_media_ui(ui_weak: &slint::Weak<barWindow>, player: &Arc<wayle_media::core::player::Player>) {
     let ui_weak = ui_weak.clone();
     let title = player.metadata.title.get().to_string();
-    let state = format!("{:?}", player.playback_state.get()); // e.g., "Playing", "Paused"
+    let state = format!("{:?}", player.playback_state.get());
+
+    let cover_path = player.metadata.cover_art.get().unwrap_or_default();
 
     let _ = slint::invoke_from_event_loop(move || {
         if let Some(ui) = ui_weak.upgrade() {
             ui.set_mediaTitle(title.to_shared_string());
             ui.set_mediaPlaybackState(state.to_shared_string());
+
+            if !cover_path.is_empty() {
+                match Image::load_from_path(std::path::Path::new(&cover_path)) {
+                    Ok(img) => ui.set_mediaCover(img),
+                    Err(e) => {
+                        error!("Failed to load media cover from path {}: {}", cover_path, e);
+                        ui.set_mediaCover(Image::default());
+                    }
+                }
+            } else {
+                ui.set_mediaCover(Image::default());
+            }
         }
     });
 }
@@ -25,10 +39,12 @@ fn clear_media_ui(ui_weak: &slint::Weak<barWindow>) {
         if let Some(ui) = ui_weak.upgrade() {
             ui.set_mediaTitle("".to_shared_string());
             ui.set_mediaPlaybackState("".to_shared_string());
+            ui.set_mediaCover(Image::default()); // Reset to an empty image
         }
     });
 }
 
+// Keep listen_media_changes exactly as it was
 pub async fn listen_media_changes(
     ui_weak: slint::Weak<barWindow>,
     media_service: Arc<MediaService>,
@@ -59,14 +75,14 @@ pub async fn listen_media_changes(
 
                     current_watcher_task = Some(tokio::spawn(async move {
                         let mut state_stream = player_clone.playback_state.watch();
-                        let mut title_stream = player_clone.metadata.title.watch();
+                        let mut metadata_stream = player_clone.metadata.watch();
 
                         loop {
                             tokio::select! {
                                 Some(_) = state_stream.next() => {
                                     update_media_ui(&ui_weak_clone, &player_clone);
                                 }
-                                Some(_) = title_stream.next() => {
+                                Some(_) = metadata_stream.next() => {
                                     update_media_ui(&ui_weak_clone, &player_clone);
                                 }
                             }

@@ -48,6 +48,47 @@ fn build_desktop_icon_index() -> HashMap<String, String> {
     map
 }
 
+fn get_icon_alias(
+    app_id: &str,
+    title: &str,
+    icon_aliases: &HashMap<String, String>,
+) -> Option<String> {
+    let values = [
+        app_id.to_lowercase(),
+        title.to_lowercase(),
+    ];
+
+    for (pattern, alias) in icon_aliases {
+        let pattern = pattern.to_lowercase();
+
+        for value in &values {
+            if pattern.starts_with('*') && pattern.ends_with('*') {
+                let middle = pattern.trim_matches('*');
+
+                if value.contains(middle) {
+                    return Some(alias.clone());
+                }
+            } else if pattern.starts_with('*') {
+                let end = pattern.trim_start_matches('*');
+
+                if value.ends_with(end) {
+                    return Some(alias.clone());
+                }
+            } else if pattern.ends_with('*') {
+                let start = pattern.trim_end_matches('*');
+
+                if value.starts_with(start) {
+                    return Some(alias.clone());
+                }
+            } else if value == &pattern {
+                return Some(alias.clone());
+            }
+        }
+    }
+
+    None
+}
+
 pub fn get_icon_desktop_fallback(
     app_id: &str,
     icon_theme: &str,
@@ -84,43 +125,41 @@ impl SerializeState {
         sorting_mode: &SortingMode,
         icon_cache: &mut CacheMap,
         check_cache_validity: &bool,
+        icon_aliases: &HashMap<String, String>,
     ) -> Self {
         let mut cache_changed = false;
         let desktop_icon_index = build_desktop_icon_index();
         let mut resolved: HashMap<String, String> = HashMap::new();
 
-        let unique_apps: Vec<String> = state
+        let unique_apps: Vec<(String, String)> = state
             .windows
             .iter()
             .map(|w| {
-                w.app_id
-                    .clone()
-                    .unwrap_or_else(|| "application-default-icon".into())
+                (
+                    w.app_id
+                        .clone()
+                        .unwrap_or_else(|| "application-default-icon".into()),
+                    w.title
+                        .clone()
+                        .unwrap_or_default()
+                        .to_string(),
+                )
             })
             .collect();
 
         let results: Vec<(String, String)> = unique_apps
             .into_iter()
-            .map(|app_id| {
-                let key = app_id.clone();
+            .map(|(key, title)| {
                 let mut icon_path = String::new();
                 let mut run_lookup = true;
 
                 if let Some(cache) = icon_cache.get(&key) {
                     icon_path = cache.icon_path.clone();
 
-                    if icon_path.is_empty() {
-                        if *check_cache_validity {
-                            if Path::new(&icon_path).exists() {
-                                run_lookup = false;
-                            } else {
-                                run_lookup = true;
-                            }
-                        } else {
-                            run_lookup = false;
-                        }
-                    } else {
-                        run_lookup = true;
+                    if !icon_path.is_empty()
+                        && (!*check_cache_validity || Path::new(&icon_path).exists())
+                    {
+                        run_lookup = false;
                     }
                 }
 
@@ -131,7 +170,9 @@ impl SerializeState {
                         .with_theme(icon_theme)
                         .find();
 
-                    icon_path = icon.unwrap_or_default().to_string_lossy().into_owned();
+                    icon_path = icon.unwrap_or_default()
+                        .to_string_lossy()
+                        .into_owned();
 
                     if icon_path.is_empty() {
                         let lower = key.to_lowercase();
@@ -142,7 +183,9 @@ impl SerializeState {
                             .with_theme(icon_theme)
                             .find();
 
-                        icon_path = icon.unwrap_or_default().to_string_lossy().into_owned();
+                        icon_path = icon.unwrap_or_default()
+                            .to_string_lossy()
+                            .into_owned();
                     }
 
                     if icon_path.is_empty() {
@@ -156,13 +199,43 @@ impl SerializeState {
                     }
 
                     if icon_path.is_empty() {
+                        if let Some(alias) = get_icon_alias(
+                            &key,
+                            &title,
+                            icon_aliases,
+                        ) {
+                            icon = lookup(&alias)
+                                .with_cache()
+                                .with_size(*icon_size)
+                                .with_theme(icon_theme)
+                                .find();
+
+                            icon_path = icon.unwrap_or_default()
+                                .to_string_lossy()
+                                .into_owned();
+
+                            if icon_path.is_empty() {
+                                icon_path = get_icon_desktop_fallback(
+                                    &alias,
+                                    icon_theme,
+                                    *icon_size,
+                                    &desktop_icon_index,
+                                )
+                                .unwrap_or_default();
+                            }
+                        }
+                    }
+
+                    if icon_path.is_empty() {
                         icon = lookup("application-x-executable")
                             .with_cache()
                             .with_size(*icon_size)
                             .with_theme(icon_theme)
                             .find();
 
-                        icon_path = icon.unwrap_or_default().to_string_lossy().into_owned();
+                        icon_path = icon.unwrap_or_default()
+                            .to_string_lossy()
+                            .into_owned();
                     }
                 }
 

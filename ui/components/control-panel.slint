@@ -1,0 +1,361 @@
+import {
+    Elevation,
+    ScrollView,
+    MaterialPalette,
+    MaterialTypography,
+    MaterialStyleMetrics,
+    CheckBox,
+    RadioButton,
+    CheckState,
+    VerticalDivider,
+    NavigationBar,
+    Dialog,
+    MaterialText,
+} from "@material/material.slint";
+import { BaseButton } from "@material/ui/components/base_button.slint";
+import { Calendar } from "@material/ui/components/date_picker.slint";
+import {
+    MaterialStyleMetrics,
+} from "../material-1.0/ui/styling/material_style_metrics.slint";
+import { ConfigSlint } from "../shared-items.slint";
+import {
+    MaterialPalette,
+} from "../material-1.0/ui/styling/material_palette.slint";
+import { FilledButton } from "../material-1.0/material.slint";
+import {
+    MaterialTypography,
+} from "../material-1.0/ui/styling/material_typography.slint";
+
+export component PowerButton inherits Rectangle {
+    in property <image> icon: @image-url("../assets/control_center/power.svg");
+    in property <string> text: "";
+    in property <length> icon-size: 42px;
+
+    callback clicked();
+    VerticalLayout {
+        alignment: center;
+        spacing: MaterialStyleMetrics.spacing_4;
+        Rectangle {
+            height: 100px;
+            width: self.height;
+            border_radius: MaterialStyleMetrics.border_radius_28;
+
+            elevation_power_but := Elevation {
+                border_radius: parent.border_radius;
+                background: MaterialPalette.surface_container_highest;
+                width: 100%;
+                height: 100%;
+            }
+
+            base := BaseButton {
+                border_radius: parent.border_radius;
+
+                icon: root.icon;
+                icon-size: root.icon-size;
+
+                button_horizontal_padding: 0px;
+                icon-color: transparent;
+                color: MaterialPalette.on_surface;
+
+                clicked => {
+                    root.clicked();
+                }
+            }
+
+            states [
+                hover when base.has-hover && !base.pressed && !base.enter_pressed: {
+                    elevation_power_but.level: 2;
+                }
+            ]
+        }
+
+        HorizontalLayout {
+            alignment: center;
+            Text {
+                font-size: MaterialTypography.body_large.font-size;
+                font-weight: MaterialTypography.body_large.font-weight;
+                text: root.text;
+            }
+        }
+    }
+}
+
+export component ControlPanel inherits Rectangle {
+    in property <ConfigSlint> config;
+    in property <bool> panel_visible;
+    in property <string> username;
+    in property <image> profileImage;
+    in property <int> upTimeHours;
+    in property <int> upTimeMinutes;
+    width: root.panel_visible ? 100% : 0%;
+    height: root.panel_visible ? 100% : 0%;
+    clip: true;
+    y: 0px;
+
+    callback shutdown();
+    callback reboot();
+    callback lock();
+    callback suspend();
+
+    animate height {
+        duration: 300ms * config.interaction.animation-multiplier;
+        easing: ease-in-out-back;
+    }
+    animate width {
+        duration: 250ms * config.interaction.animation-multiplier;
+        easing: ease-in-out-back;
+    }
+    dialog := Dialog {
+        x: -root.absolute_position.x;
+        y: -root.absolute_position.y;
+        width: root.width;
+        height: root.height;
+
+        HorizontalLayout {
+            spacing: MaterialStyleMetrics.spacing_16;
+            alignment: center;
+            PowerButton {
+                text: "Shutdown";
+                icon: @image-url("../assets/control_center/power_40x40.svg");
+                clicked => {
+                    root.shutdown();
+                }
+            }
+
+            PowerButton {
+                text: "Reboot";
+                icon: @image-url("../assets/control_center/reboot_40x40.svg");
+                clicked => {
+                    root.reboot();
+                }
+            }
+
+            PowerButton {
+                text: "Lock";
+                icon: @image-url("../assets/control_center/lock_40x40.svg");
+                clicked => {
+                    root.lock();
+                }
+            }
+
+            PowerButton {
+                text: "Suspend";
+                icon: @image-url("../assets/control_center/suspend_40x40.svg");
+                clicked => {
+                    root.suspend();
+                }
+            }
+        }
+
+        action_clicked(index) => {
+            dialog.close();
+        }
+
+        default_action_clicked => {
+            dialog.close();
+        }
+    }
+
+    HorizontalLayout {
+        y: 0px;
+        width: 1000px;
+        height: 500px;
+        alignment: center;
+        TouchArea {
+            y: 0px; 
+            width: 100%;
+            height: 100%;
+            
+            elevation := Rectangle {
+                y: 0px; 
+                width: 100%;
+                height: 100%;
+
+                Path {
+                    width: root.panel_visible ? ((config.window.bar-height + 3px)) + 2px : 0px;
+                    height: root.panel_visible ? ((config.window.bar-height + 3px)) + 1px : 0px;
+                    y: 0px;
+                    x: -self.width + 1px; 
+
+                    animate width, height {
+                        duration: 300ms * config.interaction.animation-multiplier;
+                        easing: ease-in-out-back;
+                    }
+                    fill: MaterialPalette.surface_container;
+                    commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
+                }
+
+                Path {
+                    width: root.panel_visible ? ((config.window.bar-height + 3px)) + 2px : 0px;
+                    height: root.panel_visible ? ((config.window.bar-height + 3px)) + 1px : 0px;
+                    y: 0px;
+                    x: parent.width - 1px; 
+
+                    animate width, height {
+                        duration: 300ms * config.interaction.animation-multiplier;
+                        easing: ease-in-out-back;
+                    }
+                    fill: MaterialPalette.surface_container;
+                    commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
+                }
+
+                VerticalLayout {
+                    padding: MaterialStyleMetrics.padding_8;
+                    VerticalLayout {
+                        spacing: 0px;
+                        padding: 0px;
+                        NavigationBar {
+                            items: [
+                                {
+                                    icon: @image-url("../assets/control_center/home.svg"),
+                                    selected_icon: @image-url("../assets/control_center/home.svg"),
+                                    text: "Home",
+                                    badge: ""
+                                },
+                            ];
+                        }
+                    }
+
+                    VerticalLayout {
+                        spacing: MaterialStyleMetrics.spacing_8;
+
+                        HorizontalLayout {
+                            spacing: MaterialStyleMetrics.spacing_8;
+                            HorizontalLayout {
+                                spacing: MaterialStyleMetrics.spacing_8;
+
+                                VerticalLayout {
+                                    spacing: MaterialStyleMetrics.spacing_8;
+
+                                    Elevation {
+                                        level: 2;
+                                        border_radius: MaterialStyleMetrics.border_radius_16;
+                                        background: MaterialPalette.surface_container_low;
+                                        userLayout := HorizontalLayout {
+                                            padding: MaterialStyleMetrics.padding_20;
+                                            spacing: MaterialStyleMetrics.spacing_16;
+
+                                            Image {
+                                                height: 82px;
+                                                width: 82px;
+                                                source: root.profileImage;
+                                            }
+
+                                            HorizontalLayout {
+                                                VerticalLayout {
+                                                    spacing: MaterialStyleMetrics.spacing_8;
+
+                                                    alignment: center;
+                                                    Text {
+                                                        max-width: 80px;
+                                                        text: root.username;
+                                                        font-size: MaterialTypography.title_large.font-size;
+                                                        font-weight: 500;
+                                                        overflow: elide;
+                                                    }
+
+                                                    HorizontalLayout {
+                                                        spacing: MaterialStyleMetrics.spacing_4;
+                                                        padding-right: MaterialStyleMetrics.padding_10;
+                                                        VerticalLayout {
+                                                            alignment: center;
+                                                            Image {
+                                                                height: 20px;
+                                                                width: 20px;
+                                                                source: @image-url("../assets/control_center/uptime.svg");
+                                                                colorize: MaterialPalette.on_surface_variant;
+                                                            }
+                                                        }
+
+                                                        Text {
+                                                            max-width: 80px;
+                                                            vertical-alignment: center;
+                                                            horizontal-alignment: center;
+                                                            text: (root.upTimeHours < 10 ? "0" : "") + root.upTimeHours + ":" +
+                                                                (root.upTimeMinutes < 10 ? "0" : "") + root.upTimeMinutes;
+                                                            font-size: MaterialTypography.title_small.font_size;
+                                                            font-weight: MaterialTypography.title_small.font-weight;
+                                                            color: MaterialPalette.on_surface_variant;
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            VerticalLayout {
+                                                alignment: center;
+                                                Rectangle {
+                                                    height: 40px;
+                                                    width: self.height + 2px;
+                                                    border_radius: MaterialStyleMetrics.border_radius_28;
+
+                                                    elevation_power_but := Elevation {
+                                                        border_radius: parent.border_radius;
+                                                        background: MaterialPalette.surface_container_highest;
+                                                        width: 100%;
+                                                        height: 100%;
+                                                    }
+
+                                                    base := BaseButton {
+                                                        border_radius: parent.border_radius;
+                                                        icon-size: 20px;
+                                                        button_horizontal_padding: 0px;
+                                                        icon: @image-url("../assets/control_center/power.svg");
+                                                        icon-color: transparent;
+                                                        color: MaterialPalette.on_surface;
+
+                                                        clicked => {
+                                                            dialog.show();
+                                                        }
+                                                    }
+
+                                                    states [
+                                                        hover when base.has-hover && !base.pressed && !base.enter_pressed: {
+                                                            elevation_power_but.level: 2;
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Elevation {
+                                        level: 2;
+                                        border_radius: MaterialStyleMetrics.border_radius_16;
+                                        background: MaterialPalette.surface_container_low;
+                                        Calendar {}
+                                    }
+                                }
+
+                                VerticalLayout {
+                                    spacing: MaterialStyleMetrics.spacing_8;
+
+                                    Elevation {
+                                        level: 2;
+                                        border_radius: MaterialStyleMetrics.border_radius_16;
+                                        background: MaterialPalette.surface_container_low;
+                                    }
+
+                                    Elevation {
+                                        level: 2;
+                                        border_radius: MaterialStyleMetrics.border_radius_16;
+                                        background: MaterialPalette.surface_container_low;
+                                    }
+                                }
+                            }
+
+                            Elevation {
+                                level: 2;
+                                border_radius: MaterialStyleMetrics.border_radius_16;
+                                background: MaterialPalette.surface_container_low;
+                            }
+                        }
+                    }
+                }
+
+                background: MaterialPalette.surface_container;
+                border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
+                border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
+            }
+        }
+    }
+}

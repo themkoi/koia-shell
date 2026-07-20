@@ -31,7 +31,6 @@ export component FullscreenDialog inherits PopupWindow {
                 root.close();
                 return accept;
             }
-
             reject
         }
     }
@@ -65,7 +64,7 @@ export component FullscreenDialog inherits PopupWindow {
                     vertical_alignment: center;
                 }
 
-                for action[index] in root.actions : TextButton {
+                for action[index] in root.actions: TextButton {
                     text: action;
 
                     clicked => {
@@ -75,7 +74,6 @@ export component FullscreenDialog inherits PopupWindow {
             }
 
             @children
-
         }
     }
 
@@ -110,16 +108,14 @@ export component BaseDialog {
         width: 0;
 
         key_pressed(event) => {
-            if event.text == Key.Return && root.default_action_text != ""  {
+            if event.text == Key.Return && root.default_action_text != "" {
                 root.default_action_clicked();
                 return accept;
             }
-
             if event.text == Key.Escape {
                 root.close();
                 return accept;
             }
-
             reject
         }
     }
@@ -131,66 +127,76 @@ export component BaseDialog {
         background_layer := Rectangle {
             x: (parent.width - self.width) / 2;
             y: (parent.height - self.height) / 2;
-            width: layout.min_width;
-            height: layout.min_height;
+            width: layout.preferred-width;
+            height: layout.preferred-height;
             opacity: 0;
             border_radius: MaterialStyleMetrics.border_radius_28;
             background: MaterialPalette.surface_container_high;
 
-            TouchArea {
-                layout := VerticalLayout {
-                    padding: MaterialStyleMetrics.padding_24;
-                    spacing: MaterialStyleMetrics.spacing_16;
+            VerticalLayout {
+                alignment: center;
+                TouchArea {
+                    height: 100%;
+                    width: 100%;
+                    layout := VerticalLayout {
+                        alignment: center;
+                        padding: MaterialStyleMetrics.padding_24;
+                        spacing: MaterialStyleMetrics.spacing_16;
 
-                    if root.has_icon : Icon {
-                        x: (parent.width - self.width) / 2;
-                        colorize: MaterialPalette.on_surface;
-                        source: root.icon;
-                    }
-
-                    if root.title != "" : MaterialText {
-                        horizontal_alignment: root.has_icon ? center : left;
-                        text: root.title;
-                        style: MaterialTypography.headline_small;
-                        color: MaterialPalette.on_surface;
-                    }
-
-                    @children
-
-                    HorizontalLayout {
-                        spacing: MaterialStyleMetrics.spacing_8;
-
-                        for action_button[index] in root.action_button_icons : IconButton {
-                            icon: action_button;
-
-                            clicked => {
-                                root.action_button_clicked(index);
-                            }
+                        if root.has_icon: Icon {
+                            x: (parent.width - self.width) / 2;
+                            colorize: MaterialPalette.on_surface;
+                            source: root.icon;
                         }
 
-                        // Spacer
-                        Rectangle {}
-
-                        for action[index] in root.actions : TextButton {
-                            text: action;
-
-                            clicked => {
-                                root.action_clicked(index);
-                            }
+                        if root.title != "": MaterialText {
+                            horizontal_alignment: root.has_icon ? center : left;
+                            text: root.title;
+                            style: MaterialTypography.headline_small;
+                            color: MaterialPalette.on_surface;
                         }
 
-                        if root.default_action_text != "" : FilledButton {
-                            text: root.default_action_text;
+                        @children
 
-                            clicked => {
-                                root.default_action_clicked();
+                        if default_action_text == "" && root.actions.length > 0: HorizontalLayout {
+                            alignment: center;
+                            spacing: MaterialStyleMetrics.spacing_8;
+
+                            for action_button[index] in root.action_button_icons: IconButton {
+                                icon: action_button;
+
+                                clicked => {
+                                    root.action_button_clicked(index);
+                                }
+                            }
+
+                            // Spacer
+                        Rectangle { }
+
+                            for action[index] in root.actions: TextButton {
+                                text: action;
+
+                                clicked => {
+                                    root.action_clicked(index);
+                                }
+                            }
+
+                            if root.default_action_text != "": FilledButton {
+                                text: root.default_action_text;
+
+                                clicked => {
+                                    root.default_action_clicked();
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            animate opacity { duration: MaterialAnimations.opacity_duration; easing: MaterialAnimations.opacity_easing; }
+                animate opacity {
+                    duration: MaterialAnimations.opacity_duration;
+                    easing: MaterialAnimations.opacity_easing;
+                }
+            }
         }
 
         clicked => {

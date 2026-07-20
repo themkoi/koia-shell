@@ -1,4 +1,4 @@
-use wayle_media::MediaService;
+use wayle_media::MediaServiceBuilder;
 
 use crate::{
     barWindow,
@@ -12,11 +12,11 @@ mod listener;
 
 pub async fn start_media_management(ui_weak: slint::Weak<barWindow>) {
     tokio::spawn(async move {
-        let media_service = 
-            MediaService::new()
+let media_service = MediaServiceBuilder::new()
+        .with_art_cache()
+        .build()
                 .await
                 .expect("Failed to initialize MediaService");
-
         listen_media_changes(ui_weak.clone(), media_service.clone()).await;
 
         start_media_control(ui_weak, media_service).await;

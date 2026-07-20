@@ -1,9 +1,11 @@
 use clap::Parser;
-use slint::{ComponentHandle, language::ColorScheme};
+use slint::{ComponentHandle, Image, ToSharedString, language::ColorScheme};
 use spell_framework::{
-    self, cast_spell, layer_properties::{Dimension, LayerAnchor, LayerType, WindowConf}, macro_internal::info,
+    self, cast_spell,
+    layer_properties::{Dimension, LayerAnchor, LayerType, WindowConf},
+    macro_internal::info,
 };
-use std::{env, time::Duration};
+use std::{env, path::Path, time::Duration};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
@@ -29,12 +31,12 @@ use crate::{
     services::{
         battery::listener::listen_battery_changes, bluetooth::start_bluetooth_management,
         brightness::start_brightness_management, hardware_specific::harware_specific_management,
-        media::start_media_management, network::start_network_management,
-        notifications::manager::start_notification_service,
+        idle_management::idle_management, media::start_media_management,
+        network::start_network_management, notifications::manager::start_notification_service,
         power_profiles::start_power_profile_management, sys_info::listener::listen_sysinfo_changes,
         taskbar::taskbar::run_taskbar, time::provider::provide_time,
-        tray::manager::start_system_tray, volume::start_volume_management,
-        idle_management::idle_management,
+        tray::manager::start_system_tray, uptime::provider::provide_uptime,
+        volume::start_volume_management,
     },
 };
 
@@ -132,6 +134,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     MaterialPalette::get(&bar_ui.ui).set_schemes(schemes.clone());
     bar_ui.set_config(config_slint.clone());
     bar_ui.set_sessionData(session_data_slint.clone());
+    let username = whoami::username().unwrap_or_default();
+    bar_ui.set_username(username.to_shared_string());
+    let profile_icon = shellexpand::full(&config.config.profile_icon)
+        .unwrap_or_else(|_| config.config.profile_icon.clone().into())
+        .to_string();
+
+    let profile_image = Image::load_from_path(Path::new(&profile_icon)).unwrap_or_default();
+    bar_ui.set_profileImage(profile_image);
     bar_ui.invoke_init_ui();
 
     let config_clone = config.config.clone();
@@ -159,6 +169,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .await;
     listen_battery_changes(bar_ui.as_weak()).await;
     provide_time(bar_ui.as_weak()).await;
+    provide_uptime(bar_ui.as_weak()).await;
 
     start_media_management(bar_ui.as_weak()).await;
 

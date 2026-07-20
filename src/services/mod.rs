@@ -12,3 +12,4 @@ pub(crate) mod bluetooth;
 pub(crate) mod sys_info;
 pub(crate) mod media;
 pub(crate) mod idle_management;
+pub(crate) mod uptime;

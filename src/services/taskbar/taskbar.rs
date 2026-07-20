@@ -77,6 +77,7 @@ pub async fn run_taskbar(
         let icon_theme = config_internal_task.icon_theme.clone();
         let separate_workspaces = config_internal_task.taskbar_config.separate_workspaces;
         let sorting_mode = config_internal_task.taskbar_config.sorting_mode.clone();
+        let icon_aliases = config_internal_task.taskbar_config.icon_aliases.clone();
         let check_cache_validity = true;
 
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<Event>();
@@ -108,6 +109,7 @@ pub async fn run_taskbar(
                 &sorting_mode,
                 &mut icon_cache,
                 &check_cache_validity,
+                &icon_aliases,
             );
 
             let mut paths_to_pass = Vec::new();

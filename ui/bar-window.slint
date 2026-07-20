@@ -53,6 +53,9 @@ import {
 import {
     MediaWidget,
 } from "components/media.slint";
+import {
+    ControlPanel,
+} from "components/control-panel.slint";
 
 import { MaterialStyleMetrics } from "material-1.0/material.slint";
 import {
@@ -62,6 +65,8 @@ import {
 export struct TimeDataSlint { hour: int, minute: int }
 export struct DateDataSlint { day: int, month: int, year: int }
 export struct StringDateDataSlint { day: string, month: string, year: string }
+
+export struct UpTimeSlint { hour: int, minute: int }
 
 export component barWindow inherits Window {
     in property <[Workspace]> workspaces;
@@ -92,9 +97,14 @@ export component barWindow inherits Window {
     in property <int> cpuTemp;
     in property <int> memoryUsage;
 
+    in property <string> username;
+    in property <image> profileImage;
+
     in property <string> mediaTitle;
+    in property <image> mediaCover;
     in property <string> mediaPlaybackState;
 
+    in property <UpTimeSlint> upTimeData;
     in property <TimeDataSlint> timeData;
     in property <DateDataSlint> dateData;
     in property <StringDateDataSlint> stringDateData;
@@ -187,6 +197,7 @@ export component barWindow inherits Window {
     property <bool> bluetoothPopupVis;
     property <bool> brightnessPopupVis;
     property <bool> volumePopupVis;
+    property <bool> controlPanelVis;
 
     function close_all_popups_except(active_name: string) {
         if (active_name != "BatteryPopup" && root.batteryPopupVis) {
@@ -213,6 +224,10 @@ export component barWindow inherits Window {
             root.volumePopupVis = false;
             root.manage_touch("VolumeMenu", false);
         }
+        if (active_name != "ControlPanel" && root.controlPanelVis) {
+            root.controlPanelVis = false;
+            root.manage_touch("ControlPanel", false);
+        }
         root.manage_touch(active_name, true);
     }
 
@@ -223,6 +238,7 @@ export component barWindow inherits Window {
         if (root.bluetoothPopupVis) { root.bluetoothPopupVis = false; root.manage_touch("BluetoothMenu", false); }
         if (root.brightnessPopupVis) { root.brightnessPopupVis = false; root.manage_touch("BrightnessMenu", false); }
         if (root.volumePopupVis) { root.volumePopupVis = false; root.manage_touch("VolumeMenu", false); }
+        if (root.controlPanelVis) { root.controlPanelVis = false; root.manage_touch("ControlPanel", false); }
     }
 
     layLeft := HorizontalLayout {
@@ -457,24 +473,34 @@ export component barWindow inherits Window {
                         }
                     }
 
-                    VerticalLayout {
-                        alignment: center;
-                        spacing: -3px;
-
-                        Text {
-                            vertical-alignment: bottom;
-                            horizontal-alignment: center;
-                            text: (root.timeData.hour < 10 ? "0" : "") + root.timeData.hour + ":" + (root.timeData.minute < 10 ? "0" : "") + root.timeData.minute;
-                            font-size: MaterialTypography.title_small.font-size;
-                            font-weight: MaterialTypography.title_small.font-weight;
+                    TouchArea {
+                        clicked => {
+                            root.controlPanelVis = !root.controlPanelVis;
+                            if (root.controlPanelVis) {
+                                root.close_all_popups_except("ControlPanel");
+                            } else {
+                                root.manage_touch("ControlPanel", false);
+                            }
                         }
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: -3px;
 
-                        Text {
-                            vertical-alignment: top;
-                            horizontal-alignment: center;
-                            text: root.stringDateData.day + ": " + root.stringDateData.month + " " + root.dateData.day;
-                            font-size: MaterialTypography.label_small.font-size * 1;
-                            font-weight: MaterialTypography.label_small.font-weight * 1;
+                            Text {
+                                vertical-alignment: bottom;
+                                horizontal-alignment: center;
+                                text: (root.timeData.hour < 10 ? "0" : "") + root.timeData.hour + ":" + (root.timeData.minute < 10 ? "0" : "") + root.timeData.minute;
+                                font-size: MaterialTypography.title_small.font-size;
+                                font-weight: MaterialTypography.title_small.font-weight;
+                            }
+
+                            Text {
+                                vertical-alignment: top;
+                                horizontal-alignment: center;
+                                text: root.stringDateData.day + ": " + root.stringDateData.month + " " + root.dateData.day;
+                                font-size: MaterialTypography.label_small.font-size * 1;
+                                font-weight: MaterialTypography.label_small.font-weight * 1;
+                            }
                         }
                     }
                 }
@@ -625,8 +651,18 @@ export component barWindow inherits Window {
         set_muted(m) => { root.set_muted(m); }
         set_input_volume(v, device) => { root.set_input_volume(v, device); }
         set_input_muted(m) => { root.set_input_muted(m); }
-        select_output_device(name) => {root.select_output_device(name); }
+        select_output_device(name) => { root.select_output_device(name); }
         select_input_device(name) => { root.select_input_device(name); }
+    }
+
+    ControlPanel {
+        config: root.config;
+        panel_visible: root.controlPanelVis;
+        username: root.username;
+        profileImage: root.profileImage;
+        upTimeHours: root.upTimeData.hour;
+        upTimeMinutes: root.upTimeData.minute;
+        
     }
 
     Path {

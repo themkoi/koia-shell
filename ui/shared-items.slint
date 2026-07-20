@@ -35,7 +35,15 @@ export struct HardwareConfigSlint {
     temp_alert: int,
 }
 
+export struct CommandsConfigSlint {
+    shutdown: string,
+    reboot: string,
+    lock: string,
+    suspend: string,
+}
+
 export struct ConfigSlint {
+    commands: CommandsConfigSlint,
     hardware: HardwareConfigSlint,
     window: WindowConfigSlint,
     interaction: InteractionConfigSlint,

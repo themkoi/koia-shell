@@ -8,7 +8,7 @@ use std::{
 };
 
 use crate::{
-    ConfigSlint, HardwareConfigSlint, TaskbarConfigSlint,
+    CommandsConfigSlint, ConfigSlint, HardwareConfigSlint, TaskbarConfigSlint,
     config_shell::components::taskbar::{TaskbarConfig, default_taskbar},
 };
 use crate::{
@@ -58,10 +58,20 @@ pub struct SettingsConfig {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
+pub struct CommandConfig {
+    pub shutdown: String,
+    pub reboot: String,
+    pub lock: String,
+    pub suspend: String,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Config {
     pub icon_theme: String,
     pub default_display: String,
     pub fallback_display: String,
+    pub profile_icon: String,
+    pub commands_config: CommandConfig,
     pub window_config: WindowConfig,
     pub hardware_config: HardwareConfig,
     pub interaction_config: InterractionConfig,
@@ -77,6 +87,13 @@ impl Default for Config {
             icon_theme: "Papirus-Dark".to_string(),
             default_display: "GIGA-BYTE TECHNOLOGY CO., LTD. G27QC A 0x00000439".to_string(),
             fallback_display: "eDP-1".to_string(),
+            profile_icon: "$HOME/Pictures/pfp/pfp.png".to_string(),
+            commands_config: CommandConfig {
+                shutdown: "systemctl poweroff".to_string(),
+                reboot: "systemctl reboot".to_string(),
+                lock: "$HOME/Documents/scripts/niri/lock.sh".to_string(),
+                suspend: "systemctl suspend".to_string(),
+            },
             window_config: WindowConfig {
                 bar_height: 38,
                 bar_popup_max_height: 450,
@@ -224,6 +241,12 @@ pub fn load_app_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
 
 pub fn build_config_slint(config: &crate::config::AppConfig, window_bar_width: f32) -> ConfigSlint {
     ConfigSlint {
+        commands: CommandsConfigSlint {
+            shutdown: config.config.commands_config.shutdown.clone().into(),
+            reboot: config.config.commands_config.reboot.clone().into(),
+            lock: config.config.commands_config.lock.clone().into(),
+            suspend: config.config.commands_config.suspend.clone().into(),
+        },
         hardware: HardwareConfigSlint {
             hardware_specific_features: config.config.hardware_config.hardware_specific_features,
             temp_alert: config.config.hardware_config.temp_alert as i32,
