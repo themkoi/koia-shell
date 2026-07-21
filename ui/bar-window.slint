@@ -109,6 +109,10 @@ export component barWindow inherits Window {
     in property <DateDataSlint> dateData;
     in property <StringDateDataSlint> stringDateData;
 
+    // Rust Callbacks for Date/Calendar Operations
+    pure callback month_day_count(int, int) -> int;
+    pure callback month_offset(int, int) -> int;
+
     in property <ConfigSlint> config;
     in-out property <SessionDataSlint> sessionData;
     in-out property <length> window_width <=> self.width;
@@ -454,34 +458,34 @@ export component barWindow inherits Window {
                     commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
                 }
 
-                layoutMiddle := HorizontalLayout {
-                    y: 0px;
-                    x: 0px;
-                    width: 100%;
-                    alignment: center;
-                    padding-left: 15px;
-                    padding-right: 15px;
-                    padding-top: 2px;
-
-                    MediaWidget {
-                        mediaTitle: root.mediaTitle;
-                        mediaPlaybackState: root.mediaPlaybackState;
-                        window_width: root.window_width;
-
-                        media_play_pause => {
-                            root.media_play_pause();
+                TouchArea {
+                    clicked => {
+                        root.controlPanelVis = !root.controlPanelVis;
+                        if (root.controlPanelVis) {
+                            root.close_all_popups_except("ControlPanel");
+                        } else {
+                            root.manage_touch("ControlPanel", false);
                         }
                     }
+                    layoutMiddle := HorizontalLayout {
+                        y: 0px;
+                        x: 0px;
+                        width: 100%;
+                        alignment: center;
+                        padding-left: 15px;
+                        padding-right: 15px;
+                        padding-top: 2px;
 
-                    TouchArea {
-                        clicked => {
-                            root.controlPanelVis = !root.controlPanelVis;
-                            if (root.controlPanelVis) {
-                                root.close_all_popups_except("ControlPanel");
-                            } else {
-                                root.manage_touch("ControlPanel", false);
+                        MediaWidget {
+                            mediaTitle: root.mediaTitle;
+                            mediaPlaybackState: root.mediaPlaybackState;
+                            window_width: root.window_width;
+
+                            media_play_pause => {
+                                root.media_play_pause();
                             }
                         }
+
                         VerticalLayout {
                             alignment: center;
                             spacing: -3px;
@@ -662,7 +666,45 @@ export component barWindow inherits Window {
         profileImage: root.profileImage;
         upTimeHours: root.upTimeData.hour;
         upTimeMinutes: root.upTimeData.minute;
-        
+
+        mediaCover: root.mediaCover;
+        mediaTitle: root.mediaTitle;
+        mediaPlaybackState: root.mediaPlaybackState;
+
+        currentTimeHour: root.timeData.hour;
+        currentTimeMinute: root.timeData.minute;
+        dateToday: {
+            day: root.dateData.day,
+            month: root.dateData.month,
+            year: root.dateData.year,
+        };
+        calendar_start_column: root.config.interaction.callendar-start-column;
+
+        media_next => {
+            root.media_next();
+        }
+        media_play_pause => { root.media_play_pause(); }
+        media_previous => { root.media_previous(); }
+
+        month_day_count(m, y) => {
+            return root.month_day_count(m, y);
+        }
+        month_offset(m, y) => {
+            return root.month_offset(m, y);
+        }
+
+        shutdown => {
+            root.run_command(root.config.commands.shutdown);
+        }
+        reboot => {
+            root.run_command(root.config.commands.reboot);
+        }
+        lock => {
+            root.run_command(root.config.commands.lock);
+        }
+        suspend => {
+            root.run_command(root.config.commands.suspend);
+        }
     }
 
     Path {

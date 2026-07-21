@@ -27,7 +27,7 @@ mod services;
 use crate::{
     config_shell::{components::theme::build_config_palette, config::build_config_slint},
     data_shell::data::{SessionData, build_session_data_slint, load_or_create_session_data},
-    helpers::{displays::display::get_display_info, touch_area::manager::start_touch_manager},
+    helpers::{displays::display::get_display_info, touch_area::manager::start_touch_manager, calendar::init_calendar_callbacks},
     services::{
         battery::listener::listen_battery_changes, bluetooth::start_bluetooth_management,
         brightness::start_brightness_management, hardware_specific::harware_specific_management,
@@ -148,6 +148,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     run_taskbar(&config, bar_ui.as_weak()).await;
 
+    init_calendar_callbacks(&config, bar_ui.as_weak());
     start_volume_management(
         bar_ui.as_weak(),
         config.config.interaction_config.allow_overflow_volume,

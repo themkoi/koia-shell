@@ -1,0 +1,351 @@
+import {
+    MaterialPalette,
+    MaterialTypography,
+    MaterialStyleMetrics,
+    MaterialText,
+    ScrollView,
+    StateLayer,
+    IconButton,
+} from "@material/material.slint";
+
+export struct Date {
+    day: int,
+    month: int,
+    year: int,
+}
+
+component SelectionButton {
+    in property <string> text <=> text-label.text;
+    in property <image> icon <=> icon-image.source;
+    in property <bool> enabled: true;
+    in-out property <bool> checked;
+
+    callback clicked();
+
+    min-width: content-layer.min-width;
+    min-height: max(40px, content-layer.min-height);
+    accessible-label: root.text;
+    accessible-role: button;
+    accessible-checkable: true;
+    accessible-checked: root.checked;
+    accessible-action-default => { touch-area.clicked(); }
+    forward-focus: focus_scope;
+
+    touch-area := TouchArea {
+        width: 100%;
+        height: 100%;
+        enabled: root.enabled;
+
+        clicked => {
+            root.checked = !root.checked;
+            root.clicked();
+        }
+    }
+
+    focus_scope := FocusScope {
+        width: 0px;
+        height: 0px;
+        enabled: root.enabled;
+
+        key_pressed(event) => {
+            if (event.text == " " || event.text == "\n") {
+                touch-area.clicked();
+                return accept;
+            }
+            return reject;
+        }
+    }
+
+    state-layer := StateLayer {
+        enabled: root.enabled;
+        pressed: touch-area.pressed;
+        has-hover: touch-area.has-hover;
+        has-focus: focus_scope.has-focus;
+        background: text-label.color;
+    }
+
+    content-layer := HorizontalLayout {
+        alignment: center;
+        padding-left: 8px;
+        padding-right: 8px;
+        spacing: 8px;
+
+        text-label := MaterialText {
+            vertical-alignment: center;
+            color: MaterialPalette.on_surface_variant;
+            style: MaterialTypography.label_large;
+        }
+
+        icon-image := Image {
+            y: (parent.height - self.height) / 2;
+            width: MaterialStyleMetrics.size_18;
+            colorize: MaterialPalette.on_surface_variant;
+            transform-rotation: root.checked ? 180deg : 0;
+
+            animate transform-rotation { duration: 250ms; }
+        }
+    }
+
+    states [
+        disabled when !root.enabled: {
+            root.opacity: 0.38;
+        }
+    ]
+}
+
+export component CalendarWidget inherits Rectangle {
+    in property <Date> calendar_today;
+
+    in property <int> calendar_start_column: 0;
+
+    property <[string]> calendar_header_model: root.calendar_start_column == 1 ? 
+        ["M", "T", "W", "T", "F", "S", "S"] : 
+        ["S", "M", "T", "W", "T", "F", "S"];
+
+    pure callback month_day_count(int, int) -> int;
+    pure callback month_offset(int, int) -> int;
+
+    in-out property <int> selected_day: -1;
+    in-out property <int> selected_month: -1;
+    in-out property <int> selected_year: -1;
+
+    property <int> display_month: calendar_today.month;
+    property <int> display_year: calendar_today.year;
+
+    property <int> prev_month: root.display_month == 1 ? 12 : root.display_month - 1;
+    property <int> prev_year: root.display_month == 1 ? root.display_year - 1 : root.display_year;
+    property <int> prev_month_days: root.month_day_count(root.prev_month, root.prev_year);
+
+    property <int> current_month_days: root.month_day_count(root.display_month, root.display_year);
+    property <int> raw_month_offset: root.month_offset(root.display_month, root.display_year);
+
+    property <int> calculated_start_column: mod(root.raw_month_offset - root.calendar_start_column + 7, 7);
+
+    property <int> selected_year_index: root.display_year - (root.calendar_today.year - 10);
+    property <length> target_viewport_y: -1px * (max(0, root.selected_year_index - 2) * 34);
+    property <string> calendar_month_label: month_name(root.display_month) + " " + root.display_year;
+
+    // Hardcode 42 cells (6 rows * 7 columns) so trailing lines of the next month are always rendered
+    property <int> total_required_cells: 42;
+
+    callback reset_selection();
+    reset_selection => {
+        root.selected_day = -1;
+        root.selected_month = -1;
+        root.selected_year = -1;
+    }
+
+    function month_name(m: int) -> string {
+        if (m == 1) { return "January"; }
+        if (m == 2) { return "February"; }
+        if (m == 3) { return "March"; }
+        if (m == 4) { return "April"; }
+        if (m == 5) { return "May"; }
+        if (m == 6) { return "June"; }
+        if (m == 7) { return "July"; }
+        if (m == 8) { return "August"; }
+        if (m == 9) { return "September"; }
+        if (m == 10) { return "October"; }
+        if (m == 11) { return "November"; }
+        return "December";
+    }
+
+    // Popup Window positioned relative to year_button
+    year_popup := PopupWindow {
+        x: ((year_button.x + main_layout.x + indicator_layout.x) + year_button.width/2) - popup_rect.width/2;
+        y: year_button.y + year_button.height + MaterialStyleMetrics.padding_12 + 4px;
+        width: 180px;
+        height: 200px;
+        close-policy: close-on-click-outside;
+
+        popup_rect := Rectangle {
+            width: 100%;
+            height: 100%;
+            drop-shadow-blur: 8px;
+            drop-shadow-color: rgba(0, 0, 0, 0.40);
+            background: MaterialPalette.surface_container_highest;
+            border-radius: MaterialStyleMetrics.border_radius_12;
+
+            VerticalLayout {
+                padding: MaterialStyleMetrics.padding_8;
+                spacing: MaterialStyleMetrics.spacing_4;
+
+                Text {
+                    text: "Select Year";
+                    font-size: MaterialTypography.title_small.font-size;
+                    font-weight: 700;
+                    horizontal-alignment: center;
+                }
+
+                ScrollView {
+                    viewport-y: root.target_viewport_y;
+
+                    animate viewport-y {
+                        duration: 150ms;
+                        easing: ease-out;
+                    }
+
+                    VerticalLayout {
+                        spacing: 2px;
+                        for year_offset in 21: TouchArea {
+                            property <int> year_val: (root.calendar_today.year - 10) + year_offset;
+                            height: 32px;
+
+                            clicked => {
+                                root.display_year = year_val;
+                                year_popup.close();
+                            }
+
+                            Rectangle {
+                                background: year_val == root.display_year ? MaterialPalette.primary_container : transparent;
+                                border-radius: MaterialStyleMetrics.border_radius_4;
+
+                                Text {
+                                    text: year_val;
+                                    font-size: MaterialTypography.body_large.font-size;
+                                    font-weight: year_val == root.display_year ? 700 : 400;
+                                    color: year_val == root.display_year ? MaterialPalette.on_primary_container : MaterialPalette.on_surface;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    main_layout := VerticalLayout {
+        padding: MaterialStyleMetrics.padding_12;
+        spacing: MaterialStyleMetrics.spacing_8;
+
+        indicator_layout := HorizontalLayout {
+            height: 35px;
+            alignment: space-between;
+
+            year_button := SelectionButton {
+                text: root.calendar_month_label;
+                icon: @image-url("../../assets/calendar/arrow_drop_down.svg");
+                checked: year_popup.is-open;
+                clicked => {
+                    year_popup.show();
+                }
+            }
+
+            HorizontalLayout {
+                spacing: MaterialStyleMetrics.spacing_4;
+
+                IconButton {
+                    icon: @image-url("../../assets/calendar/chevron_left.svg");
+                    clicked => {
+                        if (root.display_month == 1) {
+                            root.display_month = 12;
+                            root.display_year = root.display_year - 1;
+                        } else {
+                            root.display_month = root.display_month - 1;
+                        }
+                    }
+                }
+
+                IconButton {
+                    icon: @image-url("../../assets/calendar/chevron_right.svg");
+                    clicked => {
+                        if (root.display_month == 12) {
+                            root.display_month = 1;
+                            root.display_year = root.display_year + 1;
+                        } else {
+                            root.display_month = root.display_month + 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            height: 1px;
+            background: MaterialPalette.outline_variant;
+        }
+
+        GridLayout {
+            spacing: 2px;
+
+            for header[idx] in root.calendar_header_model: Rectangle {
+                row: 0;
+                col: idx;
+                height: 24px;
+
+                Text {
+                    text: header;
+                    font-size: MaterialTypography.body_medium.font-size;
+                    font-weight: 800;
+                    color: MaterialPalette.on_surface_variant;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+
+            for cell_idx in 42: Rectangle {
+                visible: cell_idx < root.total_required_cells;
+
+                property <int> row_num: floor((cell_idx + 7) / 7);
+                property <int> col_num: mod(cell_idx, 7);
+                property <int> day_number: cell_idx - root.calculated_start_column + 1;
+
+                property <bool> is_prev_month: cell_idx < root.calculated_start_column;
+                property <bool> is_next_month: day_number > root.current_month_days;
+                property <bool> is_current_month: !is_prev_month && !is_next_month;
+
+                property <int> prev_month_day: root.prev_month_days + cell_idx - root.calculated_start_column + 1;
+                property <int> next_month_day: day_number - root.current_month_days;
+
+                property <int> calc_day: is_current_month ? day_number : (is_next_month ? next_month_day : prev_month_day);
+                property <int> calc_month: is_current_month ? root.display_month : (is_next_month ? (root.display_month == 12 ? 1 : root.display_month + 1) : root.prev_month);
+                property <int> calc_year: is_next_month && root.display_month == 12 ? root.display_year + 1 : (is_prev_month && root.display_month == 1 ? root.display_year - 1 : root.display_year);
+
+                property <bool> is_selected: calc_day == root.selected_day
+                    && calc_month == root.selected_month
+                    && calc_year == root.selected_year;
+
+                property <bool> is_today: is_current_month
+                    && day_number == root.calendar_today.day
+                    && root.display_month == root.calendar_today.month
+                    && root.display_year == root.calendar_today.year;
+
+                row: row_num;
+                col: col_num;
+                height: 23px;
+                border-radius: MaterialStyleMetrics.border_radius_16;
+
+                background: is_selected ? MaterialPalette.primary :
+                    (is_today ? MaterialPalette.primary_container : transparent);
+
+                TouchArea {
+                    clicked => {
+                        if (is_selected) {
+                            root.reset_selection();
+                        } else {
+                            root.selected_day = calc_day;
+                            root.selected_month = calc_month;
+                            root.selected_year = calc_year;
+                        }
+                    }
+
+                    Text {
+                        text: is_current_month ? day_number :
+                            is_next_month ? next_month_day : prev_month_day;
+                        font-size: MaterialTypography.body_medium.font-size;
+                        font-weight: (is_selected || is_today) ? 700 : 400;
+
+                        color: is_selected ? MaterialPalette.on_primary :
+                            (is_today ? MaterialPalette.on_primary_container :
+                            (!is_current_month ? MaterialPalette.outline : MaterialPalette.on_surface));
+
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

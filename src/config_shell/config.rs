@@ -26,6 +26,7 @@ pub struct InterractionConfig {
     pub volume_scroll_step: u8,
     pub allow_overflow_volume: bool,
     pub brightness_scroll_step: u8,
+    pub callendar_start_column: u8,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -120,6 +121,7 @@ impl Default for Config {
                 volume_scroll_step: 3,
                 allow_overflow_volume: true,
                 brightness_scroll_step: 5,
+                callendar_start_column: 1,
             },
             settings_config: SettingsConfig {
                 persistent_sync_brightness: true,
@@ -260,6 +262,7 @@ pub fn build_config_slint(config: &crate::config::AppConfig, window_bar_width: f
             animation_multiplier: config.config.interaction_config.animation_multiplier,
             volume_scroll_step: config.config.interaction_config.volume_scroll_step as i32,
             brightness_scroll_step: config.config.interaction_config.brightness_scroll_step as i32,
+            callendar_start_column: config.config.interaction_config.callendar_start_column as i32,
         },
         taskbar: TaskbarConfigSlint {
             icon_size: config.config.taskbar_config.icon_size as f32,

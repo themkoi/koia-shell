@@ -13,7 +13,6 @@ import {
     MaterialText,
 } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
-import { Calendar } from "@material/ui/components/date_picker.slint";
 import {
     MaterialStyleMetrics,
 } from "../material-1.0/ui/styling/material_style_metrics.slint";
@@ -25,6 +24,67 @@ import { FilledButton } from "../material-1.0/material.slint";
 import {
     MaterialTypography,
 } from "../material-1.0/ui/styling/material_typography.slint";
+
+import { CalendarWidget, Date } from "./widgets/calendar.slint";
+
+export component MediaButton inherits Rectangle {
+    // --- Exposed Properties ---
+    in-out property <image> icon;
+    in-out property <length> icon_size: 20px;
+    in-out property <color> icon_color: MaterialPalette.on_surface;
+
+    // Size & Shape
+    in-out property <length> size: 40px;
+    in-out property <length> radius: MaterialStyleMetrics.border_radius_28;
+
+    // Callbacks
+    callback clicked();
+
+    // Setup component dimensions
+    width: root.size;
+    height: root.size;
+    border_radius: root.radius;
+    vertical-stretch: 0;
+
+    // --- Visual Layers ---
+    elevation := Elevation {
+        border_radius: root.border_radius;
+        width: parent.width;
+        height: parent.height;
+        background: MaterialPalette.surface_container_highest;
+    }
+
+    base := BaseButton {
+        border_radius: root.border_radius;
+        width: parent.width;
+        height: 100%;
+
+        icon: root.icon;
+        icon-size: root.icon_size;
+        icon_color: root.icon_color;
+        color: root.icon_color;
+
+        spacing: 4px;
+        button_horizontal_padding: 0px;
+        button_vertical_padding: 0px;
+
+        clicked => {
+            root.clicked();
+        }
+    }
+
+    // --- Hover / Press States ---
+    states [
+        hover when base.has_hover && !base.pressed && !base.enter_pressed: {
+            elevation.level: 2;
+            elevation.background: MaterialPalette.surface_container_high;
+        }
+        pressed when base.pressed || base.enter_pressed: {
+            elevation.level: 1;
+            elevation.background: MaterialPalette.surface_container_highest;
+        }
+    ]
+}
 
 export component PowerButton inherits Rectangle {
     in property <image> icon: @image-url("../assets/control_center/power.svg");
@@ -87,6 +147,29 @@ export component ControlPanel inherits Rectangle {
     in property <image> profileImage;
     in property <int> upTimeHours;
     in property <int> upTimeMinutes;
+
+    in property <int> currentTimeHour;
+    in property <int> currentTimeMinute;
+    in property <Date> dateToday;
+    in-out property <Date> calendar_selected_date;
+    in-out property <int> calendar_display_month: root.dateToday.month;
+    in-out property <int> calendar_display_year: root.dateToday.year;
+    in-out property <int> calendar_start_column;
+
+    in property <image> mediaCover;
+    in property <string> mediaTitle;
+    in property <string> mediaPlaybackState;
+
+    pure callback month_day_count(int, int) -> int;
+    pure callback month_offset(int, int) -> int;
+
+    callback calendar_select_date(Date);
+    callback calendar_month_changed(int, int);
+
+    changed panel_visible => {
+        callendar.reset_selection();
+    }
+
     width: root.panel_visible ? 100% : 0%;
     height: root.panel_visible ? 100% : 0%;
     clip: true;
@@ -96,6 +179,10 @@ export component ControlPanel inherits Rectangle {
     callback reboot();
     callback lock();
     callback suspend();
+
+    callback media_play_pause();
+    callback media_previous();
+    callback media_next();
 
     animate height {
         duration: 300ms * config.interaction.animation-multiplier;
@@ -135,6 +222,7 @@ export component ControlPanel inherits Rectangle {
                 icon: @image-url("../assets/control_center/lock_40x40.svg");
                 clicked => {
                     root.lock();
+                    dialog.close();
                 }
             }
 
@@ -143,6 +231,7 @@ export component ControlPanel inherits Rectangle {
                 icon: @image-url("../assets/control_center/suspend_40x40.svg");
                 clicked => {
                     root.suspend();
+                    dialog.close();
                 }
             }
         }
@@ -158,16 +247,16 @@ export component ControlPanel inherits Rectangle {
 
     HorizontalLayout {
         y: 0px;
-        width: 1000px;
-        height: 500px;
+        width: 900px;
+        height: 465px;
         alignment: center;
         TouchArea {
-            y: 0px; 
+            y: 0px;
             width: 100%;
             height: 100%;
-            
+
             elevation := Rectangle {
-                y: 0px; 
+                y: 0px;
                 width: 100%;
                 height: 100%;
 
@@ -175,7 +264,7 @@ export component ControlPanel inherits Rectangle {
                     width: root.panel_visible ? ((config.window.bar-height + 3px)) + 2px : 0px;
                     height: root.panel_visible ? ((config.window.bar-height + 3px)) + 1px : 0px;
                     y: 0px;
-                    x: -self.width + 1px; 
+                    x: -self.width + 1px;
 
                     animate width, height {
                         duration: 300ms * config.interaction.animation-multiplier;
@@ -189,7 +278,7 @@ export component ControlPanel inherits Rectangle {
                     width: root.panel_visible ? ((config.window.bar-height + 3px)) + 2px : 0px;
                     height: root.panel_visible ? ((config.window.bar-height + 3px)) + 1px : 0px;
                     y: 0px;
-                    x: parent.width - 1px; 
+                    x: parent.width - 1px;
 
                     animate width, height {
                         duration: 300ms * config.interaction.animation-multiplier;
@@ -203,7 +292,8 @@ export component ControlPanel inherits Rectangle {
                     padding: MaterialStyleMetrics.padding_8;
                     VerticalLayout {
                         spacing: 0px;
-                        padding: 0px;
+                        padding: MaterialStyleMetrics.padding_14;
+                        padding-bottom: MaterialStyleMetrics.padding_4;
                         NavigationBar {
                             items: [
                                 {
@@ -216,7 +306,13 @@ export component ControlPanel inherits Rectangle {
                         }
                     }
 
-                    VerticalLayout {
+                    Rectangle {
+                        height: 1px;
+                        background: MaterialPalette.outline_variant;
+                    }
+
+                    mainLayout := VerticalLayout {
+                        padding-top: MaterialStyleMetrics.padding_8;
                         spacing: MaterialStyleMetrics.spacing_8;
 
                         HorizontalLayout {
@@ -226,13 +322,16 @@ export component ControlPanel inherits Rectangle {
 
                                 VerticalLayout {
                                     spacing: MaterialStyleMetrics.spacing_8;
-
+                                    min-width: 265px;
+                                    max-width: 265px;
                                     Elevation {
                                         level: 2;
                                         border_radius: MaterialStyleMetrics.border_radius_16;
-                                        background: MaterialPalette.surface_container_low;
+                                        background: MaterialPalette.surface_container_high;
                                         userLayout := HorizontalLayout {
-                                            padding: MaterialStyleMetrics.padding_20;
+                                            padding: MaterialStyleMetrics.padding_12;
+                                            padding-top: MaterialStyleMetrics.padding_24;
+                                            padding-bottom: self.padding-top;
                                             spacing: MaterialStyleMetrics.spacing_16;
 
                                             Image {
@@ -290,6 +389,7 @@ export component ControlPanel inherits Rectangle {
 
                                                     elevation_power_but := Elevation {
                                                         border_radius: parent.border_radius;
+                                                        level: 2;
                                                         background: MaterialPalette.surface_container_highest;
                                                         width: 100%;
                                                         height: 100%;
@@ -310,7 +410,7 @@ export component ControlPanel inherits Rectangle {
 
                                                     states [
                                                         hover when base.has-hover && !base.pressed && !base.enter_pressed: {
-                                                            elevation_power_but.level: 2;
+                                                            elevation_power_but.level: 3;
                                                         }
                                                     ]
                                                 }
@@ -318,11 +418,23 @@ export component ControlPanel inherits Rectangle {
                                         }
                                     }
 
+                                    // --- Embedded Calendar Widget Card ---
                                     Elevation {
-                                        level: 2;
+                                        level: 3;
                                         border_radius: MaterialStyleMetrics.border_radius_16;
-                                        background: MaterialPalette.surface_container_low;
-                                        Calendar {}
+                                        background: MaterialPalette.surface_container_high;
+
+                                        callendar := CalendarWidget {
+                                            calendar_today: root.dateToday;
+                                            calendar_start_column <=> root.calendar_start_column;
+
+                                            month_day_count(m, y) => {
+                                                return root.month_day_count(m, y);
+                                            }
+                                            month_offset(m, y) => {
+                                                return root.month_offset(m, y);
+                                            }
+                                        }
                                     }
                                 }
 
@@ -332,21 +444,133 @@ export component ControlPanel inherits Rectangle {
                                     Elevation {
                                         level: 2;
                                         border_radius: MaterialStyleMetrics.border_radius_16;
-                                        background: MaterialPalette.surface_container_low;
+                                        background: MaterialPalette.surface_container_high;
+                                        VerticalLayout {
+                                            spacing: MaterialStyleMetrics.spacing_8;
+                                            padding: MaterialStyleMetrics.padding_12;
+                                            VerticalLayout {
+                                                spacing: -10px;
+                                                Text {
+                                                    horizontal-alignment: center;
+                                                    vertical-alignment: bottom;
+                                                    text: (root.currentTimeHour < 10 ? "0" : "") + root.currentTimeHour + ":" + (root.currentTimeMinute < 10 ? "0" : "") + root.currentTimeMinute;
+                                                    font-size: MaterialTypography.display_large.font-size * 1.3;
+                                                    font-weight: 500;
+                                                }
+
+                                                Text {
+                                                    vertical-alignment: top;
+                                                    horizontal-alignment: center;
+                                                    text: dateToday.day + "." + dateToday.month + "." + dateToday.year;
+                                                    font-size: MaterialTypography.label_large.font-size;
+                                                    font-weight: 500;
+                                                }
+                                            }
+
+                                            NavigationBar {
+                                                items: [
+                                                    {
+                                                        icon: @image-url("../assets/control_center/home.svg"),
+                                                        selected_icon: @image-url("../assets/control_center/home.svg"),
+                                                        text: "To Do someday",
+                                                        badge: ""
+                                                    },
+                                                ];
+                                            }
+
+                                            alignment: center;
+                                        }
                                     }
 
                                     Elevation {
                                         level: 2;
                                         border_radius: MaterialStyleMetrics.border_radius_16;
-                                        background: MaterialPalette.surface_container_low;
+                                        background: MaterialPalette.surface_container_high;
+                                        min-height: 170px;
+                                        playerLayout := VerticalLayout {
+                                            alignment: center;
+                                            padding: MaterialStyleMetrics.padding_10;
+                                            height: 100%;
+                                            width: 100%;
+                                            Rectangle {
+                                                height: 100%;
+                                                width: 100%;
+                                                border_radius: MaterialStyleMetrics.border_radius_16;
+                                                clip: true;
+                                                Image {
+                                                    source: root.mediaCover;
+                                                }
+
+                                                VerticalLayout {
+                                                    width: 100%;
+                                                    height: 100%;
+                                                    spacing: MaterialStyleMetrics.spacing_16;
+                                                    alignment: center;
+
+                                                    Text {
+                                                        vertical-alignment: bottom;
+                                                        horizontal-alignment: center;
+                                                        text: root.mediaTitle != "" ? root.mediaTitle : "No Media";
+                                                        color: root.mediaTitle != "" ? MaterialPalette.on_surface : MaterialPalette.outline;
+                                                        font-size: MaterialTypography.title_small.font-size;
+                                                        font-weight: MaterialTypography.title_small.font-weight;
+                                                        overflow: elide;
+                                                    }
+
+                                                    HorizontalLayout {
+                                                        alignment: center;
+                                                        spacing: MaterialStyleMetrics.spacing_12;
+                                                        VerticalLayout {
+                                                            alignment: center;
+                                                            MediaButton {
+                                                                size: 30px;
+                                                                icon_size: 20px;
+                                                                icon: @image-url("../assets/media/20x20/previous.svg");
+
+                                                                clicked => {
+                                                                    root.media_previous();
+                                                                }
+                                                            }
+                                                        }
+
+                                                        MediaButton {
+                                                            size: 40px;
+                                                            icon_size: 20px;
+                                                            icon: root.mediaPlaybackState == "Playing" ?
+                                                                @image-url("../assets/media/20x20/pause.svg") :
+                                                                @image-url("../assets/media/20x20/play.svg");
+
+                                                            clicked => {
+                                                                root.media_play_pause();
+                                                            }
+                                                        }
+
+                                                        VerticalLayout {
+                                                            alignment: center;
+                                                            MediaButton {
+                                                                size: 30px;
+                                                                icon_size: 20px;
+                                                                icon: @image-url("../assets/media/20x20/forward.svg");
+
+                                                                clicked => {
+                                                                    root.media_next();
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
 
                             Elevation {
+                                min-width: 265px;
+                                max-width: 265px;
                                 level: 2;
                                 border_radius: MaterialStyleMetrics.border_radius_16;
-                                background: MaterialPalette.surface_container_low;
+                                background: MaterialPalette.surface_container_high;
                             }
                         }
                     }
