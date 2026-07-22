@@ -1,0 +1,316 @@
+import {
+    MaterialPalette,
+    MaterialTypography,
+    MaterialStyleMetrics,
+    MaterialText,
+    ScrollView,
+    StateLayer,
+    Elevation,
+} from "@material/material.slint";
+import { BaseButton } from "@material/ui/components/base_button.slint";
+
+import { SelectionButton } from "./selection-button.slint";
+import { SelectionPopup } from "./selection-popup.slint";
+import { MaterialStyleMetrics } from "../../material-1.0/material.slint";
+
+export struct MediaInfo {
+    title: string,
+    artist: string,
+    album: string,
+    playback_state: string,
+    length_seconds: int,
+    can_go_next: bool,
+    can_go_previous: bool,
+    can_play: bool,
+    shuffle: string,
+    loop_status: string,
+}
+
+export component MediaButton inherits Rectangle {
+    in-out property <image> icon;
+    in-out property <length> icon_size: 20px;
+    in-out property <color> icon_color: MaterialPalette.on_surface;
+    in-out property <color> background_color: MaterialPalette.surface_container_highest;
+    in-out property <bool> enabled: true;
+
+    in-out property <length> size: 40px;
+    in-out property <length> radius: MaterialStyleMetrics.border_radius_28;
+
+    callback clicked();
+
+    width: root.size;
+    height: root.size;
+    border_radius: root.radius;
+    vertical-stretch: 0;
+
+    elevation := Elevation {
+        border_radius: root.border_radius;
+        width: parent.width;
+        height: parent.height;
+        background: root.background_color;
+    }
+
+    base := BaseButton {
+        border_radius: root.border_radius;
+        width: parent.width;
+        height: 100%;
+        enabled: root.enabled;
+
+        icon: root.icon;
+        icon-size: root.icon_size;
+        icon_color: root.icon_color;
+        color: root.icon_color;
+
+        spacing: 4px;
+        button_horizontal_padding: 0px;
+        button_vertical_padding: 0px;
+
+        clicked => {
+            if (root.enabled) {
+                root.clicked();
+            }
+        }
+    }
+
+    states [
+        hover when base.has_hover && !base.pressed && !base.enter_pressed && root.enabled: {
+            elevation.level: 2;
+        }
+        pressed when (base.pressed || base.enter_pressed) && root.enabled: {
+            elevation.level: 1;
+        }
+        disabled when !root.enabled: {
+            opacity: 0.38;
+        }
+    ]
+}
+
+export component MediaPlayer inherits Rectangle {
+    in property <MediaInfo> media_info;
+    in property <image> media_cover;
+    in property <int> media_position_seconds: 0;
+    in property <string> current_player;
+
+    in property <[string]> player_list: [];
+
+    callback set_position(int /* seconds */);
+    callback toggle_shuffle(string /* current_shuffle */);
+    callback cycle_loop_status(string /* current_status */);
+    callback play_pause();
+    callback next();
+    callback previous();
+
+    callback select_player(string /* player_identity */);
+
+    pure function format_time(total_seconds: int) -> string {
+        if (total_seconds <= 0) {
+            return "0:00";
+        }
+        let mins = Math.floor(total_seconds / 60);
+        let secs = Math.floor(Math.mod(total_seconds, 60));
+        return mins + ":" + (secs < 10 ? "0" : "") + secs;
+    }
+
+    player_popup := SelectionPopup {
+        x: ((player_button.x + main_layout.x) + player_button.width / 2) - self.popup-width / 2;
+        y: player_button.y + player_button.height + 4px;
+        title: "Select Player";
+        options: root.player_list;
+        selected-text: root.current_player;
+        popup-height: 160px;
+
+        item-selected(index, value) => {
+            root.select_player(value);
+        }
+    }
+
+    border_radius: 16px;
+
+    main_layout := VerticalLayout {
+        player_button := SelectionButton {
+            text: root.current_player;
+            icon: @image-url("../../assets/calendar/arrow_drop_down.svg");
+            checked: player_popup.is-open;
+            clicked => {
+                player_popup.show();
+            }
+        }
+VerticalLayout {
+                spacing: MaterialStyleMetrics.spacing_4;
+
+    alignment: center;
+        HorizontalLayout {
+            alignment: start;
+            spacing: MaterialStyleMetrics.spacing_16;
+
+            Rectangle {
+                width: 72px;
+                height: 72px;
+                border-radius: 8px;
+                background: MaterialPalette.surface_container_highest;
+                clip: true;
+
+                Image {
+                    width: 100%;
+                    height: 100%;
+                    source: root.media_cover;
+                    image-fit: cover;
+                }
+            }
+
+            VerticalLayout {
+                alignment: center;
+                spacing: 2px;
+
+                Text {
+                    text: root.media_info.title != "" ? root.media_info.title : "No Track Playing";
+                    font-size: MaterialTypography.title_medium.font-size;
+                    font-weight: MaterialTypography.title_medium.font-weight;
+                    color: MaterialPalette.on_surface;
+                    overflow: elide;
+                }
+
+                Text {
+                    text: root.media_info.artist != "" ? root.media_info.artist : "Unknown Artist";
+                    font-size: MaterialTypography.body_medium.font-size;
+                    color: MaterialPalette.on_surface_variant;
+                    overflow: elide;
+                }
+
+                if root.media_info.album != "": Text {
+                    text: root.media_info.album;
+                    font-size: MaterialTypography.body_small.font-size;
+                    color: MaterialPalette.outline;
+                    overflow: elide;
+                }
+            }
+        }
+
+        VerticalLayout {
+            spacing: 4px;
+
+            Rectangle {
+                height: 12px;
+
+                Rectangle {
+                    y: 4px;
+                    height: 4px;
+                    width: 100%;
+                    border-radius: 2px;
+                    background: MaterialPalette.outline_variant;
+                }
+
+                Rectangle {
+                    x: 0;
+                    y: 4px;
+                    height: 4px;
+                    width: root.media_info.length_seconds > 0
+                        ? Math.min(1.0, Math.max(0.0, root.media_position_seconds / root.media_info.length_seconds)) * parent.width
+                        : 0px;
+                    border-radius: 2px;
+                    background: MaterialPalette.primary;
+                }
+
+                TouchArea {
+                    pointer-event(event) => {
+                        if (event.button == PointerEventButton.left && (event.kind == PointerEventKind.down || event.kind == PointerEventKind.move)) {
+                            if (root.media_info.length_seconds > 0) {
+                                let ratio = Math.min(1.0, Math.max(0.0, self.mouse-x / self.width));
+                                root.set_position(Math.floor(ratio * root.media_info.length_seconds));
+                            }
+                        }
+                    }
+                }
+            }
+
+            HorizontalLayout {
+                Text {
+                    text: root.format_time(root.media_position_seconds);
+                    font-size: MaterialTypography.label_small.font-size;
+                    color: MaterialPalette.on_surface_variant;
+                }
+
+                Rectangle { }
+
+                Text {
+                    text: root.format_time(root.media_info.length_seconds);
+                    font-size: MaterialTypography.label_small.font-size;
+                    color: MaterialPalette.on_surface_variant;
+                }
+            }
+        }
+    }
+
+        HorizontalLayout {
+            spacing: MaterialStyleMetrics.spacing_8;
+            alignment: center;
+VerticalLayout {
+                alignment: center;
+                MediaButton {
+                    size: 36px;
+                    icon_size: 20px;
+                    icon: @image-url("../../assets/media/20x20/shuffle.svg");
+                    enabled: root.media_info.shuffle != "Unsupported";
+                    icon_color: root.media_info.shuffle == "On"
+                        ? MaterialPalette.on_primary_container
+                        : MaterialPalette.on_surface_variant;
+                    background_color: root.media_info.shuffle == "On"
+                        ? MaterialPalette.primary_container
+                        : MaterialPalette.surface_container_highest;
+                    clicked => { root.toggle_shuffle(root.media_info.shuffle); }
+                }
+            }
+
+            VerticalLayout {
+                alignment: center;
+                MediaButton {
+                    size: 36px;
+                    icon_size: 20px;
+                    icon: @image-url("../../assets/media/20x20/previous.svg");
+                    enabled: root.media_info.can_go_previous;
+                    icon_color: MaterialPalette.on_surface;
+                    clicked => { root.previous(); }
+                }
+            }
+
+            MediaButton {
+                size: 44px;
+                icon_size: 24px;
+                icon: root.media_info.playback_state == "Playing"
+                    ? @image-url("../../assets/media/20x20/pause.svg")
+                    : @image-url("../../assets/media/20x20/play.svg");
+                enabled: root.media_info.can_play;
+                icon_color: MaterialPalette.on_primary;
+                background_color: MaterialPalette.primary;
+                clicked => { root.play_pause(); }
+            }
+
+            VerticalLayout {
+                alignment: center;
+                MediaButton {
+                    size: 36px;
+                    icon_size: 20px;
+                    icon: @image-url("../../assets/media/20x20/forward.svg");
+                    enabled: root.media_info.can_go_next;
+                    icon_color: MaterialPalette.on_surface;
+                    clicked => { root.next(); }
+                }
+            }
+
+            VerticalLayout {
+                alignment: center;
+                MediaButton {
+                    size: 36px;
+                    icon_size: 20px;
+                    icon: root.media_info.loop_status == "Track"
+                        ? @image-url("../../assets/media/20x20/repeat_one.svg")
+                        : @image-url("../../assets/media/20x20/repeat.svg");
+                    enabled: root.media_info.loop_status != "Unsupported";
+                    icon_color: root.media_info.loop_status != "None" ? MaterialPalette.on_primary_container : MaterialPalette.on_surface_variant;
+                    background_color: root.media_info.loop_status != "None" ? MaterialPalette.primary_container : MaterialPalette.surface_container_highest;
+                    clicked => { root.cycle_loop_status(root.media_info.loop_status); }
+                }
+            }
+        }
+    }
+}

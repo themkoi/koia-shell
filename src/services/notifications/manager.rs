@@ -17,7 +17,7 @@ impl NotificationManager for notificationWindow {
             "Received new notification via framework: {}",
             notification.summary
         );
-        if self.get_dnd() {
+        if self.get_dnd() == false {
 
         let mut is_resident = false;
         let mut urgency_level = 1;

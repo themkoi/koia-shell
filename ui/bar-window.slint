@@ -56,6 +56,9 @@ import {
 import {
     ControlPanel,
 } from "components/control-panel.slint";
+import {
+    MediaInfo,
+} from "components/widgets/media-player.slint";
 
 import { MaterialStyleMetrics } from "material-1.0/material.slint";
 import {
@@ -100,9 +103,11 @@ export component barWindow inherits Window {
     in property <string> username;
     in property <image> profileImage;
 
-    in property <string> mediaTitle;
+    in property <[string]> player_list: [];
+    in property <MediaInfo> mediaData;
     in property <image> mediaCover;
-    in property <string> mediaPlaybackState;
+    in property <string> selected_player;
+    in property <int> media_position_seconds: 0;
 
     in property <UpTimeSlint> upTimeData;
     in property <TimeDataSlint> timeData;
@@ -176,9 +181,13 @@ export component barWindow inherits Window {
     callback refresh_networks();
     callback connect_wifi(string);
 
+    callback select_player(string);
+    callback set_position(int);
+    callback toggle_shuffle(string);
+    callback cycle_loop_status(string);
     callback media_play_pause();
-    callback media_next();
     callback media_previous();
+    callback media_next();
 
     callback set_caffeine(bool);
 
@@ -477,8 +486,8 @@ export component barWindow inherits Window {
                         padding-top: 2px;
 
                         MediaWidget {
-                            mediaTitle: root.mediaTitle;
-                            mediaPlaybackState: root.mediaPlaybackState;
+                            mediaTitle: root.mediaData.title;
+                            mediaPlaybackState: root.mediaData.playback-state;
                             window_width: root.window_width;
 
                             media_play_pause => {
@@ -667,9 +676,12 @@ export component barWindow inherits Window {
         upTimeHours: root.upTimeData.hour;
         upTimeMinutes: root.upTimeData.minute;
 
+        // --- Updated Media Properties ---
+        mediaData: root.mediaData;
         mediaCover: root.mediaCover;
-        mediaTitle: root.mediaTitle;
-        mediaPlaybackState: root.mediaPlaybackState;
+        media_position_seconds: root.media_position_seconds;
+        player_list: root.player_list;
+        current_player: root.selected_player;
 
         currentTimeHour: root.timeData.hour;
         currentTimeMinute: root.timeData.minute;
@@ -678,13 +690,28 @@ export component barWindow inherits Window {
             month: root.dateData.month,
             year: root.dateData.year,
         };
-        calendar_start_column: root.config.interaction.callendar-start-column;
+        calendar_start_column: root.config.look.callendar-start-column;
 
+        select_player(player) => {root.select_player(player)}
+        // --- Updated Media Callbacks ---
+        set_position(secs) => {
+            root.set_position(secs);
+        }
+        toggle_shuffle(enable) => {
+            root.toggle_shuffle(enable);
+        }
+        cycle_loop_status(status) => {
+            root.cycle_loop_status(status);
+        }
         media_next => {
             root.media_next();
         }
-        media_play_pause => { root.media_play_pause(); }
-        media_previous => { root.media_previous(); }
+        media_play_pause => {
+            root.media_play_pause();
+        }
+        media_previous => {
+            root.media_previous();
+        }
 
         month_day_count(m, y) => {
             return root.month_day_count(m, y);

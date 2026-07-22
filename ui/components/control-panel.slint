@@ -16,7 +16,9 @@ import { BaseButton } from "@material/ui/components/base_button.slint";
 import {
     MaterialStyleMetrics,
 } from "../material-1.0/ui/styling/material_style_metrics.slint";
-import { ConfigSlint } from "../shared-items.slint";
+import {
+    ConfigSlint,
+} from "../shared-items.slint";
 import {
     MaterialPalette,
 } from "../material-1.0/ui/styling/material_palette.slint";
@@ -26,27 +28,23 @@ import {
 } from "../material-1.0/ui/styling/material_typography.slint";
 
 import { CalendarWidget, Date } from "./widgets/calendar.slint";
+import { MediaInfo, MediaPlayer } from "./widgets/media-player.slint";
 
 export component MediaButton inherits Rectangle {
-    // --- Exposed Properties ---
     in-out property <image> icon;
     in-out property <length> icon_size: 20px;
     in-out property <color> icon_color: MaterialPalette.on_surface;
 
-    // Size & Shape
     in-out property <length> size: 40px;
     in-out property <length> radius: MaterialStyleMetrics.border_radius_28;
 
-    // Callbacks
     callback clicked();
 
-    // Setup component dimensions
     width: root.size;
     height: root.size;
     border_radius: root.radius;
     vertical-stretch: 0;
 
-    // --- Visual Layers ---
     elevation := Elevation {
         border_radius: root.border_radius;
         width: parent.width;
@@ -73,7 +71,6 @@ export component MediaButton inherits Rectangle {
         }
     }
 
-    // --- Hover / Press States ---
     states [
         hover when base.has_hover && !base.pressed && !base.enter_pressed: {
             elevation.level: 2;
@@ -156,9 +153,12 @@ export component ControlPanel inherits Rectangle {
     in-out property <int> calendar_display_year: root.dateToday.year;
     in-out property <int> calendar_start_column;
 
+    // --- Media Player Properties ---
+    in property <MediaInfo> mediaData;
     in property <image> mediaCover;
-    in property <string> mediaTitle;
-    in property <string> mediaPlaybackState;
+    in property <int> media_position_seconds: 0;
+    in property <[string]> player_list: [];
+    in property <string> current_player;
 
     pure callback month_day_count(int, int) -> int;
     pure callback month_offset(int, int) -> int;
@@ -180,9 +180,14 @@ export component ControlPanel inherits Rectangle {
     callback lock();
     callback suspend();
 
+    // --- Media Player Callbacks ---
+    callback set_position(int);
+    callback toggle_shuffle(string);
+    callback cycle_loop_status(string);
     callback media_play_pause();
     callback media_previous();
     callback media_next();
+    callback select_player(string /* player_identity */);
 
     animate height {
         duration: 300ms * config.interaction.animation-multiplier;
@@ -418,7 +423,6 @@ export component ControlPanel inherits Rectangle {
                                         }
                                     }
 
-                                    // --- Embedded Calendar Widget Card ---
                                     Elevation {
                                         level: 3;
                                         border_radius: MaterialStyleMetrics.border_radius_16;
@@ -486,79 +490,24 @@ export component ControlPanel inherits Rectangle {
                                         level: 2;
                                         border_radius: MaterialStyleMetrics.border_radius_16;
                                         background: MaterialPalette.surface_container_high;
-                                        min-height: 170px;
-                                        playerLayout := VerticalLayout {
+                                        VerticalLayout {
                                             alignment: center;
                                             padding: MaterialStyleMetrics.padding_10;
-                                            height: 100%;
-                                            width: 100%;
-                                            Rectangle {
-                                                height: 100%;
-                                                width: 100%;
-                                                border_radius: MaterialStyleMetrics.border_radius_16;
-                                                clip: true;
-                                                Image {
-                                                    source: root.mediaCover;
-                                                }
 
-                                                VerticalLayout {
-                                                    width: 100%;
-                                                    height: 100%;
-                                                    spacing: MaterialStyleMetrics.spacing_16;
-                                                    alignment: center;
+                                            MediaPlayer {
+                                                media_info: root.mediaData;
+                                                media_cover: root.mediaCover;
+                                                media_position_seconds: root.media_position_seconds;
+                                                player_list: root.player_list;
+                                                current_player: root.current_player;
 
-                                                    Text {
-                                                        vertical-alignment: bottom;
-                                                        horizontal-alignment: center;
-                                                        text: root.mediaTitle != "" ? root.mediaTitle : "No Media";
-                                                        color: root.mediaTitle != "" ? MaterialPalette.on_surface : MaterialPalette.outline;
-                                                        font-size: MaterialTypography.title_small.font-size;
-                                                        font-weight: MaterialTypography.title_small.font-weight;
-                                                        overflow: elide;
-                                                    }
-
-                                                    HorizontalLayout {
-                                                        alignment: center;
-                                                        spacing: MaterialStyleMetrics.spacing_12;
-                                                        VerticalLayout {
-                                                            alignment: center;
-                                                            MediaButton {
-                                                                size: 30px;
-                                                                icon_size: 20px;
-                                                                icon: @image-url("../assets/media/20x20/previous.svg");
-
-                                                                clicked => {
-                                                                    root.media_previous();
-                                                                }
-                                                            }
-                                                        }
-
-                                                        MediaButton {
-                                                            size: 40px;
-                                                            icon_size: 20px;
-                                                            icon: root.mediaPlaybackState == "Playing" ?
-                                                                @image-url("../assets/media/20x20/pause.svg") :
-                                                                @image-url("../assets/media/20x20/play.svg");
-
-                                                            clicked => {
-                                                                root.media_play_pause();
-                                                            }
-                                                        }
-
-                                                        VerticalLayout {
-                                                            alignment: center;
-                                                            MediaButton {
-                                                                size: 30px;
-                                                                icon_size: 20px;
-                                                                icon: @image-url("../assets/media/20x20/forward.svg");
-
-                                                                clicked => {
-                                                                    root.media_next();
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
+                                                select_player(player) => { root.select_player(player); }
+                                                set_position(secs) => { root.set_position(secs); }
+                                                toggle_shuffle(enable) => { root.toggle_shuffle(enable); }
+                                                cycle_loop_status(status) => { root.cycle_loop_status(status); }
+                                                play_pause() => { root.media_play_pause(); }
+                                                previous() => { root.media_previous(); }
+                                                next() => { root.media_next(); }
                                             }
                                         }
                                     }
