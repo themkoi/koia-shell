@@ -8,8 +8,7 @@ use std::{
 };
 
 use crate::{
-    CommandsConfigSlint, ConfigSlint, HardwareConfigSlint, TaskbarConfigSlint,
-    config_shell::components::taskbar::{TaskbarConfig, default_taskbar},
+    CommandsConfigSlint, ConfigSlint, HardwareConfigSlint, LookConfigSlint, TaskbarConfigSlint, config_shell::components::taskbar::{TaskbarConfig, default_taskbar},
 };
 use crate::{
     InteractionConfigSlint, NoticificationConfigSlint, TrayConfigSlint, WindowConfigSlint,
@@ -26,7 +25,6 @@ pub struct InterractionConfig {
     pub volume_scroll_step: u8,
     pub allow_overflow_volume: bool,
     pub brightness_scroll_step: u8,
-    pub callendar_start_column: u8,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -67,11 +65,18 @@ pub struct CommandConfig {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
+pub struct LookConfig {
+    pub callendar_start_column: u8,
+    pub media_cover_blur: u8,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Config {
     pub icon_theme: String,
     pub default_display: String,
     pub fallback_display: String,
     pub profile_icon: String,
+    pub look_config: LookConfig,
     pub commands_config: CommandConfig,
     pub window_config: WindowConfig,
     pub hardware_config: HardwareConfig,
@@ -89,6 +94,10 @@ impl Default for Config {
             default_display: "GIGA-BYTE TECHNOLOGY CO., LTD. G27QC A 0x00000439".to_string(),
             fallback_display: "eDP-1".to_string(),
             profile_icon: "$HOME/Pictures/pfp/pfp.png".to_string(),
+            look_config: LookConfig {
+                callendar_start_column: 1,
+                media_cover_blur: 5,
+            },
             commands_config: CommandConfig {
                 shutdown: "systemctl poweroff".to_string(),
                 reboot: "systemctl reboot".to_string(),
@@ -121,7 +130,6 @@ impl Default for Config {
                 volume_scroll_step: 3,
                 allow_overflow_volume: true,
                 brightness_scroll_step: 5,
-                callendar_start_column: 1,
             },
             settings_config: SettingsConfig {
                 persistent_sync_brightness: true,
@@ -243,6 +251,9 @@ pub fn load_app_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
 
 pub fn build_config_slint(config: &crate::config::AppConfig, window_bar_width: f32) -> ConfigSlint {
     ConfigSlint {
+        look: LookConfigSlint {
+            callendar_start_column: config.config.look_config.callendar_start_column as i32,
+        },
         commands: CommandsConfigSlint {
             shutdown: config.config.commands_config.shutdown.clone().into(),
             reboot: config.config.commands_config.reboot.clone().into(),
@@ -262,7 +273,6 @@ pub fn build_config_slint(config: &crate::config::AppConfig, window_bar_width: f
             animation_multiplier: config.config.interaction_config.animation_multiplier,
             volume_scroll_step: config.config.interaction_config.volume_scroll_step as i32,
             brightness_scroll_step: config.config.interaction_config.brightness_scroll_step as i32,
-            callendar_start_column: config.config.interaction_config.callendar_start_column as i32,
         },
         taskbar: TaskbarConfigSlint {
             icon_size: config.config.taskbar_config.icon_size as f32,
