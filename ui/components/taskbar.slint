@@ -85,7 +85,7 @@ export component Taskbar inherits Rectangle {
                             easing: ease-in-out;
                         }
 
-                        fill: MaterialPalette.surface_container;
+                        fill: MaterialPalette.surface;
                         fill-rule: evenodd;
                         commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
                     }
@@ -103,12 +103,12 @@ export component Taskbar inherits Rectangle {
                             duration: 100ms * animation_multiplier;
                             easing: ease-in-out;
                         }
-                        fill: MaterialPalette.surface_container;
+                        fill: MaterialPalette.surface;
                         commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
                     }
 
                     taskRect := Rectangle {
-                        background: MaterialPalette.surface_container;
+                        background: MaterialPalette.surface;
                         border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
                         border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
 
@@ -234,7 +234,7 @@ export component Taskbar inherits Rectangle {
                             alignment: center;
 
                             for ws[i] in root.workspaces: Rectangle {
-                                background: MaterialPalette.surface_container;
+                                background: MaterialPalette.surface;
                                 visible: ws.windows.length > 0;
                                 height: 7px;
                                 y: 0px;

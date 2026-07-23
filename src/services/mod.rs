@@ -1,15 +1,4 @@
 pub(crate) mod taskbar;
-pub(crate) mod volume;
-pub(crate) mod brightness;
 pub(crate) mod tray;
-pub(crate) mod battery;
 pub(crate) mod power_profiles;
-pub(crate) mod time;
-pub(crate) mod notifications;
 pub(crate) mod hardware_specific;
-pub(crate) mod network;
-pub(crate) mod bluetooth;
-pub(crate) mod sys_info;
-pub(crate) mod media;
-pub(crate) mod idle_management;
-pub(crate) mod uptime;

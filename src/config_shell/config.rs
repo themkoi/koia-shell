@@ -2,18 +2,19 @@ use config::{Config as ConfigLoader, File};
 use dirs::config_dir;
 use log::error;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::{
     fs,
     path::{Path, PathBuf},
+    process::Command,
 };
 
 use crate::{
-    CommandsConfigSlint, ConfigSlint, HardwareConfigSlint, LookConfigSlint, TaskbarConfigSlint, config_shell::components::taskbar::{TaskbarConfig, default_taskbar},
+    ConfigSlint, HardwareConfigSlint, TaskbarConfigSlint, config_shell::components::taskbar::{TaskbarConfig, default_taskbar},
 };
 use crate::{
-    InteractionConfigSlint, NoticificationConfigSlint, TrayConfigSlint, WindowConfigSlint,
+    InteractionConfigSlint, TrayConfigSlint, WindowConfigSlint,
     config_shell::components::{
-        notifications::{NotificationConfig, default_notificaiton},
         theme::{MaterialScheme, default_dark_scheme, default_light_scheme},
         tray::{TrayConfig, default_tray},
     },
@@ -29,11 +30,8 @@ pub struct InterractionConfig {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct WindowConfig {
-    pub bar_height: u16,
     pub bar_popup_max_height: u16,
     pub bar_popup_screen_padding: u16,
-    pub notification_screen: String,
-    pub notification_window_width: u16,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -45,71 +43,28 @@ pub struct HardwareConfig {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct SettingsConfig {
-    pub persistent_sync_brightness: bool,
-    pub sync_brightness: bool,
-    pub persistent_dark_mode: bool,
-    pub dark_mode: bool,
-    pub persistent_caffeine: bool,
-    pub caffeine: bool,
-    pub persistent_dnd: bool,
-    pub dnd: bool,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct CommandConfig {
-    pub shutdown: String,
-    pub reboot: String,
-    pub lock: String,
-    pub suspend: String,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct LookConfig {
-    pub callendar_start_column: u8,
-    pub media_cover_blur: u8,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
 pub struct Config {
+    pub default_bar: String,
     pub icon_theme: String,
     pub default_display: String,
     pub fallback_display: String,
-    pub profile_icon: String,
-    pub look_config: LookConfig,
-    pub commands_config: CommandConfig,
     pub window_config: WindowConfig,
     pub hardware_config: HardwareConfig,
     pub interaction_config: InterractionConfig,
-    pub settings_config: SettingsConfig,
     pub taskbar_config: TaskbarConfig,
     pub tray_config: TrayConfig,
-    pub notification_config: NotificationConfig,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
+            default_bar: "default".to_string(),
             icon_theme: "Papirus-Dark".to_string(),
             default_display: "GIGA-BYTE TECHNOLOGY CO., LTD. G27QC A 0x00000439".to_string(),
             fallback_display: "eDP-1".to_string(),
-            profile_icon: "$HOME/Pictures/pfp/pfp.png".to_string(),
-            look_config: LookConfig {
-                callendar_start_column: 1,
-                media_cover_blur: 5,
-            },
-            commands_config: CommandConfig {
-                shutdown: "systemctl poweroff".to_string(),
-                reboot: "systemctl reboot".to_string(),
-                lock: "$HOME/Documents/scripts/niri/lock.sh".to_string(),
-                suspend: "systemctl suspend".to_string(),
-            },
             window_config: WindowConfig {
-                bar_height: 38,
                 bar_popup_max_height: 450,
                 bar_popup_screen_padding: 4,
-                notification_screen: "eDP-1".to_string(),
-                notification_window_width: 400,
             },
             #[cfg(feature = "default_hardware")]
             hardware_config: HardwareConfig {
@@ -131,19 +86,8 @@ impl Default for Config {
                 allow_overflow_volume: true,
                 brightness_scroll_step: 5,
             },
-            settings_config: SettingsConfig {
-                persistent_sync_brightness: true,
-                sync_brightness: true,
-                persistent_dark_mode: true,
-                dark_mode: true,
-                persistent_caffeine: false,
-                caffeine: false,
-                persistent_dnd: false,
-                dnd: false,
-            },
             taskbar_config: default_taskbar(),
             tray_config: default_tray(),
-            notification_config: default_notificaiton(),
         }
     }
 }
@@ -173,12 +117,6 @@ fn config_root() -> PathBuf {
 fn config_file() -> PathBuf {
     let mut path = config_root();
     path.push("config.toml");
-    path
-}
-
-fn theme_file() -> PathBuf {
-    let mut path = config_root();
-    path.push("theme.toml");
     path
 }
 
@@ -212,26 +150,172 @@ pub fn load_or_create_config() -> Result<Config, Box<dyn std::error::Error>> {
     }
 }
 
-pub fn load_or_create_theme_config() -> Result<ThemeConfig, Box<dyn std::error::Error>> {
-    let path = theme_file();
 
-    if !path.exists() {
-        let default = ThemeConfig::default();
-        write_config(&path, &default)?;
-        return Ok(default);
+fn parse_hex_color(hex: &str) -> Option<[u8; 3]> {
+    let clean_hex = hex.trim_start_matches('#');
+    let rgb_str = match clean_hex.len() {
+        6 => clean_hex,
+        8 => &clean_hex[2..],
+        _ => return None,
+    };
+
+    let r = u8::from_str_radix(&rgb_str[0..2], 16).ok()?;
+    let g = u8::from_str_radix(&rgb_str[2..4], 16).ok()?;
+    let b = u8::from_str_radix(&rgb_str[4..6], 16).ok()?;
+
+    Some([r, g, b])
+}
+
+fn json_color(json: &Value, key: &str) -> Option<[u8; 3]> {
+    json.get(key)
+        .and_then(|v| v.as_str())
+        .and_then(parse_hex_color)
+}
+
+fn fetch_color(target: &Value, key: &str, alt_key: &str) -> Result<[u8; 3], Box<dyn std::error::Error>> {
+    json_color(target, key)
+        .or_else(|| json_color(target, alt_key))
+        .ok_or_else(|| format!("Failed to parse required color key: {} / {}", key, alt_key).into())
+}
+
+fn parse_noctalia_palette(json: &Value, is_dark: bool) -> Result<MaterialScheme, Box<dyn std::error::Error>> {
+    let target = if json.get("dark").is_some() || json.get("light").is_some() {
+        if is_dark {
+            json.get("dark").ok_or("Missing 'dark' section in palette JSON")?
+        } else {
+            json.get("light").ok_or("Missing 'light' section in palette JSON")?
+        }
+    } else {
+        json
+    };
+
+    let primary = fetch_color(target, "mPrimary", "primary")?;
+    let on_primary = fetch_color(target, "mOnPrimary", "on_primary")?;
+    let secondary = fetch_color(target, "mSecondary", "secondary")?;
+    let on_secondary = fetch_color(target, "mOnSecondary", "on_secondary")?;
+    let tertiary = fetch_color(target, "mTertiary", "tertiary")?;
+    let on_tertiary = fetch_color(target, "mOnTertiary", "on_tertiary")?;
+    let error = fetch_color(target, "mError", "error")?;
+    let on_error = fetch_color(target, "mOnError", "on_error")?;
+    let surface = fetch_color(target, "mSurface", "surface")?;
+    let on_surface = fetch_color(target, "mOnSurface", "on_surface")?;
+    let surface_variant = fetch_color(target, "mSurfaceVariant", "surface_variant")?;
+    let on_surface_variant = fetch_color(target, "mOnSurfaceVariant", "on_surface_variant")?;
+    let outline = fetch_color(target, "mOutline", "outline")?;
+    let shadow = fetch_color(target, "mShadow", "shadow")?;
+
+    Ok(MaterialScheme {
+        primary,
+        surface_tint: primary,
+        on_primary,
+        primary_container: surface_variant,
+        on_primary_container: on_surface_variant,
+        secondary,
+        on_secondary,
+        secondary_container: surface_variant,
+        on_secondary_container: on_surface_variant,
+        tertiary,
+        on_tertiary,
+        tertiary_container: surface_variant,
+        on_tertiary_container: on_surface_variant,
+        error,
+        on_error,
+        error_container: surface_variant,
+        on_error_container: on_surface_variant,
+        background: surface,
+        on_background: on_surface,
+        surface,
+        on_surface,
+        surface_variant,
+        on_surface_variant,
+        outline,
+        outline_variant: outline,
+        shadow,
+        scrim: shadow,
+        inverse_surface: on_surface,
+        inverse_on_surface: surface,
+        inverse_primary: primary,
+        primary_fixed: primary,
+        on_primary_fixed: on_primary,
+        primary_fixed_dim: primary,
+        on_primary_fixed_variant: on_primary,
+        secondary_fixed: secondary,
+        on_secondary_fixed: on_secondary,
+        secondary_fixed_dim: secondary,
+        on_secondary_fixed_variant: on_secondary,
+        tertiary_fixed: tertiary,
+        on_tertiary_fixed: on_tertiary,
+        tertiary_fixed_dim: tertiary,
+        on_tertiary_fixed_variant: on_tertiary,
+        surface_dim: surface,
+        surface_bright: surface,
+        surface_container_lowest: surface,
+        surface_container_low: surface,
+        surface_container: surface_variant,
+        surface_container_high: surface_variant,
+        surface_container_highest: surface_variant,
+    })
+}
+
+fn fetch_noctalia_theme() -> Result<ThemeConfig, Box<dyn std::error::Error>> {
+    let scheme_output = Command::new("noctalia")
+        .args(["msg", "color-scheme-get"])
+        .output()?;
+
+    if !scheme_output.status.success() {
+        return Err("`noctalia msg color-scheme-get` failed".into());
     }
 
-    let loaded = ConfigLoader::builder()
-        .add_source(File::from(path.as_path()))
-        .build()
-        .and_then(|c| c.try_deserialize::<ThemeConfig>());
+    let scheme_str = String::from_utf8_lossy(&scheme_output.stdout);
+    let mut parts = scheme_str.split_whitespace();
+    let source = parts.next().ok_or("Invalid color scheme source")?;
+    let palette_name = parts.collect::<Vec<&str>>().join(" ");
 
-    match loaded {
-        Ok(cfg) => Ok(cfg),
-        Err(_) => {
-            error!("failed loading theme: continuing with default");
-            let default = ThemeConfig::default();
-            Ok(default)
+    if palette_name.is_empty() {
+        return Err("Invalid color scheme name".into());
+    }
+
+    let base_dir = match source {
+        "custom" => {
+            let mut dir = config_dir().ok_or("Could not find config directory")?;
+            dir.push("noctalia/palettes");
+            dir
+        }
+        "community" => {
+            let mut dir = dirs::home_dir().ok_or("Could not find home directory")?;
+            dir.push(".local/state/noctalia/community-palettes");
+            dir
+        }
+        "builtin" => PathBuf::from("/usr/share/noctalia/palettes"),
+        other => return Err(format!("Unknown theme source: {}", other).into()),
+    };
+
+    let encoded_name = urlencoding::encode(&palette_name);
+    let mut palette_path = base_dir.join(format!("{}.json", encoded_name));
+
+    if !palette_path.exists() {
+        palette_path = base_dir.join(format!("{}.json", palette_name));
+    }
+
+    let content = fs::read_to_string(&palette_path)
+        .map_err(|e| format!("Failed to read palette at {:?}: {}", palette_path, e))?;
+
+    let json: Value = serde_json::from_str(&content)?;
+
+    let dark_scheme = parse_noctalia_palette(&json, true)?;
+    let light_scheme = parse_noctalia_palette(&json, false)?;
+
+    Ok(ThemeConfig {
+        dark_scheme,
+        light_scheme,
+    })
+}
+pub fn load_or_create_theme_config() -> Result<ThemeConfig, Box<dyn std::error::Error>> {
+    match fetch_noctalia_theme() {
+        Ok(theme) => Ok(theme),
+        Err(err) => {
+            error!("Failed to fetch Noctalia theme ({}): using default theme", err);
+            Ok(ThemeConfig::default())
         }
     }
 }
@@ -249,23 +333,14 @@ pub fn load_app_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
     })
 }
 
-pub fn build_config_slint(config: &crate::config::AppConfig, window_bar_width: f32) -> ConfigSlint {
+pub fn build_config_slint(config: &crate::config::AppConfig, window_bar_width: f32, bar_height: f32) -> ConfigSlint {
     ConfigSlint {
-        look: LookConfigSlint {
-            callendar_start_column: config.config.look_config.callendar_start_column as i32,
-        },
-        commands: CommandsConfigSlint {
-            shutdown: config.config.commands_config.shutdown.clone().into(),
-            reboot: config.config.commands_config.reboot.clone().into(),
-            lock: config.config.commands_config.lock.clone().into(),
-            suspend: config.config.commands_config.suspend.clone().into(),
-        },
         hardware: HardwareConfigSlint {
             hardware_specific_features: config.config.hardware_config.hardware_specific_features,
             temp_alert: config.config.hardware_config.temp_alert as i32,
         },
         window: WindowConfigSlint {
-            bar_height: config.config.window_config.bar_height as f32,
+            bar_height: bar_height as f32,
             bar_popup_max_height: config.config.window_config.bar_popup_max_height as f32,
             bar_popup_screen_padding: config.config.window_config.bar_popup_screen_padding as f32,
         },
@@ -273,6 +348,7 @@ pub fn build_config_slint(config: &crate::config::AppConfig, window_bar_width: f
             animation_multiplier: config.config.interaction_config.animation_multiplier,
             volume_scroll_step: config.config.interaction_config.volume_scroll_step as i32,
             brightness_scroll_step: config.config.interaction_config.brightness_scroll_step as i32,
+            sync_brightness: true,
         },
         taskbar: TaskbarConfigSlint {
             icon_size: config.config.taskbar_config.icon_size as f32,
@@ -286,13 +362,6 @@ pub fn build_config_slint(config: &crate::config::AppConfig, window_bar_width: f
             max_height: config.config.tray_config.max_menu_height as f32,
             width: config.config.tray_config.menu_width as f32,
             menu_icon_size: config.config.tray_config.menu_icon_size as f32,
-        },
-        notification: NoticificationConfigSlint {
-            icon_size: config.config.notification_config.icon_size as f32,
-            notification_max_height: config.config.notification_config.notification_max_height
-                as f32,
-            notification_width: config.config.notification_config.notification_width as f32,
-            other_action_buttons: config.config.notification_config.other_action_buttons,
         },
     }
 }

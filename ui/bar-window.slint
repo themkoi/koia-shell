@@ -9,7 +9,6 @@ import {
 import {
     TaskbarConfigSlint,
     ConfigSlint,
-    SessionDataSlint,
 } from "shared-items.slint";
 
 import { Workspace, Taskbar } from "components/taskbar.slint";
@@ -20,45 +19,6 @@ import {
     ContextMenuDataSlint,
 } from "components/tray.slint";
 import { ProfilesRow } from "components/profiles.slint";
-import {
-    BatteryButton,
-    BatteryDataSlint,
-    BatteryPopup,
-} from "components/battery.slint";
-import {
-    VolumeButton,
-    VolumeDataSlint,
-    AudioDeviceSlint,
-    VolumePopup,
-} from "components/volume.slint";
-import {
-    ExternalBrightnessState,
-    BrightnessButton,
-    BrightnessPopup,
-} from "components/brightness.slint";
-import {
-    NetworkItem,
-    NetworkMetadata,
-    NetworkButton,
-    NetworkPopup,
-} from "components/network.slint";
-import {
-    BluetoothItem,
-    BluetoothButton,
-    BluetoothPopup,
-} from "components/bluetooth.slint";
-import {
-    SysInfoRow,
-} from "components/sysinfo.slint";
-import {
-    MediaWidget,
-} from "components/media.slint";
-import {
-    ControlPanel,
-} from "components/control-panel.slint";
-import {
-    MediaInfo,
-} from "components/widgets/media-player.slint";
 
 import { MaterialStyleMetrics } from "material-1.0/material.slint";
 import {
@@ -74,57 +34,15 @@ export struct UpTimeSlint { hour: int, minute: int }
 export component barWindow inherits Window {
     in property <[Workspace]> workspaces;
     in property <[TrayItemSlint]> tray;
-    in property <[BatteryDataSlint]> batteryData;
     in-out property <ContextMenuDataSlint> trayMenu;
 
-    in property <NetworkMetadata> networkMetadata;
-    in property <[NetworkItem]> wifi_networks;
-
-    in property <bool> bluetooth_available;
-    in property <bool> bluetooth_enabled;
-    in property <[BluetoothItem]> bluetooth_connected_devices;
-    in property <[BluetoothItem]> bluetooth_discovered_devices;
-
-    in-out property <ExternalBrightnessState> extBrightnessData;
-    in-out property <int> brightness;
-    in property <VolumeDataSlint> volumeData;
-    in-out property <VolumeDataSlint> inputVolumeData;
-    in-out property <[AudioDeviceSlint]> output_devices;
-    in-out property <[AudioDeviceSlint]> input_devices;
-    in-out property <string> current_output_name;
-    in-out property <string> current_input_name;
     in property <string> powerProfile;
     in property <string> fanProfile;
 
-    in property <int> cpuUsage;
-    in property <int> cpuTemp;
-    in property <int> memoryUsage;
-
-    in property <string> username;
-    in property <image> profileImage;
-
-    in property <[string]> player_list: [];
-    in property <MediaInfo> mediaData;
-    in property <image> mediaCover;
-    in property <string> selected_player;
-    in property <int> media_position_seconds: 0;
-
-    in property <UpTimeSlint> upTimeData;
-    in property <TimeDataSlint> timeData;
-    in property <DateDataSlint> dateData;
-    in property <StringDateDataSlint> stringDateData;
-
-    // Rust Callbacks for Date/Calendar Operations
-    pure callback month_day_count(int, int) -> int;
-    pure callback month_offset(int, int) -> int;
 
     in property <ConfigSlint> config;
-    in-out property <SessionDataSlint> sessionData;
     in-out property <length> window_width <=> self.width;
     in-out property <length> window_height <=> self.height;
-
-    callback write_session_data(SessionDataSlint);
-    changed sessionData => { write_session_data(sessionData); }
 
     in property <[{ name: string, icon: image }]> power_profiles: [
         { name: "Power Saver", icon: @image-url("./assets/profiles/power/power_saver.svg") },
@@ -144,65 +62,20 @@ export component barWindow inherits Window {
 
     callback run_command(string);
 
-    callback set_volume(int, int);
-    callback set_muted(bool);
-
-    callback set_input_volume(int, int);
-    callback set_input_muted(bool);
-
-    callback select_output_device(string);
-    callback select_input_device(string);
-
-    callback set_brightness(int, int);
-    callback refresh_ext_brightness();
-    callback set_ext_brightness(string, int);
-    callback set_ext_brightness_all(int);
-    function handle_set_brightness(val: int, delta: int) {
-        root.brightness = root.brightness + delta;
-        root.set_brightness(root.brightness,0);
-        if (root.sessionData.sync-brightness) {
-            root.set_ext_brightness_all(root.brightness);
-        }
-    }
-    function handle_set_external_brightness(id: string, val: int) {
-        if (root.sessionData.sync-brightness) {
-            root.set_ext_brightness_all(val);
-            root.set_brightness(val, 0);
-        } else {
-            root.set_ext_brightness(id, val);
-        }
-    }
 
     callback set_power_profile(string);
     callback set_fan_profile(string);
 
-    callback set_wifi_enabled(bool);
-    callback disconnect_wifi();
-    callback refresh_networks();
-    callback connect_wifi(string);
-
-    callback select_player(string);
-    callback set_position(int);
-    callback toggle_shuffle(string);
-    callback cycle_loop_status(string);
-    callback media_play_pause();
-    callback media_previous();
-    callback media_next();
-
-    callback set_caffeine(bool);
-
-    callback set_bluetooth_enabled(bool);
-    callback connect_bluetooth_device(string);
-    callback disconnect_bluetooth_device(string);
-    callback start_bluetooth_discovery();
-
     callback tray_item_clicked(string, string, length);
     callback menu_action_executed(string, string);
 
-    callback manage_touch(string, bool);
+    callback manage_touch(string, bool, length, length, length, length);
 
     public function init_ui() {
         trayMenu.x-pos = layRight.x;
+        manage_touch("Left", true, layLeft.x, layLeft.y, layLeft.width, layLeft.height);
+        manage_touch("Right", true, layRight.x, layRight.y, layRight.width, layRight.height);
+        manage_touch("Taskbar", true, taskbar.x, taskbar.y, taskbar.width, taskbar.height);
     }
 
     property <bool> batteryPopupVis;
@@ -212,55 +85,13 @@ export component barWindow inherits Window {
     property <bool> volumePopupVis;
     property <bool> controlPanelVis;
 
-    function close_all_popups_except(active_name: string) {
-        if (active_name != "BatteryPopup" && root.batteryPopupVis) {
-            root.batteryPopupVis = false;
-            root.manage_touch("BatteryPopup", false);
-        }
-        if (active_name != "NetworkPopup" && root.networkPopupVis) {
-            root.networkPopupVis = false;
-            root.manage_touch("NetworkPopup", false);
-        }
-        if (active_name != "TrayMenu" && root.trayMenu.visible) {
-            root.trayMenu.visible = false;
-            root.manage_touch("TrayMenu", false);
-        }
-        if (active_name != "BluetoothMenu" && root.bluetoothPopupVis) {
-            root.bluetoothPopupVis = false;
-            root.manage_touch("BluetoothMenu", false);
-        }
-        if (active_name != "BrightnessMenu" && root.brightnessPopupVis) {
-            root.brightnessPopupVis = false;
-            root.manage_touch("BrightnessMenu", false);
-        }
-        if (active_name != "VolumeMenu" && root.volumePopupVis) {
-            root.volumePopupVis = false;
-            root.manage_touch("VolumeMenu", false);
-        }
-        if (active_name != "ControlPanel" && root.controlPanelVis) {
-            root.controlPanelVis = false;
-            root.manage_touch("ControlPanel", false);
-        }
-        root.manage_touch(active_name, true);
-    }
-
-    function close_all_popups() {
-        if (root.batteryPopupVis) { root.batteryPopupVis = false; root.manage_touch("BatteryPopup", false); }
-        if (root.networkPopupVis) { root.networkPopupVis = false; root.manage_touch("NetworkPopup", false); }
-        if (root.trayMenu.visible) { root.trayMenu.visible = false; root.manage_touch("TrayMenu", false); }
-        if (root.bluetoothPopupVis) { root.bluetoothPopupVis = false; root.manage_touch("BluetoothMenu", false); }
-        if (root.brightnessPopupVis) { root.brightnessPopupVis = false; root.manage_touch("BrightnessMenu", false); }
-        if (root.volumePopupVis) { root.volumePopupVis = false; root.manage_touch("VolumeMenu", false); }
-        if (root.controlPanelVis) { root.controlPanelVis = false; root.manage_touch("ControlPanel", false); }
-    }
-
     layLeft := HorizontalLayout {
         y: 0px;
         x: 0px;
         width: rectLeft.preferred-width;
         height: config.window.bar-height;
         rectLeft := Rectangle {
-            background: MaterialPalette.surface_container;
+            background: MaterialPalette.surface;
             border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
 
             Path {
@@ -268,27 +99,16 @@ export component barWindow inherits Window {
                 height: ((config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16) + 1px;
                 y: 0px;
                 x: rectLeft.width - 1px;
-                fill: MaterialPalette.surface_container;
+                fill: MaterialPalette.surface;
                 commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
             }
 
             HorizontalLayout {
-                padding-left: 10px;
-                padding-right: 10px;
+                padding-left: 30px;
+                padding-right: 30px;
                 padding-top: 2px;
                 padding-bottom: 2px;
                 spacing: MaterialStyleMetrics.spacing_2;
-                battButton := BatteryButton {
-                    battery_clicked() => {
-                        root.batteryPopupVis = !root.batteryPopupVis;
-                        if (root.batteryPopupVis) {
-                            root.close_all_popups_except("BatteryPopup");
-                        } else {
-                            root.manage_touch("BatteryPopup", false);
-                        }
-                    }
-                    battery: batteryData[0];
-                }
 
                 ProfilesRow {
                     set_power_profile(profile) => {
@@ -306,13 +126,6 @@ export component barWindow inherits Window {
                     profiles: root.power_profiles;
                     powerProfile: powerProfile;
                 }
-
-                SysInfoRow {
-                    cpuUsage: root.cpuUsage;
-                    cpuTemp: root.cpuTemp;
-                    memoryUsage: root.memoryUsage;
-                    config: root.config;
-                }
             }
         }
     }
@@ -328,7 +141,7 @@ export component barWindow inherits Window {
         }
         rectRight := Rectangle {
             height: 100%;
-            background: MaterialPalette.surface_container;
+            background: MaterialPalette.surface;
             border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
 
             Path {
@@ -336,14 +149,14 @@ export component barWindow inherits Window {
                 height: ((config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16) + 1px;
                 y: 0px;
                 x: -self.width + 1px;
-                fill: MaterialPalette.surface_container;
+                fill: MaterialPalette.surface;
                 fill-rule: evenodd;
                 commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
             }
 
             HorizontalLayout {
-                padding-left: 10px;
-                padding-right: 10px;
+                padding-left: 30px;
+                padding-right: 30px;
                 padding-top: 2px;
                 padding-bottom: 2px;
                 spacing: MaterialStyleMetrics.spacing_2;
@@ -353,77 +166,6 @@ export component barWindow inherits Window {
                     items: root.tray;
                     item_clicked(id, btn, button_x) => {
                         root.tray_item_clicked(id, btn, button_x + rectRight.x + layRight.x);
-                        if (root.trayMenu.visible) {
-                            root.close_all_popups_except("TrayMenu");
-                        } else {
-                            root.manage_touch("TrayMenu", false);
-                        }
-                    }
-                }
-
-                volumeButton := VolumeButton {
-                    volume: volumeData;
-                    volume_clicked => {
-                        root.volumePopupVis = !root.volumePopupVis;
-                        if (root.volumePopupVis) {
-                            root.close_all_popups_except("VolumeMenu");
-                        } else {
-                            root.manage_touch("VolumeMenu", false);
-                        }
-                    }
-                    volume_right_clicked() => {
-                        set_muted(!volumeData.muted);
-                    }
-                    volume_scroll_up() => {
-                        set_volume(volumeData.volume,config.interaction.volume-scroll-step)
-                    }
-                    volume_scroll_down() => {
-                        set_volume(volumeData.volume,-config.interaction.volume-scroll-step)
-                    }
-                }
-
-                brightnessButton := BrightnessButton {
-                    brightness: brightness;
-                    brightness_clicked => {
-                        refresh_ext_brightness();
-                        root.brightnessPopupVis = !root.brightnessPopupVis;
-                        if (root.brightnessPopupVis) {
-                            root.close_all_popups_except("BrightnessMenu");
-                        } else {
-                            root.manage_touch("BrightnessMenu", false);
-                        }
-                    }
-                    brightness_scroll_up() => {
-                        handle_set_brightness(brightness, config.interaction.brightness-scroll-step)
-                    }
-                    brightness_scroll_down() => {
-                        handle_set_brightness(brightness, -config.interaction.brightness-scroll-step)
-                    }
-                }
-
-                nettButton := NetworkButton {
-                    metadata: root.networkMetadata;
-                    network_clicked() => {
-                        root.networkPopupVis = !root.networkPopupVis;
-                        if (root.networkPopupVis) {
-                            root.close_all_popups_except("NetworkPopup");
-                        } else {
-                            root.manage_touch("NetworkPopup", false);
-                        }
-                    }
-                }
-
-                bluetoothButton := BluetoothButton {
-                    bluetooth_available: root.bluetooth_available;
-                    bluetooth_enabled: root.bluetooth_enabled;
-                    bluetooth_connected_devices: root.bluetooth_connected_devices;
-                    bluetooth_clicked() => {
-                        root.bluetoothPopupVis = !root.bluetoothPopupVis;
-                        if (root.bluetoothPopupVis) {
-                            root.close_all_popups_except("BluetoothMenu");
-                        } else {
-                            root.manage_touch("BluetoothMenu", false);
-                        }
                     }
                 }
             }
@@ -433,116 +175,17 @@ export component barWindow inherits Window {
     HorizontalLayout {
         x: 0px;
         y: 0px;
-        width: 100%;
-        height: config.window.bar-height;
         alignment: center;
-        animate width {
-            duration: 100ms * root.config.interaction.animation_multiplier;
-            easing: ease-in-out;
-        }
-        Rectangle {
-            width: 100%;
-
-            rectMiddle := Rectangle {
-                width: layoutMiddle.preferred-width;
-                background: MaterialPalette.surface_container;
-                border-bottom-left-radius: MaterialStyleMetrics.border_radius_16;
-                border-bottom-right-radius: MaterialStyleMetrics.border_radius_16;
-
-                Path {
-                    width: ((config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16) + 2px;
-                    height: ((config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16) + 1px;
-                    y: 0px;
-                    x: -self.width + 1px;
-                    fill: MaterialPalette.surface_container;
-                    commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
-                }
-
-                Path {
-                    width: ((config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16) + 2px;
-                    height: ((config.window.bar-height + 3px) - MaterialStyleMetrics.border_radius_16) + 1px;
-                    y: 0px;
-                    x: rectMiddle.width - 1px;
-                    fill: MaterialPalette.surface_container;
-                    commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
-                }
-
-                TouchArea {
-                    clicked => {
-                        root.controlPanelVis = !root.controlPanelVis;
-                        if (root.controlPanelVis) {
-                            root.close_all_popups_except("ControlPanel");
-                        } else {
-                            root.manage_touch("ControlPanel", false);
-                        }
-                    }
-                    layoutMiddle := HorizontalLayout {
-                        y: 0px;
-                        x: 0px;
-                        width: 100%;
-                        alignment: center;
-                        padding-left: 15px;
-                        padding-right: 15px;
-                        padding-top: 2px;
-
-                        MediaWidget {
-                            mediaTitle: root.mediaData.title;
-                            mediaPlaybackState: root.mediaData.playback-state;
-                            window_width: root.window_width;
-
-                            media_play_pause => {
-                                root.media_play_pause();
-                            }
-                        }
-
-                        VerticalLayout {
-                            alignment: center;
-                            spacing: -3px;
-
-                            Text {
-                                vertical-alignment: bottom;
-                                horizontal-alignment: center;
-                                text: (root.timeData.hour < 10 ? "0" : "") + root.timeData.hour + ":" + (root.timeData.minute < 10 ? "0" : "") + root.timeData.minute;
-                                font-size: MaterialTypography.title_small.font-size;
-                                font-weight: MaterialTypography.title_small.font-weight;
-                            }
-
-                            Text {
-                                vertical-alignment: top;
-                                horizontal-alignment: center;
-                                text: root.stringDateData.day + ": " + root.stringDateData.month + " " + root.dateData.day;
-                                font-size: MaterialTypography.label_small.font-size * 1;
-                                font-weight: MaterialTypography.label_small.font-weight * 1;
-                            }
-                        }
-                    }
-                }
+        taskbar := Taskbar {
+            changed height => {
+                manage_touch("Taskbar", true, taskbar.x, taskbar.y, taskbar.width, taskbar.height);
             }
-        }
-    }
-
-    HorizontalLayout {
-        x: 0px;
-        y: 0px;
-        height: config.window.bar-height;
-        alignment: center;
-        Taskbar {
             config: config;
             animation_multiplier: config.interaction.animation-multiplier;
             workspaces: workspaces;
             dispatch_command(cmd) => {
                 root.run_command(cmd);
             }
-        }
-    }
-
-    TouchArea {
-        width: 100%;
-        height: 100%;
-        y: config.window.bar-height;
-
-        clicked => {
-            close_all_popups();
         }
     }
 
@@ -555,181 +198,6 @@ export component barWindow inherits Window {
 
         menu_action_executed(item_id, action_id) => {
             root.menu_action_executed(item_id, action_id);
-            root.manage_touch("TrayAction", false);
-        }
-    }
-
-    BatteryPopup {
-        x: clamp(rectLeft.x + layLeft.x,config.window.bar-popup-screen-padding,(root.window_width - self.width) - config.window.bar-popup-screen-padding);
-        y: config.window.bar-height + 4px;
-        config: config;
-        fanProfile: root.fanProfile;
-        power_profiles: root.power_profiles;
-        fan_profiles: root.fan_profiles;
-        powerProfile: root.powerProfile;
-        batteryData: batteryData;
-        popup_visible: root.batteryPopupVis;
-
-        set_power_profile(profile) => {
-            root.set_power_profile(profile);
-        }
-        set_fan_profile(profile) => {
-            root.set_fan_profile(profile);
-        }
-    }
-
-    NetworkPopup {
-        x: clamp(nettButton.x + rectRight.x + layRight.x,config.window.bar-popup-screen-padding,(root.window_width - self.width) - config.window.bar-popup-screen-padding);
-        y: config.window.bar-height + 4px;
-        config: config;
-        metadata: root.networkMetadata;
-        wifi_networks: root.wifi_networks;
-        popup_visible: root.networkPopupVis;
-
-        set_wifi_enabled(enabled) => {
-            root.set_wifi_enabled(enabled);
-        }
-        disconnect_wifi => {
-            root.disconnect_wifi();
-        }
-        refresh_networks => {
-            root.refresh_networks();
-        }
-        connect_wifi(ssid) => {
-            root.connect_wifi(ssid)
-        }
-    }
-
-    BluetoothPopup {
-        x: clamp(bluetoothButton.x + rectRight.x + layRight.x,config.window.bar-popup-screen-padding,(root.window_width - self.width) - config.window.bar-popup-screen-padding);
-        y: config.window.bar-height + 4px;
-        config: config;
-
-        bluetooth_available: root.bluetooth_available;
-        bluetooth_enabled: root.bluetooth_enabled;
-        bluetooth_connected_devices: root.bluetooth_connected_devices;
-        bluetooth_discovered_devices: root.bluetooth_discovered_devices;
-
-        popup_visible: root.bluetoothPopupVis;
-
-        set_bluetooth_enabled(enabled) => {
-            root.set_bluetooth_enabled(enabled);
-        }
-        connect_bluetooth_device(mac) => {
-            root.connect_bluetooth_device(mac);
-        }
-        disconnect_bluetooth_device(mac) => {
-            root.disconnect_bluetooth_device(mac);
-        }
-        start_bluetooth_discovery() => {
-            root.start_bluetooth_discovery()
-        }
-    }
-
-    BrightnessPopup {
-        x: clamp(brightnessButton.x + rectRight.x + layRight.x,config.window.bar-popup-screen-padding,(root.window_width - self.width) - config.window.bar-popup-screen-padding);
-        y: config.window.bar-height + 4px;
-        config: config;
-        brightness <=> root.brightness;
-        extBrightnessData <=> root.extBrightnessData;
-        popup_visible: root.brightnessPopupVis;
-        sync_brightness <=> root.sessionData.sync-brightness;
-
-        refresh_external_brightness => {
-            root.refresh_ext_brightness();
-        }
-        set_brightness(val) => {
-            handle_set_brightness(val,0);
-        }
-        set_external_brightness(id, val) => {
-            handle_set_external_brightness(id, val)
-        }
-    }
-
-    VolumePopup {
-        x: clamp(volumeButton.x + rectRight.x + layRight.x, config.window.bar-popup-screen-padding, (root.window_width - self.width) - config.window.bar-popup-screen-padding);
-        y: config.window.bar-height + 4px;
-        config: root.config;
-        popup_visible: root.volumePopupVis;
-
-        volumeData: root.volumeData;
-        inputVolumeData: root.inputVolumeData;
-        output_devices: root.output_devices;
-        input_devices: root.input_devices;
-        current_input_name: root.current_input_name;
-        current_output_name: root.current_output_name;
-
-        set_volume(v, device) => { root.set_volume(v, device); }
-        set_muted(m) => { root.set_muted(m); }
-        set_input_volume(v, device) => { root.set_input_volume(v, device); }
-        set_input_muted(m) => { root.set_input_muted(m); }
-        select_output_device(name) => { root.select_output_device(name); }
-        select_input_device(name) => { root.select_input_device(name); }
-    }
-
-    ControlPanel {
-        config: root.config;
-        panel_visible: root.controlPanelVis;
-        username: root.username;
-        profileImage: root.profileImage;
-        upTimeHours: root.upTimeData.hour;
-        upTimeMinutes: root.upTimeData.minute;
-
-        // --- Updated Media Properties ---
-        mediaData: root.mediaData;
-        mediaCover: root.mediaCover;
-        media_position_seconds: root.media_position_seconds;
-        player_list: root.player_list;
-        current_player: root.selected_player;
-
-        currentTimeHour: root.timeData.hour;
-        currentTimeMinute: root.timeData.minute;
-        dateToday: {
-            day: root.dateData.day,
-            month: root.dateData.month,
-            year: root.dateData.year,
-        };
-        calendar_start_column: root.config.look.callendar-start-column;
-
-        select_player(player) => {root.select_player(player)}
-        // --- Updated Media Callbacks ---
-        set_position(secs) => {
-            root.set_position(secs);
-        }
-        toggle_shuffle(enable) => {
-            root.toggle_shuffle(enable);
-        }
-        cycle_loop_status(status) => {
-            root.cycle_loop_status(status);
-        }
-        media_next => {
-            root.media_next();
-        }
-        media_play_pause => {
-            root.media_play_pause();
-        }
-        media_previous => {
-            root.media_previous();
-        }
-
-        month_day_count(m, y) => {
-            return root.month_day_count(m, y);
-        }
-        month_offset(m, y) => {
-            return root.month_offset(m, y);
-        }
-
-        shutdown => {
-            root.run_command(root.config.commands.shutdown);
-        }
-        reboot => {
-            root.run_command(root.config.commands.reboot);
-        }
-        lock => {
-            root.run_command(root.config.commands.lock);
-        }
-        suspend => {
-            root.run_command(root.config.commands.suspend);
         }
     }
 
@@ -738,7 +206,7 @@ export component barWindow inherits Window {
         height: 10px;
         y: config.window.bar-height;
         x: window_width - self.width;
-        fill: MaterialPalette.surface_container;
+        fill: MaterialPalette.surface;
         fill-rule: evenodd;
         commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
     }
@@ -748,7 +216,7 @@ export component barWindow inherits Window {
         height: 10px;
         y: config.window.bar-height;
         x: 0px;
-        fill: MaterialPalette.surface_container;
+        fill: MaterialPalette.surface;
         fill-rule: evenodd;
         commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
     }

@@ -121,7 +121,6 @@ pub async fn run_taskbar(
                     if !path_str.is_empty() {
                         let path = Path::new(&path_str);
                         if path.exists() {
-                            // Warm up loading explicitly using our checker
                             let _ = load_image_explicitly(path);
                         }
                     }

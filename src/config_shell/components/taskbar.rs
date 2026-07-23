@@ -18,7 +18,6 @@ pub struct TaskbarConfig {
     pub check_cache_validity: bool,
     pub blacklist: Vec<String>,
 
-    // Window app_id -> desktop icon/app id override
     pub icon_aliases: HashMap<String, String>,
 }
 

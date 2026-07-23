@@ -11,13 +11,6 @@ export struct TrayConfigSlint {
     max-height: length,
 }
 
-export struct NoticificationConfigSlint {
-    icon_size: length,
-    notification_width: length,
-    notification_max_height: length,
-    other_action_buttons: bool,
-}
-
 export struct WindowConfigSlint {
     bar_height: length,
     bar_popup_max_height: length,
@@ -28,6 +21,7 @@ export struct InteractionConfigSlint {
     animation_multiplier: float,
     volume_scroll_step: int,
     brightness_scroll_step: int,
+    sync_brightness: bool,
 }
 
 export struct HardwareConfigSlint {
@@ -35,32 +29,11 @@ export struct HardwareConfigSlint {
     temp_alert: int,
 }
 
-export struct CommandsConfigSlint {
-    shutdown: string,
-    reboot: string,
-    lock: string,
-    suspend: string,
-}
-
-export struct LookConfigSlint {
-    callendar_start_column: int,
-}
-
 
 export struct ConfigSlint {
-    look: LookConfigSlint,
-    commands: CommandsConfigSlint,
     hardware: HardwareConfigSlint,
     window: WindowConfigSlint,
     interaction: InteractionConfigSlint,
     taskbar: TaskbarConfigSlint,
     tray: TrayConfigSlint,
-    notification: NoticificationConfigSlint,
-}
-
-export struct SessionDataSlint {
-    sync_brightness: bool,
-    dark_mode: bool,
-    caffeine: bool,
-    dnd: bool,
 }
