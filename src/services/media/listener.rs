@@ -529,16 +529,29 @@ pub async fn listen_media_changes(
                                                     }
                                                 }
 
-                                                let needs_update = if !title_changed && new_art_source.is_none() {
-                                                    false
+                                                if title_changed {
+                                                    if let Some(ref source) = new_art_source {
+                                                        if state.art_source.as_ref() != Some(source) {
+                                                            state.art_source = new_art_source.clone();
+                                                            (true, new_art_source)
+                                                        } else {
+                                                            (false, None)
+                                                        }
+                                                    } else {
+                                                        // Title changed and new track has no artwork: clear buffer to free memory
+                                                        state.art_source = None;
+                                                        state.cover_buffer = None;
+                                                        (false, None)
+                                                    }
                                                 } else {
-                                                    state.art_source != new_art_source
-                                                };
-
-                                                if needs_update {
-                                                    state.art_source = new_art_source.clone();
+                                                    // Title did not change: only fetch if source updated to a valid cover
+                                                    if new_art_source.is_some() && state.art_source != new_art_source {
+                                                        state.art_source = new_art_source.clone();
+                                                        (true, new_art_source)
+                                                    } else {
+                                                        (false, None)
+                                                    }
                                                 }
-                                                (needs_update, new_art_source)
                                             };
 
                                             if needs_cover_update {

@@ -13,19 +13,7 @@ import {
     MaterialText,
 } from "@material/material.slint";
 import { BaseButton } from "@material/ui/components/base_button.slint";
-import {
-    MaterialStyleMetrics,
-} from "../material-1.0/ui/styling/material_style_metrics.slint";
-import {
-    ConfigSlint,
-} from "../shared-items.slint";
-import {
-    MaterialPalette,
-} from "../material-1.0/ui/styling/material_palette.slint";
-import { FilledButton } from "../material-1.0/material.slint";
-import {
-    MaterialTypography,
-} from "../material-1.0/ui/styling/material_typography.slint";
+import { ConfigSlint } from "../shared-items.slint";
 
 import { CalendarWidget, Date } from "./widgets/calendar.slint";
 import { MediaInfo, MediaPlayer } from "./widgets/media-player.slint";
@@ -170,10 +158,21 @@ export component ControlPanel inherits Rectangle {
         callendar.reset_selection();
     }
 
-    width: root.panel_visible ? 100% : 0%;
-    height: root.panel_visible ? 100% : 0%;
-    clip: true;
-    y: 0px;
+        width: 900px;
+        height: 465px;
+    // Hardware-accelerated position slide & fade transition
+    y: root.panel_visible ? 0px : -100px;
+    opacity: root.panel_visible ? 1.0 : 0.0;
+    visible: root.opacity > 0;
+
+    animate opacity {
+        duration: 200ms * config.interaction.animation-multiplier;
+        easing: ease-out;
+    }
+    animate y {
+        duration: 250ms * config.interaction.animation-multiplier;
+        easing: ease-out;
+    }
 
     callback shutdown();
     callback reboot();
@@ -189,14 +188,6 @@ export component ControlPanel inherits Rectangle {
     callback media_next();
     callback select_player(string /* player_identity */);
 
-    animate height {
-        duration: 300ms * config.interaction.animation-multiplier;
-        easing: ease-in-out-back;
-    }
-    animate width {
-        duration: 250ms * config.interaction.animation-multiplier;
-        easing: ease-in-out-back;
-    }
     dialog := Dialog {
         x: -root.absolute_position.x;
         y: -root.absolute_position.y;
@@ -252,8 +243,6 @@ export component ControlPanel inherits Rectangle {
 
     HorizontalLayout {
         y: 0px;
-        width: 900px;
-        height: 465px;
         alignment: center;
         TouchArea {
             y: 0px;
@@ -266,29 +255,19 @@ export component ControlPanel inherits Rectangle {
                 height: 100%;
 
                 Path {
-                    width: root.panel_visible ? ((config.window.bar-height + 3px)) + 2px : 0px;
-                    height: root.panel_visible ? ((config.window.bar-height + 3px)) + 1px : 0px;
+                    width: ((config.window.bar-height + 3px)) + 2px;
+                    height: ((config.window.bar-height + 3px)) + 1px;
                     y: 0px;
                     x: -self.width + 1px;
-
-                    animate width, height {
-                        duration: 300ms * config.interaction.animation-multiplier;
-                        easing: ease-in-out-back;
-                    }
                     fill: MaterialPalette.surface_container;
                     commands: "M 7 3 L 12 3 L 12 8 C 11 5 10 4 7 3";
                 }
 
                 Path {
-                    width: root.panel_visible ? ((config.window.bar-height + 3px)) + 2px : 0px;
-                    height: root.panel_visible ? ((config.window.bar-height + 3px)) + 1px : 0px;
+                    width: ((config.window.bar-height + 3px)) + 2px;
+                    height: ((config.window.bar-height + 3px)) + 1px;
                     y: 0px;
                     x: parent.width - 1px;
-
-                    animate width, height {
-                        duration: 300ms * config.interaction.animation-multiplier;
-                        easing: ease-in-out-back;
-                    }
                     fill: MaterialPalette.surface_container;
                     commands: "M 7 8 L 7 3 L 12 3 C 9 4 8 5 7 8";
                 }
